@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+	height: 100%;
+}
+
+body {
+	font-family: 'Open Sans', ui-sans-serif, system-ui, sans-serif;
+	color: #000000;
+	background: #FFFFFF;
+}
+
+.heading {
+	font-family: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer components {
+	.btn {
+		@apply inline-flex items-center justify-center px-5 py-3 rounded-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed;
+	}
+
+	.btn-primary {
+		@apply bg-lavender text-black shadow hover:bg-black hover:text-white;
+		box-shadow: 0 10px 32px rgba(198,160,246,0.35);
+	}
+
+	.btn-primary:hover:not(:disabled) {
+		box-shadow: 0 12px 36px rgba(198,160,246,0.4);
+	}
+
+	.card {
+		@apply bg-white rounded-lg shadow-card border border-gray-100;
+	}
+
+	.input {
+		@apply w-full border border-gray-200 rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-lavender focus:border-transparent;
+	}
+
+	.dropzone {
+		@apply border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-lavender transition-colors;
+	}
+
+	.spinner-lavender {
+		@apply w-5 h-5 rounded-full border-2 border-lavender border-t-transparent animate-spin;
+	}
+
+	.toast {
+		@apply rounded-lg shadow-card px-4 py-3 text-sm flex items-center justify-between gap-4;
+	}
+
+	.toast-success {
+		@apply bg-white text-black border border-lavender/40;
+	}
+
+	.toast-error {
+		@apply bg-white text-red-700 border border-red-200;
+	}
+
+	.toast-info {
+		@apply bg-white text-black border border-gray-200;
+	}
+
+	.print-only {
+		display: none;
+	}
+
+	.screen-only {
+		display: block;
+	}
+}
+
+@media print {
+	.no-print {
+		display: none !important;
+	}
+
+	.print-only {
+		display: block !important;
+	}
+
+	.screen-only {
+		display: none !important;
+	}
+
+	body {
+		background: white !important;
+	}
+}
+
