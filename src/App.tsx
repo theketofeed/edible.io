@@ -7,6 +7,7 @@ import Results from './components/Results'
 import { generateMealPlan } from './lib/mealPlanGenerator'
 import type { DietType, MealPlanResult } from './utils/types'
 import { useReactToPrint } from 'react-to-print'
+import html2pdf from 'html2pdf.js/dist/include/html2pdf.es.js'
 import ToastContainer, { ToastKind, ToastMessage } from './components/Toast'
 
 export default function App() {
@@ -108,18 +109,56 @@ export default function App() {
 		`
 	})
 
-	const triggerDownload = useCallback(() => {
+	const triggerDownload = useCallback(async () => {
 		if (!printRef.current) {
 			console.error('[Print] Ref is null')
 			showToast('error', 'Content not ready for printing')
 			return
 		}
-		console.log('[Print] Triggering print dialog...')
+
+		const element = printRef.current
+		const filename = 'edible-meal-plan.pdf'
+
+		// We'll clone the print element and inject lightweight PDF-specific styles
+		const clone = element.cloneNode(true) as HTMLElement
+		// Inline styles for PDF readability
+		const style = document.createElement('style')
+		style.innerHTML = `
+		  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; }
+		  .card { box-shadow: none !important; border: none !important; page-break-inside: avoid; }
+		  .print-only { display: block !important; }
+		  .no-print { display: none !important; }
+		  .heading { font-size: 18px; }
+		  .card h3 { font-size: 14px; margin: 0 0 6px 0 }
+		  .card ul { font-size: 12px }
+		  /* Force page breaks between grid items when necessary */
+		  .print-page-break { page-break-after: always; }
+		`
+		clone.prepend(style)
+
+		// Wrap clone in a container so html2pdf picks up styles
+		const wrapper = document.createElement('div')
+		wrapper.style.padding = '0.5in'
+		wrapper.appendChild(clone)
+
+		const opt = {
+			margin: 0.5,
+			filename,
+			image: { type: 'jpeg', quality: 0.98 },
+			html2canvas: { scale: 2, useCORS: true },
+			jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+			pagebreak: { mode: ['css', 'legacy'] }
+		}
+
 		try {
-			handlePrint()
+			// html2pdf expects an element; call from the wrapper
+			await html2pdf().set(opt).from(wrapper).save()
+			showToast('success', 'Downloaded meal plan PDF')
 		} catch (err) {
-			console.error('[Print] Error:', err)
-			showToast('error', 'Failed to open print dialog')
+			console.error('[PDF] html2pdf error:', err)
+			showToast('error', 'Failed to generate PDF')
+			// Fallback to print dialog
+			try { handlePrint(); showToast('info', 'Opened print dialog — choose "Save as PDF" to export') } catch { /* ignore */ }
 		}
 	}, [handlePrint, showToast])
 

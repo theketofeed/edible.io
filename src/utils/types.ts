@@ -29,4 +29,21 @@ export interface OcrResult {
 	confidence?: number
 }
 
+export type FoodCategory = 
+	| 'protein'
+	| 'vegetable'
+	| 'fruit'
+	| 'dairy'
+	| 'grain'
+	| 'pantry'
+	| 'frozen'
+	| 'miscellaneous'
 
+export interface CategorizedFoodItem {
+	name: string
+	category: FoodCategory
+}
+
+export interface FoodItemsResult {
+	food_items: CategorizedFoodItem[]
+}
