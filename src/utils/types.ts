@@ -1,4 +1,4 @@
-export type DietType = 'Keto' | 'Paleo' | 'Vegan' | 'Vegetarian' | 'Low-Carb' | 'High-Protein' | 'Balanced'
+export type DietType = 'Keto' | 'Paleo' | 'Vegan' | 'Vegetarian' | 'Low-Carb' | 'High-Protein' | 'Balanced' | 'Mediterranean'
 
 export type MealType = 'Breakfast' | 'Lunch' | 'Dinner'
 
@@ -21,6 +21,7 @@ export interface GenerateMealPlanParams {
 	items: string[]
 	diet: DietType
 	sourceText: string
+	days?: number
 }
 
 export interface OcrResult {

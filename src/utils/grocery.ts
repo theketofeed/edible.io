@@ -142,6 +142,22 @@ const OCR_CORRECTIONS: Record<string, string> = {
 	'veggie': 'vegetable'
 }
 
+// Common vendor/store prefixes and brand tokens to strip
+const PREFIX_TOKENS = ['365', 'og', 'cv', 'wf', 'wholefoods', 'wo', 'brand']
+
+// Map short vendor codes or shorthand to likely ingredients
+const CODE_MAPPINGS: Record<string, string> = {
+	// Example heuristics used in receipts — these can be extended
+	'3bc': 'chicken breast',
+	'ckn': 'chicken',
+	'rot': 'rotisserie chicken',
+	'ckn': 'chicken',
+	'pck': 'package',
+}
+
+// Patterns that indicate package sizes or counts to strip
+const PACKAGE_PATTERNS = [/(\b\d+\s?oz\b)/gi, /(\b\d+\s?lbs?\b)/gi, /(\bpack\b)/gi, /(\bpk\b)/gi, /(\bct\b)/gi, /(\bpcs\b)/gi]
+
 function normalizeItem(value: string): string {
 	// Remove all price-related patterns
 	let cleaned = value
@@ -162,15 +178,28 @@ function normalizeItem(value: string): string {
 
 	if (!cleaned) return ''
 
+	// Remove common prefix tokens like store codes or brand prefixes
+	const parts = cleaned.split(/\s+/).filter(Boolean)
+	let tokens = parts.slice()
+	if (tokens.length && PREFIX_TOKENS.includes(tokens[0])) {
+		tokens = tokens.slice(1)
+	}
+
 	// Split into tokens and filter
-	const tokens = cleaned.split(' ').filter(Boolean)
+	tokens = tokens.flatMap(t => t.split('-')).filter(Boolean)
 	if (!tokens.length) return ''
 
 	// Apply OCR corrections and filter stop words
 	const correctedTokens = tokens.map((token) => {
+		const low = token.toLowerCase()
 		// Apply OCR corrections
-		if (OCR_CORRECTIONS[token]) {
-			return OCR_CORRECTIONS[token]
+		if (OCR_CORRECTIONS[low]) return OCR_CORRECTIONS[low]
+		// Map short codes
+		if (CODE_MAPPINGS[low]) return CODE_MAPPINGS[low]
+		// Strip package size tokens
+		for (const p of PACKAGE_PATTERNS) {
+			if (p.test(low)) return ''
+			p.lastIndex = 0
 		}
 		return token
 	})
@@ -185,9 +214,43 @@ function normalizeItem(value: string): string {
 
 	if (!filteredTokens.length) return ''
 
-	// Join and capitalize first letter of each word
+	// Join and lowercase normalized result (we'll return simple lower-case names)
 	const joined = filteredTokens.join(' ')
-	return joined.replace(/\b\w/g, (char) => char.toUpperCase())
+	if (!joined) return ''
+	// Apply some canonical pluralization / simplifications
+	let out = joined
+	out = out.replace(/\bblack bean\b/gi, 'black beans')
+	out = out.replace(/\bcilantro\b/gi, 'cilantro')
+	out = out.replace(/\bavocado\b/gi, 'avocado')
+	// common singularization for consistency
+	out = out.replace(/\bpotatoes\b/gi, 'potato')
+	out = out.replace(/\btomatoes\b/gi, 'tomato')
+	return out.toLowerCase()
+}
+
+/**
+ * Clean an extracted grocery list into simple ingredient names.
+ * - strips non-food tokens and prefixes
+ * - applies OCR corrections and code mappings
+ * - removes duplicates and normalizes casing
+ */
+export function cleanGroceryList(inputItems: string[]): string[] {
+	const cleaned: string[] = []
+	const seen = new Set<string>()
+	for (const raw of inputItems) {
+		if (!raw || typeof raw !== 'string') continue
+		// run through normalizeItem (works on free-form strings too)
+		const n = normalizeItem(raw)
+		if (!n) continue
+		// final trim and lower-case
+		const key = n.trim().toLowerCase()
+		if (!key) continue
+		if (!seen.has(key)) {
+			seen.add(key)
+			cleaned.push(key)
+		}
+	}
+	return cleaned
 }
 
 export function extractGroceryItems(input: string): string[] {
