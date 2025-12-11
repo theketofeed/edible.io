@@ -1,6 +1,7 @@
 import type { DietType } from '../utils/types'
 
-const DIETS: DietType[] = ['Keto','Paleo','Vegan','Vegetarian','Low-Carb','High-Protein','Balanced']
+// Order chosen to follow user preference: Keto, Paleo, Vegan, Vegetarian, Low Carb, High Protein, Balanced, Mediterranean
+const DIETS: DietType[] = ['Keto','Paleo','Vegan','Vegetarian','Low-Carb','High-Protein','Balanced','Mediterranean']
 
 interface Props {
 	value: DietType

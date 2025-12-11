@@ -13,6 +13,7 @@ import ToastContainer, { ToastKind, ToastMessage } from './components/Toast'
 export default function App() {
 	const [diet, setDiet] = useState<DietType>('Balanced')
 	const [groceryItems, setGroceryItems] = useState<string[]>([])
+	const [planDaysSelection, setPlanDaysSelection] = useState<number | 'auto'>('auto')
 	const [sourceText, setSourceText] = useState('')
 	const [isLoading, setIsLoading] = useState(false)
 	const [error, setError] = useState<string | null>(null)
@@ -30,6 +31,18 @@ export default function App() {
 	}, [])
 
 	const canGenerate = useMemo(() => groceryItems.length > 0, [groceryItems])
+
+	// Automatic plan length based on grocery items count
+	const autoPlanDays = useMemo(() => {
+		const n = groceryItems.length
+		if (n >= 26) return 7
+		if (n >= 16) return 5
+		if (n >= 10) return 3
+		if (n > 0) return 2
+		return 1
+	}, [groceryItems])
+
+	const effectivePlanDays = planDaysSelection === 'auto' ? autoPlanDays : planDaysSelection
 
 	const onItemsDetected = useCallback((items: string[], rawText: string) => {
 		setError(null)
@@ -55,7 +68,8 @@ export default function App() {
 		setError(null)
 		setIsLoading(true)
 		try {
-			const plan = await generateMealPlan({ items: groceryItems, diet, sourceText })
+			console.log('[App] Generating meal plan with days:', effectivePlanDays)
+			const plan = await generateMealPlan({ items: groceryItems, diet, sourceText, days: effectivePlanDays })
 			setResult(plan)
 			// Only show info toast if we used fallback (no API key or API failed)
 			const hasKey = !!import.meta.env.VITE_OPENAI_API_KEY
@@ -71,7 +85,7 @@ export default function App() {
 		} finally {
 			setIsLoading(false)
 		}
-	}, [diet, groceryItems, showToast, sourceText])
+	}, [diet, groceryItems, showToast, sourceText, effectivePlanDays])
 
 	const handleRegenerate = useCallback(() => {
 		if (!canGenerate) return
@@ -174,7 +188,27 @@ export default function App() {
 
 						<div className="grid gap-2">
 							<label className="text-sm font-semibold text-black/80">Select diet:</label>
-							<DietSelector value={diet} onChange={setDiet} disabled={isLoading} />
+							<div className="flex items-center gap-3">
+								<DietSelector value={diet} onChange={setDiet} disabled={isLoading} />
+								<div>
+									<label className="text-sm font-semibold text-black/80">Meal Plan Length</label>
+									<select
+										className="ml-2 border rounded px-2 py-1"
+										value={planDaysSelection}
+										onChange={(e) => {
+											const v = e.target.value
+											if (v === 'auto') setPlanDaysSelection('auto')
+											else setPlanDaysSelection(Number(v))
+										}}
+									>
+										<option value={'auto'}>Auto ({autoPlanDays} days)</option>
+										<option value={3}>3 days</option>
+										<option value={5}>5 days</option>
+										<option value={7}>7 days</option>
+									</select>
+									<div className="text-xs text-black/60 mt-1">Based on {groceryItems.length} items, recommended {autoPlanDays} days</div>
+								</div>
+							</div>
 						</div>
 
 						<div className="flex flex-wrap items-center gap-3">
