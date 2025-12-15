@@ -43,12 +43,24 @@ const Results = forwardRef<HTMLDivElement, Props>(function Results({ result, onC
 				<div className="grid md:grid-cols-2 gap-4">
 					{result.days.map((d) => (
 						<div key={d.day} className="card p-4">
-							<h3 className="heading text-lg font-bold mb-2">{d.day}</h3>
-							<ul className="text-sm grid gap-2">
-								<li><span className="font-semibold">Breakfast:</span> {d.Breakfast}</li>
-								<li><span className="font-semibold">Lunch:</span> {d.Lunch}</li>
-								<li><span className="font-semibold">Dinner:</span> {d.Dinner}</li>
-							</ul>
+							<h3 className="heading text-lg font-bold mb-3">{d.day}</h3>
+							<div className="text-sm grid gap-3">
+								<div>
+									<div className="font-semibold mb-1">Breakfast:</div>
+									<div className="mb-1">{d.Breakfast.title}</div>
+									<div className="text-black/70 text-xs">⏱️ Prep: {d.Breakfast.prepTime} min | Cook: {d.Breakfast.cookTime} min | Total: {d.Breakfast.totalTime} min</div>
+								</div>
+								<div>
+									<div className="font-semibold mb-1">Lunch:</div>
+									<div className="mb-1">{d.Lunch.title}</div>
+									<div className="text-black/70 text-xs">⏱️ Prep: {d.Lunch.prepTime} min | Cook: {d.Lunch.cookTime} min | Total: {d.Lunch.totalTime} min</div>
+								</div>
+								<div>
+									<div className="font-semibold mb-1">Dinner:</div>
+									<div className="mb-1">{d.Dinner.title}</div>
+									<div className="text-black/70 text-xs">⏱️ Prep: {d.Dinner.prepTime} min | Cook: {d.Dinner.cookTime} min | Total: {d.Dinner.totalTime} min</div>
+								</div>
+							</div>
 						</div>
 					))}
 				</div>

@@ -6,5 +6,5 @@
     "module": "ESNext",
     "moduleResolution": "node",
   },
-  "include": ["src/utils/foodCategorizer.test.ts", "src/utils/foodCategorizer.clean.ts"]
+  "include": ["src/utils/foodCategorizer.test.ts", "src/utils/foodCategorizer.ts"]
 }

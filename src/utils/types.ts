@@ -2,11 +2,20 @@ export type DietType = 'Keto' | 'Paleo' | 'Vegan' | 'Vegetarian' | 'Low-Carb' | 
 
 export type MealType = 'Breakfast' | 'Lunch' | 'Dinner'
 
+export interface Meal {
+	title: string
+	prepTime: number
+	cookTime: number
+	totalTime: number
+	instructions: string
+	ingredients: string[]
+}
+
 export interface DayMeals {
 	day: string
-	Breakfast: string
-	Lunch: string
-	Dinner: string
+	Breakfast: Meal
+	Lunch: Meal
+	Dinner: Meal
 }
 
 export interface MealPlanResult {

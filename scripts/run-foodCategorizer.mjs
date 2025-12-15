@@ -1,4 +1,4 @@
-import { extractAndCategorizeFoodItems } from '../src/utils/foodCategorizer.node.clean.mjs'
+import { extractAndCategorizeFoodItems } from '../src/utils/foodCategorizer'
 
 const sampleCleanedItems = [
   'Flat Leaf Spinach',
