@@ -95,7 +95,7 @@ export default function App() {
 	const handleCopy = useCallback(async () => {
 		if (!result) return
 		const text = result.days.map(d =>
-			`${d.day}\n- Breakfast: ${d.Breakfast}\n- Lunch: ${d.Lunch}\n- Dinner: ${d.Dinner}`
+			`${d.day}\n- Breakfast: ${d.Breakfast.title} (⏱️ Prep: ${d.Breakfast.prepTime} min | Cook: ${d.Breakfast.cookTime} min | Total: ${d.Breakfast.totalTime} min)\n- Lunch: ${d.Lunch.title} (⏱️ Prep: ${d.Lunch.prepTime} min | Cook: ${d.Lunch.cookTime} min | Total: ${d.Lunch.totalTime} min)\n- Dinner: ${d.Dinner.title} (⏱️ Prep: ${d.Dinner.prepTime} min | Cook: ${d.Dinner.cookTime} min | Total: ${d.Dinner.totalTime} min)`
 		).join('\n\n')
 		try {
 			await navigator.clipboard.writeText(text)

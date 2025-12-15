@@ -1,4 +1,4 @@
-import { extractAndCategorizeFoodItems } from './foodCategorizer.clean'
+import { extractAndCategorizeFoodItems } from './foodCategorizer'
 
 // Test data: cleaned items from grocery list
 const sampleCleanedItems = [
