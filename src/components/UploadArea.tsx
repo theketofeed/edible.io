@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { FileUp, FileText, Image as ImageIcon, X, File as FileIcon } from 'lucide-react'
-import { runOcrOnFile } from '../lib/mealPlanGenerator'
 import { extractGroceryItems } from '../utils/grocery'
+import { runGoogleVisionOcr } from '../lib/googleVisionOcr'
 
 interface Props {
 	onItemsDetected: (items: string[], rawText: string) => void
@@ -38,16 +38,16 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 		setIsOcrRunning(true)
 		setOcrConfidence(undefined)
 		try {
-			const { items, rawText, confidence } = await runOcrOnFile(file)
-			setOcrConfidence(confidence)
-			if (items.length) {
-				setDetectedCount(items.length)
-				onItemsDetected(items, rawText)
-			} else {
-				setDetectedCount(0)
-				onError('No grocery items found. Try a clearer photo.')
-			}
-		} catch (e) {
+          const { items, rawText, confidence } = await runGoogleVisionOcr(file)
+          setOcrConfidence(confidence)
+          if (items.length) {
+            setDetectedCount(items.length)
+            onItemsDetected(items, rawText)
+          } else {
+            setDetectedCount(0)
+            onError('No grocery items found. Try a clearer photo.')
+          }
+        } catch (e) {
 			console.error('[UploadArea] OCR error:', e)
 			onError('Something went wrong while reading your receipt.')
 		} finally {
