@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "server": "node server.mjs",
+    "dev:all": "concurrently \"npm run server\" \"npm run dev\"",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "food-categorizer": "node scripts/run-foodCategorizer-clean.mjs",
@@ -12,9 +14,15 @@
     "food-categorizer-compiled": "tsc -p tsconfig.test.json && node dist/src/utils/foodCategorizer.test.js"
   },
   "dependencies": {
+    "@google-cloud/vision": "^5.3.4",
     "@types/tesseract.js": "^0.0.2",
+    "concurrently": "^9.2.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
     "html2pdf.js": "^0.9.3",
     "lucide-react": "^0.460.0",
+    "node-fetch": "^2.7.0",
     "openai": "^4.70.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

@@ -51,8 +51,6 @@ const RECEIPT_METADATA_PATTERNS = [
 	/^card$/i,
 	/\.com$/i,
 	/@/i,
-	// STRICT: Reject any 2-3 letter garbage tokens (fi, er, at, le, ds, rri, na, be, or, cv, cy, etc.)
-	/^[a-z]{2,3}$/i,
 ]
 
 // Food keywords that indicate a valid food item
@@ -67,7 +65,7 @@ const FOOD_KEYWORDS = new Set([
 	'apple', 'apples', 'orange', 'oranges', 'grape', 'grapes', 'berry', 'berries', 'strawberry', 'strawberries',
 	'blueberry', 'blueberries', 'raspberry', 'raspberries', 'peach', 'peaches', 'pear', 'pears', 'plum', 'plums',
 	'cherry', 'cherries', 'mango', 'mangoes', 'pineapple', 'watermelon', 'melon', 'kiwi', 'kiwis', 'lemon', 'lemons',
-	'raisins',
+	'lime', 'limes', 'raisins',
 	// Proteins
 	'chicken', 'turkey', 'beef', 'pork', 'fish', 'salmon', 'tuna', 'shrimp', 'crab', 'crabmeat', 'lobster', 'egg', 'eggs',
 	'tofu', 'tempeh', 'seitan', 'bacon', 'sausage', 'ham', 'steak', 'ground', 'tenders',
@@ -77,7 +75,7 @@ const FOOD_KEYWORDS = new Set([
 	'bread', 'rice', 'pasta', 'noodles', 'quinoa', 'oats', 'oatmeal', 'wheat', 'barley', 'couscous', 'tortilla', 'wrap',
 	'croissant', 'cookies',
 	// Other / pantry
-	'oil', 'olive oil', 'vinegar', 'salt', 'sugar', 'flour', 'honey', 'jam', 'jelly', 'peanut', 'peanuts', 'almond', 'almonds',
+	'oil', 'olive', 'olive oil', 'vinegar', 'balsamic', 'balsamic vinegar', 'salt', 'sugar', 'flour', 'honey', 'jam', 'jelly', 'peanut', 'peanuts', 'almond', 'almonds',
 	'walnut', 'walnuts', 'cashew', 'cashews', 'seed', 'seeds', 'nut', 'nuts', 'butter', 'cottage cheese',
 	// Herbs and spices
 	'cilantro', 'parsley', 'basil', 'oregano', 'thyme', 'rosemary', 'sage', 'mint', 'garlic', 'ginger', 'cumin',
@@ -270,9 +268,16 @@ const OCR_CORRECTIONS: Record<string, string> = {
 	'roti': 'tortilla',
 	// Limes/citrus
 	'hass': 'hass',  // Keep brand name for avocados
-	// Apples
-	'gala apples': 'gala apples',
-	'gala': 'apples'
+	// Balsamic vinegar (OCR often misreads this)
+	'balsamic': 'balsamic vinegar',
+	'bas apacer': 'balsamic vinegar',  // Common OCR error
+	'basalmic': 'balsamic vinegar',
+	// Beans
+	'black bean': 'black beans',
+	'og black bean': 'black beans',
+	'365 og black': 'black beans',
+	'cv limes': 'limes',
+	'cv': 'conventional',  // Remove CV prefix if alone
 }
 
 // Common abbreviations on receipts -> full words
@@ -569,18 +574,26 @@ function looksLikeFood(item: string, rawLine?: string): boolean {
         }
     }
 
-    // Single-word logic: allow shorter words (3+ chars) if they plausibly match food keywords
+    // Single-word logic: prioritize food keyword matching over strict length requirements
     if (words.length === 1) {
         const w = words[0]
-        // Absolutely reject 2-character garbage tokens like 'er', 'db', 'fy', 'be'
-        if (w.length < 3) {
-            console.log(`[Filter] Rejected "${item}" - too short (${w.length} chars), garbage token`)
-            return false
+        
+        // First check: does it match a food keyword (any length)?
+        if (FOOD_KEYWORDS.has(w)) {
+            return true
         }
         for (const keyword of FOOD_KEYWORDS) {
             if (keyword.includes(w) || w.includes(keyword)) return true
         }
-        console.log(`[Filter] Rejected "${item}" - single short word, no food keyword match`)
+        
+        // Second check: only reject very short tokens (2 chars) that don't match any keyword
+        if (w.length < 3) {
+            console.log(`[Filter] Rejected "${item}" - too short (${w.length} chars) and no food keyword match`)
+            return false
+        }
+        
+        // Third check: 3+ chars but no keyword match
+        console.log(`[Filter] Rejected "${item}" - single word, no food keyword match`)
         return false
     }
 
