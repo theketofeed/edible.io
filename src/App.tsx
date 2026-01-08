@@ -4,6 +4,7 @@ import UploadArea from './components/UploadArea'
 import DietSelector from './components/DietSelector'
 import Loading from './components/Loading'
 import Results from './components/Results'
+import ErrorBoundary from './components/ErrorBoundary'
 import { generateMealPlan } from './lib/mealPlanGenerator'
 import type { DietType, MealPlanResult } from './utils/types'
 import { useReactToPrint } from 'react-to-print'
@@ -177,8 +178,12 @@ export default function App() {
 	}, [handlePrint, showToast])
 
 	return (
-		<div className="min-h-full">
-			<ToastContainer toasts={toasts} onDismiss={dismissToast} />
+		<ErrorBoundary onError={(error) => {
+			console.error('[App] Error boundary caught:', error)
+			showToast('error', 'An unexpected error occurred. Please refresh and try again.')
+		}}>
+			<div className="min-h-full">
+				<ToastContainer toasts={toasts} onDismiss={dismissToast} />
 			<div className="max-w-5xl mx-auto px-4 py-8 md:py-12">
 				<Header />
 
@@ -250,8 +255,7 @@ export default function App() {
 					</div>
 				)}
 			</div>
-		</div>
+			</div>
+		</ErrorBoundary>
 	)
 }
-
-

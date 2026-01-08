@@ -1,4 +1,6 @@
-export default function Header() {
+import { memo } from 'react'
+
+const Header = memo(function Header() {
 	return (
 		<div className="text-center max-w-3xl mx-auto mb-8 md:mb-12">
 			<h1 className="heading text-3xl md:text-5xl font-bold mb-3 text-black">
@@ -9,6 +11,8 @@ export default function Header() {
 			</p>
 		</div>
 	)
-}
+})
+
+export default Header
 
 

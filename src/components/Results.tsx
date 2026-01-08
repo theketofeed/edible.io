@@ -1,6 +1,6 @@
-import { forwardRef } from 'react'
+import { forwardRef, memo, useMemo } from 'react'
 import { Copy, Download, RefreshCw } from 'lucide-react'
-import type { MealPlanResult } from '../utils/types'
+import type { MealPlanResult, DayMeals, Meal } from '../utils/types'
 
 interface Props {
 	result: MealPlanResult
@@ -9,8 +9,37 @@ interface Props {
 	onRegenerate: () => void
 }
 
-const Results = forwardRef<HTMLDivElement, Props>(function Results({ result, onCopy, onDownload, onRegenerate }, ref) {
-	const title = `Your ${result.totalDays}-Day ${result.diet} Meal Plan`
+// Memoized meal card to prevent unnecessary re-renders
+const MealCard = memo(function MealCard({ meal, label }: { meal: Meal; label: string }) {
+	return (
+		<div>
+			<div className="font-semibold mb-1">{label}:</div>
+			<div className="mb-1">{meal.title}</div>
+			<div className="text-black/70 text-xs">⏱️ Prep: {meal.prepTime} min | Cook: {meal.cookTime} min | Total: {meal.totalTime} min</div>
+		</div>
+	)
+})
+
+// Memoized day card to prevent re-rendering of unchanged days
+const DayCard = memo(function DayCard({ day }: { day: DayMeals }) {
+	return (
+		<div className="card p-4">
+			<h3 className="heading text-lg font-bold mb-3">{day.day}</h3>
+			<div className="text-sm grid gap-3">
+				<MealCard meal={day.Breakfast} label="Breakfast" />
+				<MealCard meal={day.Lunch} label="Lunch" />
+				<MealCard meal={day.Dinner} label="Dinner" />
+			</div>
+		</div>
+	)
+})
+
+const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result, onCopy, onDownload, onRegenerate }, ref) {
+	// Memoize the title to avoid recalculation
+	const title = useMemo(() => `Your ${result.totalDays}-Day ${result.diet} Meal Plan`, [result.totalDays, result.diet])
+	
+	// Memoize the days to avoid re-rendering all days when props change slightly
+	const days = useMemo(() => result.days, [result.days])
 
 	return (
 		<div className="grid gap-6 animate-fadeIn">
@@ -41,33 +70,12 @@ const Results = forwardRef<HTMLDivElement, Props>(function Results({ result, onC
 					<p className="text-sm text-black/70">Generated from your uploaded grocery list</p>
 				</div>
 				<div className="grid md:grid-cols-2 gap-4">
-					{result.days.map((d) => (
-						<div key={d.day} className="card p-4">
-							<h3 className="heading text-lg font-bold mb-3">{d.day}</h3>
-							<div className="text-sm grid gap-3">
-								<div>
-									<div className="font-semibold mb-1">Breakfast:</div>
-									<div className="mb-1">{d.Breakfast.title}</div>
-									<div className="text-black/70 text-xs">⏱️ Prep: {d.Breakfast.prepTime} min | Cook: {d.Breakfast.cookTime} min | Total: {d.Breakfast.totalTime} min</div>
-								</div>
-								<div>
-									<div className="font-semibold mb-1">Lunch:</div>
-									<div className="mb-1">{d.Lunch.title}</div>
-									<div className="text-black/70 text-xs">⏱️ Prep: {d.Lunch.prepTime} min | Cook: {d.Lunch.cookTime} min | Total: {d.Lunch.totalTime} min</div>
-								</div>
-								<div>
-									<div className="font-semibold mb-1">Dinner:</div>
-									<div className="mb-1">{d.Dinner.title}</div>
-									<div className="text-black/70 text-xs">⏱️ Prep: {d.Dinner.prepTime} min | Cook: {d.Dinner.cookTime} min | Total: {d.Dinner.totalTime} min</div>
-								</div>
-							</div>
-						</div>
+					{days.map((d) => (
+						<DayCard key={d.day} day={d} />
 					))}
 				</div>
 			</div>
 		</div>
 	)
-})
-
-export default Results
+}))
 
