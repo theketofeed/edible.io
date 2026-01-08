@@ -1,4 +1,6 @@
-export default function Loading() {
+import { memo } from 'react'
+
+const Loading = memo(function Loading() {
 	return (
 		<div className="flex flex-col items-center justify-center gap-3 text-black/80 py-6">
 			<span className="spinner-lavender" />
@@ -6,6 +8,8 @@ export default function Loading() {
 			<p className="text-xs text-black/60 text-center">We are reading your items, applying diet rules, and assembling meals.</p>
 		</div>
 	)
-}
+})
+
+export default Loading
 
 

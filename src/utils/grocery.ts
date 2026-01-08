@@ -1,56 +1,13 @@
-// Receipt metadata patterns that should be completely filtered out
+// Receipt metadata patterns - ONLY obvious non-food items (Mindee already filters most)
 const RECEIPT_METADATA_PATTERNS = [
-	/^special$/i,
 	/^subtotal$/i,
 	/^total$/i,
-	/^loyalty$/i,
-	/^cash$/i,
-	/^change$/i,
 	/^balance$/i,
-	/^paid$/i,
+	/^change$/i,
+	/^tax$/i,
 	/^payment$/i,
-	/^tender$/i,
-	/^due$/i,
-	/^ref$/i,
-	/^trans$/i,
-	/^transaction$/i,
-	/^invoice$/i,
-	/^order$/i,
-	/^receipt$/i,
-	/^store$/i,
-	/^market$/i,
-	/^date$/i,
-	/^time$/i,
-	/^cashier$/i,
-	/^clerk$/i,
-	/^register$/i,
-	/^customer$/i,
-	/^member$/i,
-	/^thank$/i,
-	/^thanks$/i,
-	/^savings$/i,
-	/^save$/i,
-	/^saved$/i,
-	/^coupon$/i,
-	/^discount$/i,
-	/^rewards$/i,
-	/^points$/i,
-	/^promo$/i,
-	/^deal$/i,
-	/^result$/i,
-	/^approved$/i,
-	/^sequence$/i,
-	/^term$/i,
-	/^terminal$/i,
-	/^id$/i,
-	/^seq$/i,
-	/^visa$/i,
-	/^mastercard$/i,
-	/^debit$/i,
-	/^credit$/i,
-	/^card$/i,
-	/\.com$/i,
-	/@/i,
+	/^cash$/i,
+	/^thank you$/i,
 ]
 
 // Food keywords that indicate a valid food item
@@ -351,111 +308,21 @@ const CANONICAL_PATTERNS: Array<{ pattern: RegExp; replacement: string }> = [
 const PACKAGE_PATTERNS = [/(\b\d+\s?oz\b)/gi, /(\b\d+\s?lbs?\b)/gi, /(\bpack\b)/gi, /(\bpk\b)/gi, /(\bct\b)/gi, /(\bpcs\b)/gi]
 
 function normalizeItem(value: string): string {
-	// Remove all price-related patterns, tax codes, and OCR artifacts
+	// Minimal cleanup - Mindee already provides clean descriptions
 	let cleaned = value
-		.replace(PRICE_PATTERN, ' ')
-		.replace(LOOSE_PRICE_PATTERN, ' ')
-		.replace(F_CODE_PATTERN, ' ')
-		.replace(TAX_CODE_PATTERN, ' ')  // Remove tax codes like FB, FY, FE, BE, etc.
-		.replace(QUANTITY_PATTERN, ' ')
-		.replace(WEIGHT_PATTERN, ' ')
-		.replace(LINE_NUMBER_PATTERN, ' ')
-		.replace(DATE_PATTERN, ' ')
-		.replace(TIME_PATTERN, ' ')
-		.replace(LEADING_CODE_PATTERN, ' ')
-		.replace(TRAILING_DIGITS_PATTERN, ' ')
-		.replace(NON_WORD_PATTERN, ' ')
-		.replace(/\s{2,}/g, ' ')
 		.trim()
 		.toLowerCase()
-
-	// Special-case common dairy product "half and half" so descriptor stripping
-	// doesn't reduce it to a meaningless token like "and"
-	if (cleaned === 'half and half') {
-		return 'half and half'
-	}
-
-	if (!cleaned) return ''
-
- 	// Remove common prefix tokens like store codes or brand prefixes
- 	let parts = cleaned.split(/\s+/).filter(Boolean)
- 	// remove any brand tokens found anywhere
- 	parts = parts.filter(p => !BRAND_TOKENS.includes(p.toLowerCase()))
- 	
- 	// Remove common trailing single letters/suffixes that are incomplete (e.g., "avocados na", "heart")
- 	if (parts.length > 1) {
- 		const lastPart = parts[parts.length - 1]
- 		// If last part is 2 chars or less AND doesn't match food keyword, remove it
- 		if (lastPart.length <= 2 && !FOOD_KEYWORDS.has(lastPart.toLowerCase())) {
- 			parts = parts.slice(0, -1)
- 		}
- 	}
-
- 	// if first token is a known prefix (like 365 or OG) drop it
- 	if (parts.length && PREFIX_TOKENS.includes(parts[0])) parts = parts.slice(1)
-
- 	// expand abbreviations and apply OCR corrections/code mappings per token
- 	let tokens = parts.flatMap(t => t.split('-')).map(t => t.toLowerCase()).filter(Boolean)
- 	tokens = tokens.map(token => {
- 		if (ABBREVIATIONS[token]) return ABBREVIATIONS[token]
- 		if (OCR_CORRECTIONS[token]) return OCR_CORRECTIONS[token]
- 		if (CODE_MAPPINGS[token]) return CODE_MAPPINGS[token]
- 		return token
- 	})
-
- 	// strip package / size tokens
- 	tokens = tokens.filter(t => {
- 		for (const p of PACKAGE_PATTERNS) {
- 			if (p.test(t)) return false
- 			p.lastIndex = 0
- 		}
- 		return true
- 	})
-
- 	// remove stop words, ignored descriptors, pure numbers and very short tokens
- 	tokens = tokens.filter(token => {
- 		if (STOP_WORDS.has(token)) return false
- 		if (IGNORED_DESCRIPTORS.has(token)) return false
- 		if (/^\d+$/.test(token)) return false
- 		if (token.length <= 1) return false
- 		return true
- 	})
-
- 	if (!tokens.length) return ''
-
- 	// Re-join for pattern matching and canonicalization
- 	let candidate = tokens.join(' ')
-
- 	// Apply canonical patterns first (most specific mappings)
- 	for (const { pattern, replacement } of CANONICAL_PATTERNS) {
- 		if (pattern.test(candidate)) {
- 			return replacement.toLowerCase()
- 		}
- 	}
-
-	// Prefer returning a multi-word candidate when it contains any known food keyword
-	const partsLen = tokens.length
-	if (partsLen >= 2) {
-		// if any token is an explicit food keyword, prefer the full candidate (preserve multi-word items)
-		for (const t of tokens) {
-			if (FOOD_KEYWORDS.has(t)) return candidate.toLowerCase()
-		}
-		// if the joined candidate contains any food keyword substring, keep it (e.g., 'butter croissant')
-		for (const kw of FOOD_KEYWORDS) {
-			if (candidate.includes(kw)) return candidate.toLowerCase()
-		}
-
-		// Keep adjective + noun when adjective is meaningful (e.g., 'sweet potato', 'organic asparagus')
-		const last = tokens[partsLen - 1]
-		const prev = tokens[partsLen - 2]
-		if (KEEP_ADJECTIVES.has(prev) || /sweet|red|yellow|baby|boneless|skinless|mini|pint|organic/.test(prev)) {
-			return `${prev} ${last}`.toLowerCase()
-		}
-	}
-
-	// fallback: use last token (noun)
-	const noun = tokens[tokens.length - 1]
-	return noun.toLowerCase()
+		.replace(/\s+/g, ' ')  // Normalize whitespace
+	
+	if (!cleaned || cleaned.length < 2) return ''
+	
+	// Only remove obvious prices at the end ($X.XX)
+	cleaned = cleaned.replace(/\s*\$\d+[\.,]\d{2}\s*$/, '').trim()
+	
+	// Remove line numbers at start (e.g., "1. item" or "1 item")
+	cleaned = cleaned.replace(/^\d+[\s.\-:]+/, '').trim()
+	
+	return cleaned
 }
 
 /**
@@ -491,193 +358,100 @@ function mergeMultiWordItems(items: string[]): string[] {
 
 /**
  * Clean an extracted grocery list into simple ingredient names.
- * - strips non-food tokens and prefixes
- * - applies OCR corrections and code mappings
- * - removes duplicates and normalizes casing
+ * For Mindee data, this is minimal - mostly just deduplication.
  */
 export function cleanGroceryList(inputItems: string[]): string[] {
-	// Merge multi-word items that were split across extraction
-	const mergedItems = mergeMultiWordItems(inputItems)
-	console.log('[Cleaning] Input items count:', mergedItems.length)
-	console.log('[Cleaning] Input items:', mergedItems)
-	const afterNormalization: Array<{ raw: string; normalized: string }> = []
-	const filteredOut: Array<{ raw: string; reason: string }> = []
+	console.log('[Cleaning] Processing', inputItems.length, 'items from Mindee')
+	
 	const cleaned: string[] = []
 	const seen = new Set<string>()
+
 	for (const raw of inputItems) {
-		if (!raw || typeof raw !== 'string') {
-			console.log('[Cleaning] Skipping invalid item:', raw)
-			filteredOut.push({ raw: String(raw), reason: 'invalid type or empty' })
+		if (!raw || typeof raw !== 'string') continue
+
+		const normalized = normalizeItem(raw).trim()
+		if (!normalized) continue
+
+		// Filter obvious non-food items
+		if (!looksLikeFood(normalized)) {
+			console.log(`[Cleaning] Filtered out: "${raw}"`)
 			continue
 		}
-		// run through normalizeItem (works on free-form strings too)
-		const n = normalizeItem(raw)
-		afterNormalization.push({ raw, normalized: n })
-		if (!n) {
-			console.log(`[Cleaning] Item "${raw}" normalized to empty, skipping`)
-			filteredOut.push({ raw, reason: 'normalized to empty' })
-			continue
-		}
-		// final trim and lower-case
-		const key = n.trim().toLowerCase()
-		if (!key) {
-			console.log(`[Cleaning] Item "${raw}" -> "${n}" -> empty after trim, skipping`)
-			filteredOut.push({ raw, reason: 'empty after trim' })
-			continue
-		}
-		// Discard things that don't look like food (avoid keeping OCR garbage)
-		if (!looksLikeFood(key, raw)) {
-			console.log(`[Cleaning] Rejected during cleaning: "${raw}" -> "${key}" (looksLikeFood=false)`)
-			filteredOut.push({ raw, reason: 'looksLikeFood=false' })
-			continue
-		}
+
+		// Deduplicate
+		const key = normalized.toLowerCase()
 		if (!seen.has(key)) {
 			seen.add(key)
 			cleaned.push(key)
-			console.log(`[Cleaning] Added: "${raw}" -> "${key}"`)
-		} else {
-			console.log(`[Cleaning] Skipping duplicate: "${raw}" -> "${key}"`)
+			console.log(`[Cleaning] Added: "${normalized}"`)
 		}
 	}
-	console.log('[Cleaning] Items after normalization:', afterNormalization)
-	console.log('[Cleaning] Items filtered out during cleaning:', filteredOut)
-	console.log('[Cleaning] Final cleaned items count:', cleaned.length)
-	console.log('[Cleaning] Final cleaned items:', cleaned)
+
+	console.log('[Cleaning] Result:', cleaned.length, 'items')
 	return cleaned
 }
 
-function looksLikeFood(item: string, rawLine?: string): boolean {
+function looksLikeFood(item: string): boolean {
 	if (!item || item.length < 2) return false
 
 	const lower = item.toLowerCase()
 
-	// Reject strict receipt metadata immediately
+	// Reject obvious metadata
 	for (const pattern of RECEIPT_METADATA_PATTERNS) {
-		if (pattern.test(item)) {
-			console.log(`[Filter] Rejected "${item}" - matches receipt metadata pattern`)
-			return false
-		}
+		if (pattern.test(item)) return false
 	}
 
-    // Check if it's all caps and very short (likely a code)
-    if (item === item.toUpperCase() && item.length <= 8 && !/[aeiou]/i.test(item)) {
-        console.log(`[Filter] Rejected "${item}" - looks like a code (all caps, short, no vowels)`)
-        return false
-    }
+	// Accept anything that contains a food keyword
+	// This is much more lenient since Mindee already filtered most junk
+	for (const keyword of FOOD_KEYWORDS) {
+		if (lower.includes(keyword)) return true
+	}
 
-    // Split into words and check for known food keywords or partial matches
-    const words = lower.split(/\s+/).filter(Boolean)
-    for (const word of words) {
-        if (FOOD_KEYWORDS.has(word)) return true
-        for (const keyword of FOOD_KEYWORDS) {
-            if (word.includes(keyword) || keyword.includes(word)) return true
-        }
-    }
+	// Accept any reasonable-length item (3+ chars) that passed metadata check
+	// Trust Mindee has already done the heavy lifting
+	if (item.length >= 3) {
+		// Only reject if it's clearly not food (all caps, no vowels, too short)
+		if (item === item.toUpperCase() && !/[aeiou]/i.test(item) && item.length <= 4) {
+			return false
+		}
+		return true
+	}
 
-    // Single-word logic: prioritize food keyword matching over strict length requirements
-    if (words.length === 1) {
-        const w = words[0]
-        
-        // First check: does it match a food keyword (any length)?
-        if (FOOD_KEYWORDS.has(w)) {
-            return true
-        }
-        for (const keyword of FOOD_KEYWORDS) {
-            if (keyword.includes(w) || w.includes(keyword)) return true
-        }
-        
-        // Second check: only reject very short tokens (2 chars) that don't match any keyword
-        if (w.length < 3) {
-            console.log(`[Filter] Rejected "${item}" - too short (${w.length} chars) and no food keyword match`)
-            return false
-        }
-        
-        // Third check: 3+ chars but no keyword match
-        console.log(`[Filter] Rejected "${item}" - single word, no food keyword match`)
-        return false
-    }
-
-    // For multi-word phrases: accept if the raw line has a price AND the normalized item is reasonable
-    // (not just 2-letter trash tokens). Don't accept junk like "be", "fy", "fb" even with a price.
-    if (rawLine && (PRICE_PATTERN.test(rawLine) || LOOSE_PRICE_PATTERN.test(rawLine))) {
-        // Only accept price lines if the result is at least 4 characters or has a food keyword
-        if (item.length >= 4) {
-            console.log(`[Filter] Accepted "${item}" (len=${item.length}) because raw line contains price`)
-            return true
-        }
-        // Check if any token is a food keyword despite short length
-        for (const w of words) {
-            for (const keyword of FOOD_KEYWORDS) {
-                if (keyword.includes(w) || w.includes(keyword)) {
-                    console.log(`[Filter] Accepted "${item}" because contains food keyword "${w}"`)
-                    return true
-                }
-            }
-        }
-        console.log(`[Filter] Rejected "${item}" (len=${item.length}) from price line — too short and no food keywords`)
-        return false
-    }
-
-    // For multi-word phrases without price, accept if longer than short threshold
-    if (item.length >= 4) return true
-
-    console.log(`[Filter] Rejected "${item}" - doesn't look like food`)
-    return false
+	return false
 }
 
 export function extractGroceryItems(input: string): string[] {
 	if (!input.trim()) return []
 
-	console.log('[Extraction] Raw input length:', input.length)
+	console.log('[Extraction] Processing input from Mindee receipt data')
 	const lines = input.split(/[\r\n,;]+/).map(l => l.trim()).filter(Boolean)
-	console.log('[Extraction] Split into', lines.length, 'lines')
-	console.log('[Extraction] Raw lines:', lines)
+	console.log('[Extraction] Lines to process:', lines.length)
 
-	const candidates: string[] = []
-	const rejected: Array<{ line: string; reason: string; idx: number }> = []
-
-	for (let idx = 0; idx < lines.length; idx++) {
-		const line = lines[idx]
-		console.log(`[Extraction] BEFORE normalization Line ${idx + 1}: "${line}"`)
-		const normalized = normalizeItem(line)
-		console.log(`[Extraction] AFTER normalization Line ${idx + 1}: "${normalized}"`)
-		if (!normalized) {
-			console.log(`[Extraction] REJECTED Line ${idx + 1}: "${line}" -> normalized to empty`)
-			rejected.push({ line, reason: 'normalized to empty', idx: idx + 1 })
-			continue
-		}
-		// Additional validation: must have at least one letter
-		if (!/[a-zA-Z]/.test(normalized)) {
-			console.log(`[Extraction] REJECTED Line ${idx + 1}: "${line}" -> "${normalized}" (no letters)`)
-			rejected.push({ line: normalized, reason: 'no letters', idx: idx + 1 })
-			continue
-		}
-		// Check heuristics for looking like food — this function logs reasons when rejecting
-		const looks = looksLikeFood(normalized, line)
-		if (!looks) {
-			console.log(`[Extraction] REJECTED Line ${idx + 1}: "${line}" -> "${normalized}" (looksLikeFood=false)`)
-			rejected.push({ line: normalized, reason: 'looksLikeFood=false', idx: idx + 1 })
-			continue
-		}
-		candidates.push(normalized)
-	}
-
-	console.log('[Extraction] After filtering,', candidates.length, 'candidates remain:', candidates)
-
-	// Deduplicate (case-insensitive)
+	const items: string[] = []
 	const seen = new Set<string>()
-	const unique: string[] = []
-	for (const item of candidates) {
-		const lowerItem = item.toLowerCase()
-		if (!seen.has(lowerItem)) {
-			seen.add(lowerItem)
-			unique.push(item)
-		} else {
-			console.log(`[Extraction] Skipping duplicate: "${item}"`)
+
+	for (const line of lines) {
+		const normalized = normalizeItem(line)
+		if (!normalized) continue
+
+		// Check if it looks like food
+		if (!looksLikeFood(normalized)) {
+			console.log(`[Extraction] Filtered out: "${normalized}" (not recognized as food)`)
+			continue
 		}
+
+		// Deduplicate
+		const key = normalized.toLowerCase()
+		if (seen.has(key)) {
+			console.log(`[Extraction] Skipping duplicate: "${normalized}"`)
+			continue
+		}
+
+		seen.add(key)
+		items.push(normalized)
+		console.log(`[Extraction] Added: "${normalized}"`)
 	}
 
-	console.log('[Extraction] Final unique items:', unique.length, unique)
-	console.log('[Extraction] Rejected lines with reasons:', rejected)
-	return unique
+	console.log('[Extraction] Final items:', items.length, items)
+	return items
 }

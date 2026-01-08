@@ -464,56 +464,129 @@ async function callOpenAI(prompt: string, diet: DietType): Promise<{ totalDays: 
 	}
 }
 
+function categorizeIngredients(items: string[]): {
+	proteins: string[]
+	veggies: string[]
+	grains: string[]
+	dairy: string[]
+	other: string[]
+} {
+	const proteins: string[] = []
+	const veggies: string[] = []
+	const grains: string[] = []
+	const dairy: string[] = []
+	const other: string[] = []
+	
+	const proteinKeywords = /chicken|beef|pork|fish|salmon|tuna|shrimp|egg|eggs|tofu|tempeh|beans|lentils|turkey|sausage/i
+	const vegKeywords = /spinach|broccoli|tomato|tomatoes|lettuce|kale|carrot|carrots|onion|onions|pepper|peppers|cucumber|celery|asparagus|zucchini|potato|potatoes/i
+	const grainKeywords = /bread|rice|pasta|noodles|quinoa|oats|oatmeal|tortilla|wrap|barley|couscous/i
+	const dairyKeywords = /milk|cheese|yogurt|butter|cream|cottage/i
+	
+	for (const item of items) {
+		const lower = item.toLowerCase()
+		if (proteinKeywords.test(lower)) proteins.push(item)
+		else if (vegKeywords.test(lower)) veggies.push(item)
+		else if (grainKeywords.test(lower)) grains.push(item)
+		else if (dairyKeywords.test(lower)) dairy.push(item)
+		else other.push(item)
+	}
+	
+	return { proteins, veggies, grains, dairy, other }
+}
+
 function buildFallbackPlan(items: string[], diet: DietType, sourceText: string, desiredDays?: number): MealPlanResult {
-	// Generate a safe plan that ONLY uses actual ingredients, not hallucinated ones
-	// Create simple meals by rotating through available items
+	// Generate realistic meals using ONLY actual ingredients from the list
+	// Distribute ingredients evenly across meals for variety
 	const estimatedDays = desiredDays ?? Math.max(1, Math.min(7, Math.round(items.length / 3) || 3))
 	const safeDays = Math.max(1, Math.min(7, estimatedDays))
 	
+	const categorized = categorizeIngredients(items)
 	const days: Day[] = []
-	const itemsPerDay = Math.ceil(items.length / safeDays)
+	
+	// Helper to create meal with dynamic ingredients based on what's available
+	const createBreakfast = (dayNum: number, availableItems: string[]): Meal => {
+		const proteins = categorized.proteins.slice(0, Math.ceil(categorized.proteins.length / safeDays))
+		const grains = categorized.grains.slice(0, Math.ceil(categorized.grains.length / safeDays))
+		const dairy = categorized.dairy.slice(0, Math.ceil(categorized.dairy.length / safeDays))
+		const other = categorized.other.slice(0, Math.ceil(categorized.other.length / safeDays))
+		
+		const items: string[] = []
+		if (proteins.length > 0) items.push(proteins[dayNum % proteins.length])
+		if (grains.length > 0) items.push(grains[dayNum % grains.length])
+		if (dairy.length > 0) items.push(dairy[dayNum % dairy.length])
+		if (other.length > 0 && items.length < 2) items.push(other[dayNum % other.length])
+		
+		const ingredient = items.length > 0 ? items[0] : 'available ingredients'
+		const itemsList = items.filter(Boolean).join(', ')
+		
+		return {
+			title: items.length > 1 ? `${items[0].charAt(0).toUpperCase() + items[0].slice(1)} & ${items[1]} Breakfast` : `Simple ${ingredient} Breakfast`,
+			prepTime: 5,
+			cookTime: 8,
+			totalTime: 13,
+			instructions: `Prepare a nourishing breakfast combining ${itemsList}. Cook on medium heat until ready to serve.`,
+			ingredients: items.filter(Boolean)
+		}
+	}
+	
+	const createLunch = (dayNum: number, availableItems: string[]): Meal => {
+		const proteins = categorized.proteins.slice(Math.floor(categorized.proteins.length / 2))
+		const veggies = categorized.veggies.length > 0 ? categorized.veggies.slice(Math.floor(categorized.veggies.length / 2)) : []
+		const grains = categorized.grains.length > 0 ? categorized.grains.slice(Math.floor(categorized.grains.length / 2)) : []
+		
+		const items: string[] = []
+		if (proteins.length > 0) items.push(proteins[dayNum % proteins.length])
+		if (veggies.length > 0) items.push(veggies[dayNum % veggies.length])
+		if (grains.length > 0) items.push(grains[dayNum % grains.length])
+		
+		const itemsList = items.filter(Boolean).join(', ')
+		const mealType = items.some(i => i.toLowerCase().includes('bread')) ? 'Sandwich' : 'Bowl'
+		
+		return {
+			title: items.length > 0 ? `${mealType} with ${items[0]}` : 'Lunch Bowl',
+			prepTime: 10,
+			cookTime: 12,
+			totalTime: 22,
+			instructions: `Combine ${itemsList} to create a balanced lunch. Season to taste and serve fresh or warm.`,
+			ingredients: items.filter(Boolean)
+		}
+	}
+	
+	const createDinner = (dayNum: number, availableItems: string[]): Meal => {
+		const proteins = categorized.proteins
+		const veggies = categorized.veggies.length > 0 ? categorized.veggies : []
+		const grains = categorized.grains.length > 0 ? categorized.grains : []
+		
+		const items: string[] = []
+		if (proteins.length > 0) items.push(proteins[(dayNum + 1) % proteins.length])
+		if (veggies.length > 0) items.push(veggies[(dayNum + 2) % veggies.length])
+		if (grains.length > 0) items.push(grains[(dayNum + 1) % grains.length])
+		
+		const itemsList = items.filter(Boolean).join(', ')
+		
+		return {
+			title: items.length > 0 ? `Hearty ${items[0]} Dinner` : 'Dinner Plate',
+			prepTime: 12,
+			cookTime: 20,
+			totalTime: 32,
+			instructions: `Prepare a satisfying dinner with ${itemsList}. Cook proteins first, then combine with vegetables and grains for a complete meal.`,
+			ingredients: items.filter(Boolean)
+		}
+	}
 	
 	for (let d = 0; d < safeDays; d++) {
-		const startIdx = d * itemsPerDay
-		const endIdx = Math.min(startIdx + itemsPerDay, items.length)
-		const dayItems = items.slice(startIdx, endIdx).filter(i => i && i.length > 0)
-		
-		if (dayItems.length === 0) continue
-		
-		const item1 = dayItems[0] || 'ingredients'
-		const item2 = dayItems[1] || item1
-		const item3 = dayItems[2] || item2
+		const dayItems = items.slice(Math.floor(d * items.length / safeDays), Math.floor((d + 1) * items.length / safeDays)).filter(i => i && i.length > 0)
 		
 		days.push({
 			day: `Day ${d + 1}`,
-			Breakfast: {
-				title: `Simple Breakfast with ${item1}`,
-				prepTime: 5,
-				cookTime: 5,
-				totalTime: 10,
-				instructions: `Prepare a simple breakfast using ${item1}.`,
-				ingredients: [item1]
-			},
-			Lunch: {
-				title: `Lunch with ${item2}`,
-				prepTime: 10,
-				cookTime: 10,
-				totalTime: 20,
-				instructions: `Create a meal combining ${item1} and ${item2}.`,
-				ingredients: dayItems.slice(0, 2)
-			},
-			Dinner: {
-				title: `Dinner with ${item3}`,
-				prepTime: 10,
-				cookTime: 15,
-				totalTime: 25,
-				instructions: `Prepare dinner using the available ingredients.`,
-				ingredients: dayItems
-			}
+			Breakfast: createBreakfast(d, dayItems),
+			Lunch: createLunch(d, dayItems),
+			Dinner: createDinner(d, dayItems)
 		})
 	}
 	
-	console.log('[Generator] Generated fallback plan using ONLY actual ingredients:', items)
+	console.log('[Generator] Generated realistic fallback plan with ingredient distribution across', safeDays, 'days')
+	console.log('[Generator] Ingredient categories:', categorized)
 	return {
 		sourceItems: items,
 		sourceText,
