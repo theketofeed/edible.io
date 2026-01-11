@@ -79,3 +79,5 @@ const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result
 	)
 }))
 
+export default Results
+
