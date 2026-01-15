@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { FileUp, FileText, Image as ImageIcon, X, File as FileIcon } from 'lucide-react'
 import { extractGroceryItems } from '../utils/grocery'
-import { runMindeeOcr } from '../lib/mindeeOcr'
+import { runOcrSpace } from '../lib/ocrSpaceOcr'
 
 interface Props {
 	onItemsDetected: (items: string[], rawText: string) => void
@@ -43,14 +43,14 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 		setIsOcrRunning(true)
 		setOcrConfidence(undefined)
 		setReceiptMetadata(null)
-		
+
 		try {
-			console.log('[UploadArea] Processing file with Mindee OCR...')
-			const { items, rawText, confidence, metadata } = await runMindeeOcr(file)
-			
+			console.log('[UploadArea] Processing file with OCR.space...')
+			const { items, rawText, confidence } = await runOcrSpace(file)
+
 			setOcrConfidence(confidence)
-			setReceiptMetadata(metadata || null)
-			
+			setReceiptMetadata(null)
+
 			if (items.length) {
 				setDetectedCount(items.length)
 				onItemsDetected(items, rawText)
@@ -165,7 +165,7 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 				{isOcrRunning && (
 					<p className="mt-3 text-sm text-black/70 flex items-center justify-center gap-2">
 						<span className="spinner-lavender" />
-						Reading your receipt with Mindee AI...
+						Reading your receipt with OCR.space...
 					</p>
 				)}
 			</div>
