@@ -10,6 +10,21 @@ const RECEIPT_METADATA_PATTERNS = [
 	/^thank you$/i,
 ]
 
+const EXCLUDED_PATTERNS = [
+  /^\$?\d+\.?\d*\s*[ft]?$/i, // Prices like "$6.99 f"
+  /^@/i, // Price indicators like "@ 5 for"
+  /lb\s*@/i, // Weight prices
+  /tare\s*weight/i,
+  /subtotal|total|tax|fee|paid|visa|rate|amt/i,
+  /^\d{3}-\d{4}/i, // Phone numbers
+  /^(whole|foods|market|tribeca|greenwich|street|new york|city|ny)/i, // Store info
+  /^--/i, // Separators
+  /metropolita|summary/i
+];
+
+const isExcluded = (text: string) => 
+  EXCLUDED_PATTERNS.some(pattern => pattern.test(text));
+
 // Food keywords that indicate a valid food item
 // Expanded with more produce, bakery, seafood and pantry items to improve recall
 const FOOD_KEYWORDS = new Set([

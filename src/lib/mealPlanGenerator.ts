@@ -421,11 +421,37 @@ function validatePlanCompliance(result: { totalDays: number; days: DayMeals[] } 
 
 async function callOpenAI(prompt: string, diet: DietType): Promise<{ totalDays: number; days: DayMeals[] } | null> {
 	console.log('[OpenAI] Sending prompt for diet:', diet)
+	
+	// ========== DEBUG LOGS START ==========
+	console.log('[OpenAI] ========== ENVIRONMENT VARIABLE DEBUG ==========')
+	console.log('[OpenAI] Full import.meta.env:', import.meta.env)
+	console.log('[OpenAI] VITE_OPENAI_API_KEY value:', import.meta.env.VITE_OPENAI_API_KEY)
+	console.log('[OpenAI] VITE_OCR_SPACE_API_KEY value:', import.meta.env.VITE_OCR_SPACE_API_KEY)
+	console.log('[OpenAI] ====================================================')
+	// ========== DEBUG LOGS END ==========
+	
 	const apiKey = import.meta.env.VITE_OPENAI_API_KEY as string | undefined
+	
+	// ========== MORE DEBUG LOGS START ==========
+	console.log('[OpenAI] API Key after extraction:', apiKey)
+	console.log('[OpenAI] API Key type:', typeof apiKey)
+	console.log('[OpenAI] API Key length:', apiKey?.length)
+	console.log('[OpenAI] API Key starts with sk-:', apiKey?.startsWith('sk-'))
+	console.log('[OpenAI] API Key trimmed equals empty:', apiKey?.trim() === '')
+	console.log('[OpenAI] API Key equals placeholder:', apiKey === 'your_key_here')
+	console.log('[OpenAI] Condition check - !apiKey:', !apiKey)
+	console.log('[OpenAI] Condition check - apiKey.trim() === "":', apiKey?.trim() === '')
+	console.log('[OpenAI] Condition check - apiKey === "your_key_here":', apiKey === 'your_key_here')
+	// ========== MORE DEBUG LOGS END ==========
+	
 	if (!apiKey || apiKey.trim() === '' || apiKey === 'your_key_here') {
 		console.warn('[OpenAI] No valid API key found. Using sample fallback.')
+		console.warn('[OpenAI] Please check your .env file has: VITE_OPENAI_API_KEY=sk-...')
 		return null
 	}
+	
+	console.log('[OpenAI] ✓ API key validated successfully!')
+	
 	try {
 		const res = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
 			method: 'POST',
@@ -453,8 +479,6 @@ async function callOpenAI(prompt: string, diet: DietType): Promise<{ totalDays: 
 		console.log('[OpenAI] Raw AI response:', content)
 		const parsed = JSON.parse(content)
 		console.log('[OpenAI] Parsed JSON:', parsed)
-		// Note: We can't pass requestedDays here since callOpenAI doesn't receive it
-		// The days parameter will be handled in generateMealPlan after coercion
 		const coerced = coerceDaysStructure(parsed)
 		console.log('[OpenAI] Coerced result - totalDays:', coerced.totalDays, 'days count:', coerced.days.length)
 		return coerced
@@ -501,7 +525,7 @@ function buildFallbackPlan(items: string[], diet: DietType, sourceText: string, 
 	const safeDays = Math.max(1, Math.min(7, estimatedDays))
 	
 	const categorized = categorizeIngredients(items)
-	const days: Day[] = []
+	const days: DayMeals[] = []
 	
 	// Helper to create meal with dynamic ingredients based on what's available
 	const createBreakfast = (dayNum: number, availableItems: string[]): Meal => {
@@ -516,7 +540,8 @@ function buildFallbackPlan(items: string[], diet: DietType, sourceText: string, 
 		if (dairy.length > 0) items.push(dairy[dayNum % dairy.length])
 		if (other.length > 0 && items.length < 2) items.push(other[dayNum % other.length])
 		
-		const ingredient = items.length > 0 ? items[0] : 'available ingredients'
+		const ingredient = items.length >
+        0 ? items[0] : 'available ingredients'
 		const itemsList = items.filter(Boolean).join(', ')
 		
 		return {
@@ -608,7 +633,6 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
 		throw new Error('No grocery items found. Try a clearer photo.')
 	}
 	
-	// Clean and normalize the provided grocery items before building the prompt
 	const cleanedItems = cleanGroceryList(items)
 	console.log('[Generator] Cleaned items count:', cleanedItems.length)
 	console.log('[Generator] Cleaned items:', cleanedItems)
@@ -618,12 +642,9 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
 		throw new Error('No valid grocery items found after cleaning. The receipt may contain only non-food items.')
 	}
 
-	// For restrictive diets, reduce days if ingredients are limited
-	// Restrictive diets need more variety and specific ingredients
 	const isRestrictiveDiet = ['paleo', 'keto', 'vegan', 'mediterranean', 'vegetarian', 'low-carb'].includes(diet.toLowerCase())
 	let effectiveDays = days || 3
 	if (isRestrictiveDiet && cleanedItems.length < effectiveDays * 3) {
-		// If we have fewer items than needed for variety (estimate ~3 items per day for restrictive diets)
 		const maxDays = Math.max(1, Math.floor(cleanedItems.length / 3))
 		if (maxDays < effectiveDays) {
 			console.log(`[Generator] ⚠️ Restrictive diet (${diet}) with ${cleanedItems.length} items. Reducing days from ${effectiveDays} to ${maxDays}`)
@@ -639,43 +660,37 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
 	console.log('[Generator] AI result:', aiResult)
 	console.log('[Generator] AI result totalDays:', aiResult?.totalDays)
 	console.log('[Generator] AI result days count:', aiResult?.days?.length)
+	
 	if (aiResult && aiResult.totalDays && aiResult.days.length) {
-		// If AI returned fewer days than requested, log a warning
 		if (days && aiResult.days.length < days) {
 			console.warn(`[Generator] AI returned ${aiResult.days.length} days but ${days} were requested`)
 		}
 		
-		// Validate that AI only used provided ingredients
 		const ingredientViolations = validateIngredientUsage(aiResult, cleanedItems)
 		if (ingredientViolations.length > 0) {
 			console.error('[Generator] AI used ingredients not in grocery list:', ingredientViolations)
 			console.error('[Generator] Available ingredients were:', cleanedItems)
 			console.warn('[Generator] Rejecting AI plan due to ingredient violations. Falling back to safe plan.')
 		} else {
-			// Log any grocery items that were never used
 			logUnusedIngredients(aiResult, cleanedItems)
-
-			// Check protein variety (soft validation, logs warnings)
 			validateProteinVariety(aiResult)
 			
-			// Validate AI output against strict diet rules
 			const ok = validatePlanCompliance(aiResult, diet, items)
 			if (ok) {
-			// Ensure we have the requested number of days
-			let finalDays = aiResult.days
-			if (days && aiResult.days.length < days && aiResult.days.length < 7) {
-				console.log('[Generator] Padding AI result to requested', days, 'days')
-				const fallbackDays = ['Day 1','Day 2','Day 3','Day 4','Day 5','Day 6','Day 7']
-				finalDays = [...aiResult.days]
-				for (let i = aiResult.days.length; i < days && i < 7; i++) {
-					finalDays.push({
-						day: fallbackDays[i],
-						Breakfast: coerceMeal(null, 'Breakfast'),
-						Lunch: coerceMeal(null, 'Lunch'),
-						Dinner: coerceMeal(null, 'Dinner')
-					})
+				let finalDays = aiResult.days
+				if (days && aiResult.days.length < days && aiResult.days.length < 7) {
+					console.log('[Generator] Padding AI result to requested', days, 'days')
+					const fallbackDays = ['Day 1','Day 2','Day 3','Day 4','Day 5','Day 6','Day 7']
+					finalDays = [...aiResult.days]
+					for (let i = aiResult.days.length; i < days && i < 7; i++) {
+						finalDays.push({
+							day: fallbackDays[i],
+							Breakfast: coerceMeal(null, 'Breakfast'),
+							Lunch: coerceMeal(null, 'Lunch'),
+							Dinner: coerceMeal(null, 'Dinner')
+						})
+					}
 				}
-			}
 				const finalTotalDays = days && days > 0 ? days : finalDays.length
 				console.log('[Generator] AI result passed validation, returning', finalDays.length, 'days (requested:', days, ')')
 				return {
@@ -687,10 +702,9 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
 				}
 			}
 			console.warn('[Generator] AI result failed diet validation — falling back to safe plan')
+		}
 	}
+	
+	console.log('[Generator] Using fallback plan with', days, 'days')
+	return buildFallbackPlan(cleanedItems, diet, sourceText, days)
 }
-console.log('[Generator] Using fallback plan with', days, 'days')
-return buildFallbackPlan(cleanedItems, diet, sourceText, days)
-}
-
-
