@@ -8,22 +8,47 @@ const RECEIPT_METADATA_PATTERNS = [
 	/^payment$/i,
 	/^cash$/i,
 	/^thank you$/i,
+	// Cashier and staff references
+	/^your\s+cashier/i,
+	/cashier\s+today\s+was/i,
+	/served\s+by/i,
+	// Tax and payment info
+	/taxable\s*@/i,
+	/amount\s+due/i,
+	/^items$/i,
+	/^sold\s+items/i,
+	// Dates and times
+	/^\d{1,2}\/\d{1,2}\/\d{2,4}$/i,
+	/^\d{1,2}:\d{2}/i,
+	// Generic receipt text
+	/^date$/i,
+	/^time$/i,
+	/^name$/i,
+	/^rate$/i,
+	/^amt\.?$/i,
 ]
 
 const EXCLUDED_PATTERNS = [
-  /^\$?\d+\.?\d*\s*[ft]?$/i, // Prices like "$6.99 f"
-  /^@/i, // Price indicators like "@ 5 for"
-  /lb\s*@/i, // Weight prices
-  /tare\s*weight/i,
-  /subtotal|total|tax|fee|paid|visa|rate|amt/i,
-  /^\d{3}-\d{4}/i, // Phone numbers
-  /^(whole|foods|market|tribeca|greenwich|street|new york|city|ny)/i, // Store info
-  /^--/i, // Separators
-  /metropolita|summary/i
+	/^\$?\d+\.?\d*\s*[ft]?$/i, // Prices like "$6.99 f"
+	/^@/i, // Price indicators like "@ 5 for"
+	/lb\s*@/i, // Weight prices
+	/tare\s*weight/i,
+	/subtotal|total|tax|fee|paid|visa|rate|amt/i,
+	/^\d{3}-\d{4}/i, // Phone numbers
+	/^(whole|foods|market|tribeca|greenwich|street|new york|city|ny)/i, // Store info
+	/^--/i, // Separators
+	/metropolita|summary/i,
+	// Additional patterns for receipt junk
+	/your\s+cashier/i,
+	/taxable\s*@/i,
+	/amount\s+due/i,
+	/^items$/i,
+	/^\*+$/i, // Lines of asterisks
+	/^-+$/i, // Lines of dashes
 ];
 
-const isExcluded = (text: string) => 
-  EXCLUDED_PATTERNS.some(pattern => pattern.test(text));
+const isExcluded = (text: string) =>
+	EXCLUDED_PATTERNS.some(pattern => pattern.test(text));
 
 // Food keywords that indicate a valid food item
 // Expanded with more produce, bakery, seafood and pantry items to improve recall
@@ -272,20 +297,20 @@ const BRAND_TOKENS = ['aldi', 'walmart', 'wholefoods', 'trader', 'joes', 'costco
 // Descriptors we intentionally drop when normalizing
 // (quantity/packaging words we don't want in the final ingredient name)
 const IGNORED_DESCRIPTORS = new Set([
-    'conventional',
-    'fresh',
-    'raw',
-    'large',
-    'small',
-    'medium',
-    'pkg',
-    'package',
-    'each',
-    'ea',
-    'unit',
-    'bunch',
-    'bunches',
-    'half'
+	'conventional',
+	'fresh',
+	'raw',
+	'large',
+	'small',
+	'medium',
+	'pkg',
+	'package',
+	'each',
+	'ea',
+	'unit',
+	'bunch',
+	'bunches',
+	'half'
 ])
 
 // Adjectives to preserve when they carry meaning for the ingredient
@@ -328,15 +353,15 @@ function normalizeItem(value: string): string {
 		.trim()
 		.toLowerCase()
 		.replace(/\s+/g, ' ')  // Normalize whitespace
-	
+
 	if (!cleaned || cleaned.length < 2) return ''
-	
+
 	// Only remove obvious prices at the end ($X.XX)
 	cleaned = cleaned.replace(/\s*\$\d+[\.,]\d{2}\s*$/, '').trim()
-	
+
 	// Remove line numbers at start (e.g., "1. item" or "1 item")
 	cleaned = cleaned.replace(/^\d+[\s.\-:]+/, '').trim()
-	
+
 	return cleaned
 }
 
@@ -377,7 +402,7 @@ function mergeMultiWordItems(items: string[]): string[] {
  */
 export function cleanGroceryList(inputItems: string[]): string[] {
 	console.log('[Cleaning] Processing', inputItems.length, 'items from Mindee')
-	
+
 	const cleaned: string[] = []
 	const seen = new Set<string>()
 
@@ -416,6 +441,17 @@ function looksLikeFood(item: string): boolean {
 		if (pattern.test(item)) return false
 	}
 
+	// Reject excluded patterns
+	for (const pattern of EXCLUDED_PATTERNS) {
+		if (pattern.test(item)) return false
+	}
+
+	// Reject pure numbers or prices
+	if (/^\d+\.?\d*$/.test(item)) return false
+
+	// Reject items that are just symbols or special characters
+	if (/^[^a-zA-Z]+$/.test(item)) return false
+
 	// Accept anything that contains a food keyword
 	// This is much more lenient since Mindee already filtered most junk
 	for (const keyword of FOOD_KEYWORDS) {
@@ -427,6 +463,11 @@ function looksLikeFood(item: string): boolean {
 	if (item.length >= 3) {
 		// Only reject if it's clearly not food (all caps, no vowels, too short)
 		if (item === item.toUpperCase() && !/[aeiou]/i.test(item) && item.length <= 4) {
+			return false
+		}
+		// Reject common receipt words that aren't food
+		const nonFoodWords = ['sean', 'wed', 'loyalty', 'visa', 'debit', 'credit']
+		if (nonFoodWords.includes(lower)) {
 			return false
 		}
 		return true
