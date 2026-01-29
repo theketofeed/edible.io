@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import Header from './components/Header'
+import HeroSection from './components/HeroSection'
 import UploadArea from './components/UploadArea'
 import DietSelector from './components/DietSelector'
 import Loading from './components/Loading'
@@ -184,77 +185,78 @@ export default function App() {
 		}}>
 			<div className="min-h-full">
 				<ToastContainer toasts={toasts} onDismiss={dismissToast} />
-			<div className="max-w-5xl mx-auto px-4 py-8 md:py-12">
 				<Header />
+				<div className="max-w-5xl mx-auto px-4 py-8 md:py-12">
+					<HeroSection />
 
-				<div className="card p-5 md:p-6 mb-6">
-					<div className="grid gap-6">
-						<UploadArea onItemsDetected={onItemsDetected} onError={onItemError} disabled={isLoading} />
+					<div className="card p-5 md:p-6 mb-6">
+						<div className="grid gap-6">
+							<UploadArea onItemsDetected={onItemsDetected} onError={onItemError} disabled={isLoading} />
 
-						<div className="grid gap-2">
-							<label className="text-sm font-semibold text-black/80">Select diet:</label>
-							<div className="flex items-center gap-3">
-								<DietSelector value={diet} onChange={setDiet} disabled={isLoading} />
-								<div>
-									<label className="text-sm font-semibold text-black/80">Meal Plan Length</label>
-									<select
-										className="ml-2 border rounded px-2 py-1"
-										value={planDaysSelection}
-										onChange={(e) => {
-											const v = e.target.value
-											if (v === 'auto') setPlanDaysSelection('auto')
-											else setPlanDaysSelection(Number(v))
-										}}
-									>
-										<option value={'auto'}>Auto ({autoPlanDays} days)</option>
-										<option value={3}>3 days</option>
-										<option value={5}>5 days</option>
-										<option value={7}>7 days</option>
-									</select>
-									<div className="text-xs text-black/60 mt-1">Based on {groceryItems.length} items, recommended {autoPlanDays} days</div>
+							<div className="grid gap-2">
+								<label className="text-sm font-semibold text-black/80">Select diet:</label>
+								<div className="flex items-center gap-3">
+									<DietSelector value={diet} onChange={setDiet} disabled={isLoading} />
+									<div>
+										<label className="text-sm font-semibold text-black/80">Meal Plan Length</label>
+										<select
+											className="ml-2 border rounded px-2 py-1"
+											value={planDaysSelection}
+											onChange={(e) => {
+												const v = e.target.value
+												if (v === 'auto') setPlanDaysSelection('auto')
+												else setPlanDaysSelection(Number(v))
+											}}
+										>
+											<option value={'auto'}>Auto ({autoPlanDays} days)</option>
+											<option value={3}>3 days</option>
+											<option value={5}>5 days</option>
+											<option value={7}>7 days</option>
+										</select>
+										<div className="text-xs text-black/60 mt-1">Based on {groceryItems.length} items, recommended {autoPlanDays} days</div>
+									</div>
 								</div>
 							</div>
-						</div>
 
-						<div className="flex flex-wrap items-center gap-3">
-							<button
-								className="btn btn-primary text-base"
-								disabled={!canGenerate || isLoading}
-								onClick={handleGenerate}
-							>
-								Generate Meal Plan
-							</button>
-							{!canGenerate && (
-								<span className="text-sm text-black/60">Upload a file or paste text to enable</span>
-							)}
+							<div className="flex flex-wrap items-center gap-3">
+								<button
+									className="btn btn-primary text-base"
+									disabled={!canGenerate || isLoading}
+									onClick={handleGenerate}
+								>
+									Generate Meal Plan
+								</button>
+								{!canGenerate && (
+									<span className="text-sm text-black/60">Upload a file or paste text to enable</span>
+								)}
+							</div>
 						</div>
 					</div>
+
+					{isLoading && (
+						<div className="card p-6 mb-6">
+							<Loading />
+						</div>
+					)}
+
+					{error && (
+						<div className="card p-4 border-red-200">
+							<p className="text-sm text-red-700">{error}</p>
+						</div>
+					)}
+
+					{result && !isLoading && (
+						<div className="card p-5 md:p-6">
+							<Results
+								result={result}
+								onCopy={handleCopy}
+								onDownload={triggerDownload}
+								onRegenerate={handleRegenerate}
+								ref={printRef}
+							/>
+						</div>
+					)}
 				</div>
-
-				{isLoading && (
-					<div className="card p-6 mb-6">
-						<Loading />
-					</div>
-				)}
-
-				{error && (
-					<div className="card p-4 border-red-200">
-						<p className="text-sm text-red-700">{error}</p>
-					</div>
-				)}
-
-				{result && !isLoading && (
-					<div className="card p-5 md:p-6">
-						<Results
-							result={result}
-							onCopy={handleCopy}
-							onDownload={triggerDownload}
-							onRegenerate={handleRegenerate}
-							ref={printRef}
-						/>
-					</div>
-				)}
-			</div>
 			</div>
 		</ErrorBoundary>
 	)
