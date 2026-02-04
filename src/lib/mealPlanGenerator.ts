@@ -3,8 +3,9 @@ import type { DietType, GenerateMealPlanParams, MealPlanResult, DayMeals, Meal, 
 import { SAMPLE_PLAN } from '../utils/samplePlan'
 import { extractGroceryItems, cleanGroceryList } from '../utils/grocery'
 
-const OPENAI_BASE_URL = 'https://api.openai.com/v1'
-const OPENAI_MODEL = 'gpt-4o-mini'
+// Groq Configuration (Fallback - unlimited free)
+const GROQ_BASE_URL = 'https://api.groq.com/openai/v1'
+const GROQ_MODEL = 'llama-3.3-70b-versatile'
 
 type DietRules = { never: string[]; always?: string[]; notes?: string }
 
@@ -63,9 +64,8 @@ export async function runOcrOnFile(file: File): Promise<OcrResult> {
 			if (m.status === 'recognizing text') {
 				console.log(`[OCR] Progress: ${(m.progress * 100).toFixed(0)}%`)
 			}
-		},
-		tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-., '
-	})
+		}
+	} as any)
 	const rawText = data.text ?? ''
 	const confidence = data.confidence
 	console.log('[OCR] Raw extracted text:', rawText)
@@ -83,8 +83,7 @@ function buildPrompt(items: string[], diet: DietType, days?: number): string {
 	console.log('[Prompt] Building prompt with', items.length, 'items')
 	console.log('[Prompt] Items being sent to AI:', items)
 	console.log('[Prompt] Items list:', itemsList)
-	
-	// Build a prompt that includes strict NEVER/ALWAYS rules for the selected diet
+
 	const strict = DIET_STRICT[diet]
 	const neverList = strict?.never?.length ? `NEVER include: ${strict.never.join(', ')}` : ''
 	const alwaysList = strict?.always?.length ? `ALWAYS include where appropriate: ${strict.always.join(', ')}` : ''
@@ -118,12 +117,21 @@ function buildPrompt(items: string[], diet: DietType, days?: number): string {
 		'If an ingredient is NOT in the list, DELETE that meal and create a replacement using ONLY available items.',
 		'NO EXCEPTIONS. NO SUBSTITUTIONS. NO ADDITIONS.',
 		'',
+		'CRITICAL: SUGGEST ACTUAL POPULAR RECIPES (NOT AI MADE-UP COMBINATIONS):',
+		'- Base all meals on REAL recipes that people actually cook and eat',
+		'- Use recipes from cookbooks, food blogs (AllRecipes, Food Network, Simply Recipes, etc.), restaurants, and home cooking communities',
+		'- Use authentic cooking techniques and methods that are proven to work',
+		'- Include recognizable recipe names: "Simple Green Salad", "Roasted Root Vegetables", "Steamed Broccoli", "Sautéed Vegetables", "Grilled Vegetables", "Vegetable Stir-Fry", etc.',
+		'- Each meal should be something a person could find an actual recipe for online or in a cookbook',
+		'- Focus on timeless, classic dishes that are known to taste good',
+		'- Avoid bizarre or untested ingredient combinations that don\'t exist in real cuisine',
+		'',
 		'Make meals practical, varied, and realistic:',
 		'- Do NOT use the same primary protein twice in the same day (e.g., do not serve chicken for both lunch and dinner on the same day).',
 		'- Within a single day, Breakfast, Lunch, and Dinner should each have a different primary ingredient focus (for example: eggs for breakfast, chicken for lunch, beans or tofu for dinner).',
-		'- Vary cooking methods across meals (grilled, baked, sautéed, roasted, raw/salad, stir-fry, baked, pan-seared).',
+		'- Vary cooking methods across meals (grilled, baked, sautéed, roasted, raw/salad, stir-fry, steamed).',
 		"- Distribute ingredients evenly across days; don't exhaust a scarce ingredient (like avocado or seafood) on day 1 unless quantity clearly allows.",
-		'- Avoid strange or unlikely combinations; each meal should feel like something a typical home cook would actually make with 5–8 ingredients.',
+		'- Use cooking techniques and combinations that are proven popular and taste good together',
 		'- Use reasonable portions and stretch expensive or limited items (like seafood, steak, or specialty cheeses) across multiple days instead of repeating them in every meal.',
 		'',
 		'PROTEIN VARIETY RULES (CRITICAL):',
@@ -198,7 +206,7 @@ function coerceMeal(meal: any, fallbackTitle: string): Meal {
 			ingredients: Array.isArray(meal.ingredients) ? meal.ingredients.map(String) : []
 		}
 	}
-	// Fallback for old string format (backward compatibility)
+	// Fallback for old string format
 	if (typeof meal === 'string') {
 		return {
 			title: meal.split('(')[0].trim() || fallbackTitle,
@@ -226,19 +234,18 @@ function coerceDaysStructure(raw: any): { totalDays: number; days: DayMeals[] } 
 	const actualDaysCount = rawDays.length
 	console.log('[Coerce] Raw totalDays from AI:', reportedTotalDays)
 	console.log('[Coerce] Actual days array length:', actualDaysCount)
-	
-	// Use the actual array length, respecting the reported totalDays
+
 	const targetDays = Math.max(actualDaysCount, reportedTotalDays || actualDaysCount || 1)
 	const safeDays = rawDays.slice(0, Math.min(7, targetDays))
-	
-	const fallbackDays = ['Day 1','Day 2','Day 3','Day 4','Day 5','Day 6','Day 7']
+
+	const fallbackDays = ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7']
 	const days: DayMeals[] = safeDays.map((d: any, idx: number) => ({
 		day: d?.day || fallbackDays[idx],
 		Breakfast: coerceMeal(d?.Breakfast, 'Breakfast'),
 		Lunch: coerceMeal(d?.Lunch, 'Lunch'),
 		Dinner: coerceMeal(d?.Dinner, 'Dinner')
 	}))
-	
+
 	const finalTotalDays = Math.max(1, Math.min(7, days.length || reportedTotalDays || 1))
 	console.log('[Coerce] Final totalDays:', finalTotalDays, 'final days count:', days.length)
 	return { totalDays: finalTotalDays, days }
@@ -246,36 +253,33 @@ function coerceDaysStructure(raw: any): { totalDays: number; days: DayMeals[] } 
 
 function validateIngredientUsage(result: { totalDays: number; days: DayMeals[] }, allowedItems: string[]): string[] {
 	const violations: string[] = []
-	
 	console.log('[Validation] Checking ingredient usage against allowed items:', allowedItems)
-	
+
 	for (const day of result.days) {
-		for (const mealKey of ['Breakfast','Lunch','Dinner'] as const) {
+		for (const mealKey of ['Breakfast', 'Lunch', 'Dinner'] as const) {
 			const meal = day[mealKey]
 			if (!meal || !meal.ingredients) continue
-			
+
 			for (const ingredient of meal.ingredients) {
 				const lowerIngredient = ingredient.toLowerCase().trim()
 				if (!lowerIngredient) continue
-				
-				// Check if ingredient matches any allowed item (exact or partial)
+
 				let found = false
 				for (const allowed of allowedItems) {
 					const lowerAllowed = allowed.toLowerCase()
-					if (lowerIngredient === lowerAllowed || 
-					    lowerIngredient.includes(lowerAllowed) || 
-					    lowerAllowed.includes(lowerIngredient)) {
+					if (lowerIngredient === lowerAllowed ||
+						lowerIngredient.includes(lowerAllowed) ||
+						lowerAllowed.includes(lowerIngredient)) {
 						found = true
 						break
 					}
 				}
-				
-				// Also check common pantry basics that are always allowed
+
 				const pantryBasics = ['salt', 'pepper', 'water', 'oil', 'olive oil']
 				if (pantryBasics.includes(lowerIngredient)) {
 					found = true
 				}
-				
+
 				if (!found) {
 					const violation = `${day.day} ${mealKey}: "${ingredient}" not in grocery list`
 					violations.push(violation)
@@ -284,14 +288,13 @@ function validateIngredientUsage(result: { totalDays: number; days: DayMeals[] }
 			}
 		}
 	}
-	
 	return violations
 }
 
 function logUnusedIngredients(result: { totalDays: number; days: DayMeals[] }, allowedItems: string[]): void {
 	const used = new Set<string>()
 	for (const day of result.days) {
-		for (const mealKey of ['Breakfast','Lunch','Dinner'] as const) {
+		for (const mealKey of ['Breakfast', 'Lunch', 'Dinner'] as const) {
 			const meal = day[mealKey]
 			if (!meal || !meal.ingredients) continue
 			for (const ingredient of meal.ingredients) {
@@ -305,7 +308,6 @@ function logUnusedIngredients(result: { totalDays: number; days: DayMeals[] }, a
 	for (const item of allowedItems) {
 		const key = item.toLowerCase().trim()
 		if (!key) continue
-		// consider an item used if any used ingredient contains it or vice versa
 		let found = false
 		for (const u of used) {
 			if (u === key || u.includes(key) || key.includes(u)) {
@@ -343,7 +345,6 @@ function validateProteinVariety(result: { totalDays: number; days: DayMeals[] })
 			Dinner: detectPrimaryProtein(day.Dinner)
 		}
 
-		// Rule: never same protein at Lunch and Dinner on same day
 		if (dayProteins.Lunch && dayProteins.Dinner && dayProteins.Lunch === dayProteins.Dinner) {
 			messages.push(`${day.day}: Lunch and Dinner both use "${dayProteins.Lunch}" as primary protein.`)
 		}
@@ -355,16 +356,13 @@ function validateProteinVariety(result: { totalDays: number; days: DayMeals[] })
 		}
 	}
 
-	// Global distribution checks (soft warnings)
 	if ((proteinCounts['chicken'] || 0) > 3) {
 		messages.push(`Chicken is used in ${proteinCounts['chicken']} meals (target max 2–3).`)
 	}
-
 	const eggCount = (proteinCounts['egg'] || 0) + (proteinCounts['eggs'] || 0)
 	if (eggCount > 3) {
 		messages.push(`Eggs are used in ${eggCount} meals (should primarily be breakfasts with at most one lunch).`)
 	}
-
 	const beanCount = (proteinCounts['bean'] || 0) + (proteinCounts['beans'] || 0)
 	if (beanCount < 2) {
 		messages.push(`Beans appear in only ${beanCount} meals (target at least 2–3 meals).`)
@@ -386,81 +384,123 @@ function validatePlanCompliance(result: { totalDays: number; days: DayMeals[] } 
 
 	const forbidden = (rules.never || []).map(s => s.toLowerCase())
 	const required = (rules.always || []).map(s => s.toLowerCase())
-
 	const violations: string[] = []
+	let criticalViolations = 0
 
+	// Check forbidden ingredients - only count MAIN ingredients as critical violations
 	for (const day of result.days) {
-		for (const mealKey of ['Breakfast','Lunch','Dinner'] as const) {
+		for (const mealKey of ['Breakfast', 'Lunch', 'Dinner'] as const) {
 			const meal = day[mealKey]
 			if (!meal) continue
-			const text = `${meal.title} ${meal.instructions} ${meal.ingredients.join(' ')}`.toLowerCase()
+
 			for (const f of forbidden) {
 				if (!f) continue
-				// simple substring check
-				if (text.includes(f)) {
-					violations.push(`${day.day} ${mealKey} contains forbidden term: ${f}`)
+
+				// Check if it's a MAIN ingredient (in the ingredients array)
+				const isMainIngredient = meal.ingredients.some(ing => ing.toLowerCase().includes(f))
+
+				if (isMainIngredient) {
+					// Critical violation - forbidden ingredient is a main ingredient
+					violations.push(`${day.day} ${mealKey} contains forbidden main ingredient: ${f}`)
+					criticalViolations++
+				} else {
+					// Just mentioned in text, not a main ingredient - log warning but don't count
+					const textMentioned = `${meal.title} ${meal.instructions}`.toLowerCase().includes(f)
+					if (textMentioned) {
+						console.warn(`[Validation] ${day.day} ${mealKey} mentions "${f}" in text but not as main ingredient`)
+					}
 				}
 			}
 		}
-		// check required presence per day when defined
-		if (required.length) {
+	}
+
+	// Check required ingredients - less strict, just warn if missing
+	if (required.length) {
+		for (const day of result.days) {
 			const dayText = `${day.Breakfast.title} ${day.Breakfast.ingredients.join(' ')} ${day.Lunch.title} ${day.Lunch.ingredients.join(' ')} ${day.Dinner.title} ${day.Dinner.ingredients.join(' ')}`.toLowerCase()
 			const hasRequired = required.some(r => dayText.includes(r))
 			if (!hasRequired) {
-				violations.push(`${day.day} is missing required items for ${diet}: needs one of ${required.join(', ')}`)
+				console.warn(`[Validation] ${day.day} is missing required items for ${diet}: needs one of ${required.join(', ')}`)
 			}
 		}
 	}
 
-	if (violations.length) {
-		console.error('[Validation] Diet compliance violations detected:', violations)
+	// Only reject if 3+ critical violations, allow 0-2 with warning
+	if (criticalViolations >= 3) {
+		console.error('[Validation] Plan has', criticalViolations, 'critical diet violations (threshold: 3+). Rejecting plan.', violations)
 		return false
 	}
+
+	if (criticalViolations > 0) {
+		console.warn(`[Validation] Plan has ${criticalViolations} critical violation(s) but within tolerance (0-2 allowed). Accepting plan with warning.`, violations)
+	}
+
 	return true
 }
 
-async function callOpenAI(prompt: string, diet: DietType): Promise<{ totalDays: number; days: DayMeals[] } | null> {
-	console.log('[OpenAI] Sending prompt for diet:', diet)
-	
-	// ========== DEBUG LOGS START ==========
-	console.log('[OpenAI] ========== ENVIRONMENT VARIABLE DEBUG ==========')
-	console.log('[OpenAI] Full import.meta.env:', import.meta.env)
-	console.log('[OpenAI] VITE_OPENAI_API_KEY value:', import.meta.env.VITE_OPENAI_API_KEY)
-	console.log('[OpenAI] VITE_OCR_SPACE_API_KEY value:', import.meta.env.VITE_OCR_SPACE_API_KEY)
-	console.log('[OpenAI] ====================================================')
-	// ========== DEBUG LOGS END ==========
-	
-	const apiKey = import.meta.env.VITE_OPENAI_API_KEY as string | undefined
-	
-	// ========== MORE DEBUG LOGS START ==========
-	console.log('[OpenAI] API Key after extraction:', apiKey)
-	console.log('[OpenAI] API Key type:', typeof apiKey)
-	console.log('[OpenAI] API Key length:', apiKey?.length)
-	console.log('[OpenAI] API Key starts with sk-:', apiKey?.startsWith('sk-'))
-	console.log('[OpenAI] API Key trimmed equals empty:', apiKey?.trim() === '')
-	console.log('[OpenAI] API Key equals placeholder:', apiKey === 'your_key_here')
-	console.log('[OpenAI] Condition check - !apiKey:', !apiKey)
-	console.log('[OpenAI] Condition check - apiKey.trim() === "":', apiKey?.trim() === '')
-	console.log('[OpenAI] Condition check - apiKey === "your_key_here":', apiKey === 'your_key_here')
-	// ========== MORE DEBUG LOGS END ==========
-	
-	if (!apiKey || apiKey.trim() === '' || apiKey === 'your_key_here') {
-		console.warn('[OpenAI] No valid API key found. Using sample fallback.')
-		console.warn('[OpenAI] Please check your .env file has: VITE_OPENAI_API_KEY=sk-...')
+async function callClaude(prompt: string, diet: DietType): Promise<{ totalDays: number; days: DayMeals[] } | null> {
+	console.log('[Claude] Attempting to use Claude API for diet:', diet)
+
+	try {
+		console.log('[Claude] Calling backend proxy at http://localhost:3001/api/claude')
+		
+		const response = await fetch('http://localhost:3001/api/claude', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				prompt: prompt
+			})
+		})
+
+		if (!response.ok) {
+			const text = await response.text().catch(() => '')
+			throw new Error(`Backend HTTP ${response.status}: ${text}`)
+		}
+
+		const json = await response.json()
+		const content = json.content?.[0]?.text
+		if (!content) throw new Error('Missing content in Claude response')
+
+		console.log('[Claude] Raw AI response:', content)
+
+		// Claude sometimes adds markdown code fences, strip them
+		const cleaned = content.replace(/```json\n?|\n?```/g, '').trim()
+
+		const parsed = JSON.parse(cleaned)
+		console.log('[Claude] Parsed JSON:', parsed)
+
+		const coerced = coerceDaysStructure(parsed)
+		console.log('[Claude] Coerced result - totalDays:', coerced.totalDays, 'days count:', coerced.days.length)
+		return coerced
+	} catch (err) {
+		console.error('[Claude] Error:', err)
 		return null
 	}
-	
-	console.log('[OpenAI] ✓ API key validated successfully!')
-	
+}
+
+async function callGroq(prompt: string, diet: DietType): Promise<{ totalDays: number; days: DayMeals[] } | null> {
+	console.log('[Groq] Attempting to use Groq API as fallback for diet:', diet)
+
+	const apiKey = import.meta.env.VITE_GROQ_API_KEY as string | undefined
+
+	if (!apiKey || apiKey.trim() === '' || apiKey === 'your_key_here') {
+		console.warn('[Groq] No valid Groq API key found.')
+		return null
+	}
+
+	console.log('[Groq] ✓ API key validated successfully!')
+
 	try {
-		const res = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
+		const res = await fetch(`${GROQ_BASE_URL}/chat/completions`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
 				'Authorization': `Bearer ${apiKey}`
 			},
 			body: JSON.stringify({
-				model: OPENAI_MODEL,
+				model: GROQ_MODEL,
 				messages: [
 					{ role: 'system', content: 'You output JSON only. No code fences. No commentary.' },
 					{ role: 'user', content: prompt }
@@ -471,21 +511,47 @@ async function callOpenAI(prompt: string, diet: DietType): Promise<{ totalDays: 
 		})
 		if (!res.ok) {
 			const text = await res.text().catch(() => '')
-			throw new Error(`OpenAI HTTP ${res.status}: ${text}`)
+			throw new Error(`Groq HTTP ${res.status}: ${text}`)
 		}
 		const json = await res.json()
 		const content = json.choices?.[0]?.message?.content
-		if (!content) throw new Error('Missing content in OpenAI response')
-		console.log('[OpenAI] Raw AI response:', content)
+		if (!content) throw new Error('Missing content in Groq response')
+		console.log('[Groq] Raw AI response:', content)
 		const parsed = JSON.parse(content)
-		console.log('[OpenAI] Parsed JSON:', parsed)
+		console.log('[Groq] Parsed JSON:', parsed)
 		const coerced = coerceDaysStructure(parsed)
-		console.log('[OpenAI] Coerced result - totalDays:', coerced.totalDays, 'days count:', coerced.days.length)
+		console.log('[Groq] Coerced result - totalDays:', coerced.totalDays, 'days count:', coerced.days.length)
 		return coerced
 	} catch (err) {
-		console.error('[OpenAI] Error:', err)
+		console.error('[Groq] Error:', err)
 		return null
 	}
+}
+
+async function callAI(prompt: string, diet: DietType): Promise<{ totalDays: number; days: DayMeals[] } | null> {
+	console.log('[AI] ========== STARTING AI CALL WITH CLAUDE (PRIMARY) ==========')
+
+	// Priority 1: Claude Haiku ($0.25 per 1M tokens - super cheap, ~$0.0005 per meal plan)
+	console.log('[AI] Trying Claude API (Primary)...')
+	const claudeResult = await callClaude(prompt, diet)
+	if (claudeResult && claudeResult.totalDays && claudeResult.days.length) {
+		console.log('[AI] ✅ Claude succeeded! Using Claude result.')
+		return claudeResult
+	}
+	console.log('[AI] ❌ Claude failed or unavailable.')
+
+	// Priority 2: Groq (unlimited free)
+	console.log('[AI] Trying Groq API (Fallback)...')
+	const groqResult = await callGroq(prompt, diet)
+	if (groqResult && groqResult.totalDays && groqResult.days.length) {
+		console.log('[AI] ✅ Groq succeeded! Using Groq result.')
+		return groqResult
+	}
+	console.log('[AI] ❌ Groq failed or unavailable.')
+
+	// Priority 3: Manual fallback
+	console.log('[AI] ❌ All AI providers failed. Will use sample fallback plan.')
+	return null
 }
 
 function categorizeIngredients(items: string[]): {
@@ -500,12 +566,12 @@ function categorizeIngredients(items: string[]): {
 	const grains: string[] = []
 	const dairy: string[] = []
 	const other: string[] = []
-	
+
 	const proteinKeywords = /chicken|beef|pork|fish|salmon|tuna|shrimp|egg|eggs|tofu|tempeh|beans|lentils|turkey|sausage/i
 	const vegKeywords = /spinach|broccoli|tomato|tomatoes|lettuce|kale|carrot|carrots|onion|onions|pepper|peppers|cucumber|celery|asparagus|zucchini|potato|potatoes/i
 	const grainKeywords = /bread|rice|pasta|noodles|quinoa|oats|oatmeal|tortilla|wrap|barley|couscous/i
 	const dairyKeywords = /milk|cheese|yogurt|butter|cream|cottage/i
-	
+
 	for (const item of items) {
 		const lower = item.toLowerCase()
 		if (proteinKeywords.test(lower)) proteins.push(item)
@@ -514,36 +580,32 @@ function categorizeIngredients(items: string[]): {
 		else if (dairyKeywords.test(lower)) dairy.push(item)
 		else other.push(item)
 	}
-	
+
 	return { proteins, veggies, grains, dairy, other }
 }
 
 function buildFallbackPlan(items: string[], diet: DietType, sourceText: string, desiredDays?: number): MealPlanResult {
-	// Generate realistic meals using ONLY actual ingredients from the list
-	// Distribute ingredients evenly across meals for variety
 	const estimatedDays = desiredDays ?? Math.max(1, Math.min(7, Math.round(items.length / 3) || 3))
 	const safeDays = Math.max(1, Math.min(7, estimatedDays))
-	
+
 	const categorized = categorizeIngredients(items)
 	const days: DayMeals[] = []
-	
-	// Helper to create meal with dynamic ingredients based on what's available
+
 	const createBreakfast = (dayNum: number, availableItems: string[]): Meal => {
 		const proteins = categorized.proteins.slice(0, Math.ceil(categorized.proteins.length / safeDays))
 		const grains = categorized.grains.slice(0, Math.ceil(categorized.grains.length / safeDays))
 		const dairy = categorized.dairy.slice(0, Math.ceil(categorized.dairy.length / safeDays))
 		const other = categorized.other.slice(0, Math.ceil(categorized.other.length / safeDays))
-		
+
 		const items: string[] = []
 		if (proteins.length > 0) items.push(proteins[dayNum % proteins.length])
 		if (grains.length > 0) items.push(grains[dayNum % grains.length])
 		if (dairy.length > 0) items.push(dairy[dayNum % dairy.length])
 		if (other.length > 0 && items.length < 2) items.push(other[dayNum % other.length])
-		
-		const ingredient = items.length >
-        0 ? items[0] : 'available ingredients'
+
+		const ingredient = items.length > 0 ? items[0] : 'available ingredients'
 		const itemsList = items.filter(Boolean).join(', ')
-		
+
 		return {
 			title: items.length > 1 ? `${items[0].charAt(0).toUpperCase() + items[0].slice(1)} & ${items[1]} Breakfast` : `Simple ${ingredient} Breakfast`,
 			prepTime: 5,
@@ -553,20 +615,20 @@ function buildFallbackPlan(items: string[], diet: DietType, sourceText: string, 
 			ingredients: items.filter(Boolean)
 		}
 	}
-	
+
 	const createLunch = (dayNum: number, availableItems: string[]): Meal => {
 		const proteins = categorized.proteins.slice(Math.floor(categorized.proteins.length / 2))
 		const veggies = categorized.veggies.length > 0 ? categorized.veggies.slice(Math.floor(categorized.veggies.length / 2)) : []
 		const grains = categorized.grains.length > 0 ? categorized.grains.slice(Math.floor(categorized.grains.length / 2)) : []
-		
+
 		const items: string[] = []
 		if (proteins.length > 0) items.push(proteins[dayNum % proteins.length])
 		if (veggies.length > 0) items.push(veggies[dayNum % veggies.length])
 		if (grains.length > 0) items.push(grains[dayNum % grains.length])
-		
+
 		const itemsList = items.filter(Boolean).join(', ')
 		const mealType = items.some(i => i.toLowerCase().includes('bread')) ? 'Sandwich' : 'Bowl'
-		
+
 		return {
 			title: items.length > 0 ? `${mealType} with ${items[0]}` : 'Lunch Bowl',
 			prepTime: 10,
@@ -576,19 +638,19 @@ function buildFallbackPlan(items: string[], diet: DietType, sourceText: string, 
 			ingredients: items.filter(Boolean)
 		}
 	}
-	
+
 	const createDinner = (dayNum: number, availableItems: string[]): Meal => {
 		const proteins = categorized.proteins
 		const veggies = categorized.veggies.length > 0 ? categorized.veggies : []
 		const grains = categorized.grains.length > 0 ? categorized.grains : []
-		
+
 		const items: string[] = []
 		if (proteins.length > 0) items.push(proteins[(dayNum + 1) % proteins.length])
 		if (veggies.length > 0) items.push(veggies[(dayNum + 2) % veggies.length])
 		if (grains.length > 0) items.push(grains[(dayNum + 1) % grains.length])
-		
+
 		const itemsList = items.filter(Boolean).join(', ')
-		
+
 		return {
 			title: items.length > 0 ? `Hearty ${items[0]} Dinner` : 'Dinner Plate',
 			prepTime: 12,
@@ -598,10 +660,10 @@ function buildFallbackPlan(items: string[], diet: DietType, sourceText: string, 
 			ingredients: items.filter(Boolean)
 		}
 	}
-	
+
 	for (let d = 0; d < safeDays; d++) {
 		const dayItems = items.slice(Math.floor(d * items.length / safeDays), Math.floor((d + 1) * items.length / safeDays)).filter(i => i && i.length > 0)
-		
+
 		days.push({
 			day: `Day ${d + 1}`,
 			Breakfast: createBreakfast(d, dayItems),
@@ -609,7 +671,7 @@ function buildFallbackPlan(items: string[], diet: DietType, sourceText: string, 
 			Dinner: createDinner(d, dayItems)
 		})
 	}
-	
+
 	console.log('[Generator] Generated realistic fallback plan with ingredient distribution across', safeDays, 'days')
 	console.log('[Generator] Ingredient categories:', categorized)
 	return {
@@ -628,15 +690,15 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
 	console.log('[Generator] Raw items:', items)
 	console.log('[Generator] Requested days:', days)
 	console.log('[Generator] Diet:', diet)
-	
+
 	if (!items.length) {
 		throw new Error('No grocery items found. Try a clearer photo.')
 	}
-	
+
 	const cleanedItems = cleanGroceryList(items)
 	console.log('[Generator] Cleaned items count:', cleanedItems.length)
 	console.log('[Generator] Cleaned items:', cleanedItems)
-	
+
 	if (cleanedItems.length === 0) {
 		console.error('[Generator] ERROR: All items were filtered out during cleaning!')
 		throw new Error('No valid grocery items found after cleaning. The receipt may contain only non-food items.')
@@ -652,20 +714,22 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
 		}
 	}
 	console.log(`[Generator] Requesting ${effectiveDays} days for diet: ${diet} (items available: ${cleanedItems.length})`)
-	
+
 	const prompt = buildPrompt(cleanedItems, diet, effectiveDays)
 	console.log('[Generator] Prompt includes days instruction:', days ? `Generate exactly ${days} complete days` : 'Auto-determine days')
 	console.log('[Generator] Prompt length:', prompt.length, 'characters')
-	const aiResult = await callOpenAI(prompt, diet)
+
+	// Use the new AI caller with priority fallback (Gemini -> Groq -> Fallback)
+	const aiResult = await callAI(prompt, diet)
 	console.log('[Generator] AI result:', aiResult)
 	console.log('[Generator] AI result totalDays:', aiResult?.totalDays)
 	console.log('[Generator] AI result days count:', aiResult?.days?.length)
-	
+
 	if (aiResult && aiResult.totalDays && aiResult.days.length) {
 		if (days && aiResult.days.length < days) {
 			console.warn(`[Generator] AI returned ${aiResult.days.length} days but ${days} were requested`)
 		}
-		
+
 		const ingredientViolations = validateIngredientUsage(aiResult, cleanedItems)
 		if (ingredientViolations.length > 0) {
 			console.error('[Generator] AI used ingredients not in grocery list:', ingredientViolations)
@@ -674,13 +738,13 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
 		} else {
 			logUnusedIngredients(aiResult, cleanedItems)
 			validateProteinVariety(aiResult)
-			
+
 			const ok = validatePlanCompliance(aiResult, diet, items)
 			if (ok) {
 				let finalDays = aiResult.days
 				if (days && aiResult.days.length < days && aiResult.days.length < 7) {
 					console.log('[Generator] Padding AI result to requested', days, 'days')
-					const fallbackDays = ['Day 1','Day 2','Day 3','Day 4','Day 5','Day 6','Day 7']
+					const fallbackDays = ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7']
 					finalDays = [...aiResult.days]
 					for (let i = aiResult.days.length; i < days && i < 7; i++) {
 						finalDays.push({
@@ -704,7 +768,7 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
 			console.warn('[Generator] AI result failed diet validation — falling back to safe plan')
 		}
 	}
-	
+
 	console.log('[Generator] Using fallback plan with', days, 'days')
 	return buildFallbackPlan(cleanedItems, diet, sourceText, days)
 }

@@ -6,6 +6,12 @@ import DietSelector from './components/DietSelector'
 import Loading from './components/Loading'
 import Results from './components/Results'
 import ErrorBoundary from './components/ErrorBoundary'
+import HowItWorks from './components/HowItWorks'
+import Features from './components/Features'
+import Testimonials from './components/Testimonials'
+import FinalCTA from './components/FinalCTA'
+import FAQ from './components/FAQ'
+import Footer from './components/Footer'
 import { generateMealPlan } from './lib/mealPlanGenerator'
 import type { DietType, MealPlanResult } from './utils/types'
 import { useReactToPrint } from 'react-to-print'
@@ -108,7 +114,7 @@ export default function App() {
 	}, [result])
 
 	const handlePrint = useReactToPrint({
-		content: () => printRef.current,
+		contentRef: printRef,
 		documentTitle: result ? `Edible.io – Your ${result.totalDays}-Day ${result.diet} Meal Plan` : 'Edible.io-Meal-Plan',
 		pageStyle: `
 			@page {
@@ -183,80 +189,151 @@ export default function App() {
 			console.error('[App] Error boundary caught:', error)
 			showToast('error', 'An unexpected error occurred. Please refresh and try again.')
 		}}>
-			<div className="min-h-full">
+			<div className="min-h-full flex flex-col">
 				<ToastContainer toasts={toasts} onDismiss={dismissToast} />
 				<Header />
-				<div className="max-w-5xl mx-auto px-4 py-8 md:py-12">
-					<HeroSection />
+				
+				{/* Landing Page Sections - Show when no result */}
+				{!result && (
+					<>
+						<div className="flex-1">
+							<div className="max-w-5xl mx-auto px-4 py-8 md:py-12">
+								<HeroSection />
 
-					<div className="card p-5 md:p-6 mb-6">
-						<div className="grid gap-6">
-							<UploadArea onItemsDetected={onItemsDetected} onError={onItemError} disabled={isLoading} />
+								<div id="upload-section" className="card p-5 md:p-8 mb-6">
+									<div className="grid gap-8">
+										<UploadArea onItemsDetected={onItemsDetected} onError={onItemError} disabled={isLoading} />
 
-							<div className="grid gap-2">
-								<label className="text-sm font-semibold text-black/80">Select diet:</label>
-								<div className="flex items-center gap-3">
-									<DietSelector value={diet} onChange={setDiet} disabled={isLoading} />
-									<div>
-										<label className="text-sm font-semibold text-black/80">Meal Plan Length</label>
-										<select
-											className="ml-2 border rounded px-2 py-1"
-											value={planDaysSelection}
-											onChange={(e) => {
-												const v = e.target.value
-												if (v === 'auto') setPlanDaysSelection('auto')
-												else setPlanDaysSelection(Number(v))
-											}}
-										>
-											<option value={'auto'}>Auto ({autoPlanDays} days)</option>
-											<option value={3}>3 days</option>
-											<option value={5}>5 days</option>
-											<option value={7}>7 days</option>
-										</select>
-										<div className="text-xs text-black/60 mt-1">Based on {groceryItems.length} items, recommended {autoPlanDays} days</div>
+										{/* Diet Selection Section */}
+										<div className="border-t pt-8">
+											<DietSelector value={diet} onChange={setDiet} disabled={isLoading} />
+										</div>
+
+										{/* Meal Plan Length Section */}
+										<div className="border-t pt-6">
+											<div className="mb-6">
+												<label className="text-sm font-semibold text-gray-900 block mb-2">Meal Plan Duration</label>
+												<select
+													className="border-2 border-gray-200 rounded-lg px-3 py-2 text-sm font-medium focus:outline-none focus:border-purple-500 transition-colors"
+													value={planDaysSelection}
+													onChange={(e) => {
+														const v = e.target.value
+														if (v === 'auto') setPlanDaysSelection('auto')
+														else setPlanDaysSelection(Number(v))
+													}}
+												>
+													<option value={'auto'}>Auto ({autoPlanDays} days)</option>
+													<option value={3}>3 days</option>
+													<option value={5}>5 days</option>
+													<option value={7}>7 days</option>
+												</select>
+												<div className="text-sm text-gray-600 mt-3">
+													{groceryItems.length > 0 
+														? `Based on ${groceryItems.length} items • Recommended ${autoPlanDays} days`
+														: '👆 Upload a receipt to see recommended days'
+													}
+												</div>
+											</div>
+
+											{/* Generate Button Section */}
+											<div className="pt-2">
+												<div className="relative group">
+													<button
+														className={`
+															w-full md:w-auto px-6 py-3 rounded-lg font-semibold transition-all duration-200 text-base
+															${canGenerate && !isLoading
+																? 'bg-purple-600 text-white hover:bg-purple-700 hover:-translate-y-0.5 shadow-md hover:shadow-lg cursor-pointer'
+																: 'bg-purple-600 text-white opacity-50 cursor-not-allowed'
+															}
+														`}
+														disabled={!canGenerate || isLoading}
+														onClick={handleGenerate}
+													>
+														{isLoading ? 'Generating...' : 'Generate Meal Plan'}
+													</button>
+													
+													{/* Tooltip on hover */}
+													{!canGenerate && (
+														<div className="absolute left-0 bottom-full mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
+															Upload a receipt or paste ingredients first
+														</div>
+													)}
+												</div>
+
+												{/* Helper text */}
+												{!canGenerate && (
+													<div className="text-sm text-gray-600 mt-4 text-center md:text-left">
+														👆 Upload your grocery receipt above to get started
+													</div>
+												)}
+											</div>
+										</div>
 									</div>
 								</div>
-							</div>
 
-							<div className="flex flex-wrap items-center gap-3">
-								<button
-									className="btn btn-primary text-base"
-									disabled={!canGenerate || isLoading}
-									onClick={handleGenerate}
-								>
-									Generate Meal Plan
-								</button>
-								{!canGenerate && (
-									<span className="text-sm text-black/60">Upload a file or paste text to enable</span>
+								{isLoading && (
+									<div className="card p-6 mb-6">
+										<Loading />
+									</div>
+								)}
+
+								{error && (
+									<div className="card p-4 border-red-200">
+										<p className="text-sm text-red-700">{error}</p>
+									</div>
 								)}
 							</div>
 						</div>
+
+						{/* Landing Page Sections */}
+						<HowItWorks />
+						<Features />
+						<Testimonials />
+						<FinalCTA onCTAClick={() => {
+							setGroceryItems([])
+							setSourceText('')
+							setError(null)
+							setResult(null)
+						}} />
+						<FAQ />
+					</>
+				)}
+
+				{/* Result View - Full Screen */}
+				{result && !isLoading && (
+					<div className="flex-1">
+						<div className="max-w-5xl mx-auto px-4 py-8 md:py-12">
+							<div className="card p-5 md:p-6">
+								<Results
+									result={result}
+									onCopy={handleCopy}
+									onDownload={triggerDownload}
+									onRegenerate={handleRegenerate}
+									ref={printRef}
+								/>
+							</div>
+
+							{/* Back to Editor Link */}
+							<div className="text-center mt-8">
+								<button
+									onClick={() => {
+										setResult(null)
+										setGroceryItems([])
+										setSourceText('')
+										setError(null)
+										window.scrollTo({ top: 0, behavior: 'smooth' })
+									}}
+									className="text-purple-600 hover:text-purple-700 font-semibold transition-colors"
+								>
+									← Create Another Meal Plan
+								</button>
+							</div>
+						</div>
 					</div>
+				)}
 
-					{isLoading && (
-						<div className="card p-6 mb-6">
-							<Loading />
-						</div>
-					)}
-
-					{error && (
-						<div className="card p-4 border-red-200">
-							<p className="text-sm text-red-700">{error}</p>
-						</div>
-					)}
-
-					{result && !isLoading && (
-						<div className="card p-5 md:p-6">
-							<Results
-								result={result}
-								onCopy={handleCopy}
-								onDownload={triggerDownload}
-								onRegenerate={handleRegenerate}
-								ref={printRef}
-							/>
-						</div>
-					)}
-				</div>
+				{/* Footer */}
+				<Footer />
 			</div>
 		</ErrorBoundary>
 	)
