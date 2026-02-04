@@ -57,3 +57,15 @@ export interface CategorizedFoodItem {
 export interface FoodItemsResult {
 	food_items: CategorizedFoodItem[]
 }
+
+export interface ParsedReceiptItem {
+	item: string
+	quantity: string
+	price: string
+	category: FoodCategory
+}
+
+export interface ParsedReceiptResult {
+	items: ParsedReceiptItem[]
+	rawText: string
+}

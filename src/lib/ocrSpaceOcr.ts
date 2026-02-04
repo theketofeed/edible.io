@@ -32,52 +32,67 @@ export async function runOcrSpace(file: File) {
 
     try {
         console.log('[OCR] Sending request to OCR.space with key length:', apiKey.length)
-        const response = await fetch('https://api.ocr.space/parse/image', {
-            method: 'POST',
-            headers: {
-                'apikey': apiKey
-            },
-            body: formData,
-        })
 
-        if (!response.ok) {
-            throw new Error(`OCR.space API error: ${response.statusText}`)
-        }
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
 
-        const data: OcrSpaceResponse = await response.json()
+        try {
+            const response = await fetch('https://api.ocr.space/parse/image', {
+                method: 'POST',
+                headers: {
+                    'apikey': apiKey
+                },
+                body: formData,
+                signal: controller.signal
+            })
+            clearTimeout(timeoutId)
 
-        if (data.IsErroredOnProcessing || (data.ErrorMessage && data.ErrorMessage.length > 0)) {
-            const errorMsg = data.ErrorMessage?.join(', ') || 'Unknown error from OCR.space'
-            throw new Error(errorMsg)
-        }
+            if (!response.ok) {
+                throw new Error(`OCR.space API error: ${response.statusText}`)
+            }
 
-        if (!data.ParsedResults || data.ParsedResults.length === 0) {
+            const data: OcrSpaceResponse = await response.json()
+            // ... strict check rest of logic ...
+            if (data.IsErroredOnProcessing || (data.ErrorMessage && data.ErrorMessage.length > 0)) {
+                const errorMsg = data.ErrorMessage?.join(', ') || 'Unknown error from OCR.space'
+                throw new Error(errorMsg)
+            }
+
+            if (!data.ParsedResults || data.ParsedResults.length === 0) {
+                return {
+                    items: [],
+                    rawText: '',
+                    confidence: 0,
+                    metadata: null
+                }
+            }
+
+            const result = data.ParsedResults[0]
+            const rawText = result.ParsedText || ''
+            const confidence = rawText.length > 10 ? 90 : 50
+            const items = extractGroceryItems(rawText)
+
             return {
-                items: [],
-                rawText: '',
-                confidence: 0,
+                items,
+                rawText,
+                confidence,
                 metadata: null
             }
-        }
 
-        const result = data.ParsedResults[0]
-        const rawText = result.ParsedText || ''
-
-        // OCR.space doesn't give a simple confidence score per document like Mindee
-        // We can mock it or calculate it if needed, but for now we'll imply success = high confidence
-        const confidence = rawText.length > 10 ? 90 : 50
-
-        const items = extractGroceryItems(rawText)
-
-        return {
-            items,
-            rawText,
-            confidence, // Mocked confidence
-            metadata: null // OCR.space simple endpoint doesn't extract structured metadata like Mindee
+        } catch (fetchError) {
+            clearTimeout(timeoutId)
+            if (initialErrorIsAbort(fetchError)) { // Check if aborted
+                throw new Error('OCR request timed out after 30 seconds. Please check your internet connection.')
+            }
+            throw fetchError
         }
 
     } catch (error) {
         console.error('OCR.space error:', error)
         throw error
     }
+}
+
+function initialErrorIsAbort(e: any) {
+    return e.name === 'AbortError' || (e instanceof DOMException && e.name === 'AbortError')
 }

@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "backend": "node server.mjs",
     "server": "node server-mindee.mjs",
-    "dev:all": "concurrently \"npm run server\" \"npm run dev\"",
+    "dev:all": "concurrently \"npm run backend\" \"npm run dev\"",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest",
@@ -14,9 +15,12 @@
     "test:coverage": "vitest --coverage"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@types/tesseract.js": "^0.0.2",
     "concurrently": "^9.2.1",
+    "cors": "^2.8.6",
     "dotenv": "^17.2.3",
+    "express": "^5.2.1",
     "html2pdf.js": "^0.9.3",
     "lucide-react": "^0.460.0",
     "node-fetch": "^2.7.0",
