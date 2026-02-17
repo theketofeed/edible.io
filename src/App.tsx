@@ -1,13 +1,16 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
+import { ArrowUp, AlertCircle, ArrowLeft } from 'lucide-react'
+import { BrowserRouter as Router, Routes, Route, useNavigate, useParams, useLocation } from 'react-router-dom'
 import Header from './components/Header'
 import HeroSection from './components/HeroSection'
 import UploadArea from './components/UploadArea'
 import DietSelector from './components/DietSelector'
 import Loading from './components/Loading'
 import Results from './components/Results'
+import RecipeDetail from './components/RecipeDetail'
 import ErrorBoundary from './components/ErrorBoundary'
 import HowItWorks from './components/HowItWorks'
-import Features from './components/Features'
+import ComparisonSection from './components/ComparisonSection'
 import Testimonials from './components/Testimonials'
 import FinalCTA from './components/FinalCTA'
 import FAQ from './components/FAQ'
@@ -17,8 +20,12 @@ import type { DietType, MealPlanResult } from './utils/types'
 import { useReactToPrint } from 'react-to-print'
 import html2pdf from 'html2pdf.js/dist/include/html2pdf.es.js'
 import ToastContainer, { ToastKind, ToastMessage } from './components/Toast'
+import ReceiptConfirmation from './components/ReceiptConfirmation'
+import { parseReceiptWithGemini, ParsedItem } from './services/receiptParser'
 
-export default function App() {
+function MainContent() {
+	const navigate = useNavigate()
+	const location = useLocation()
 	const [diet, setDiet] = useState<DietType>('Balanced')
 	const [groceryItems, setGroceryItems] = useState<string[]>([])
 	const [planDaysSelection, setPlanDaysSelection] = useState<number | 'auto'>('auto')
@@ -28,6 +35,11 @@ export default function App() {
 	const [result, setResult] = useState<MealPlanResult | null>(null)
 	const printRef = useRef<HTMLDivElement | null>(null)
 	const [toasts, setToasts] = useState<ToastMessage[]>([])
+
+	// Smart Parsing State
+	const [isParsing, setIsParsing] = useState(false)
+	const [showConfirmation, setShowConfirmation] = useState(false)
+	const [parsedItems, setParsedItems] = useState<ParsedItem[]>([])
 
 	const showToast = useCallback((type: ToastKind, message: string, autoClose = 4200) => {
 		const id = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`
@@ -40,7 +52,6 @@ export default function App() {
 
 	const canGenerate = useMemo(() => groceryItems.length > 0, [groceryItems])
 
-	// Automatic plan length based on grocery items count
 	const autoPlanDays = useMemo(() => {
 		const n = groceryItems.length
 		if (n >= 26) return 7
@@ -52,13 +63,38 @@ export default function App() {
 
 	const effectivePlanDays = planDaysSelection === 'auto' ? autoPlanDays : planDaysSelection
 
-	const onItemsDetected = useCallback((items: string[], rawText: string) => {
+	const onItemsDetected = useCallback(async (items: string[], rawText: string) => {
 		setError(null)
-		setGroceryItems(items)
 		setSourceText(rawText)
-		if (items.length) {
-			showToast('success', `Great! Detected ${items.length} grocery items.`)
+		setShowConfirmation(true)
+		setIsParsing(true)
+
+		try {
+			const parsed = await parseReceiptWithGemini(rawText)
+			if (parsed.length > 0) {
+				setParsedItems(parsed)
+			} else {
+				setParsedItems(items.map((item, i) => ({
+					id: `fallback-${i}`,
+					original: item,
+					name: item,
+					quantity: '1',
+					category: 'Uncategorized',
+					confidence: 50
+				})))
+				showToast('info', 'AI parsing unavailable, using raw detection.')
+			}
+		} catch (err) {
+			showToast('error', 'Failed to analyze receipt details.')
+		} finally {
+			setIsParsing(false)
 		}
+	}, [showToast])
+
+	const handleConfirmItems = useCallback((confirmedItems: string[]) => {
+		setGroceryItems(confirmedItems)
+		setShowConfirmation(false)
+		showToast('success', `Confirmed ${confirmedItems.length} items! Ready to generate.`)
 	}, [showToast])
 
 	const onItemError = useCallback((message: string) => {
@@ -68,26 +104,17 @@ export default function App() {
 
 	const handleGenerate = useCallback(async () => {
 		if (!groceryItems.length) {
-			const message = 'No grocery items found. Try a clearer photo.'
-			setError(message)
-			showToast('error', message)
+			setError('No grocery items found.')
+			showToast('error', 'No grocery items found.')
 			return
 		}
 		setError(null)
 		setIsLoading(true)
 		try {
-			console.log('[App] Generating meal plan with days:', effectivePlanDays)
 			const plan = await generateMealPlan({ items: groceryItems, diet, sourceText, days: effectivePlanDays })
 			setResult(plan)
-			// Only show info toast if we used fallback (no API key or API failed)
-			const hasKey = !!import.meta.env.VITE_OPENAI_API_KEY
-			if (!hasKey) {
-				showToast('info', 'Add your OpenAI key in .env file for real AI plans (restart dev server after adding)')
-			} else {
-				showToast('success', 'Your meal plan is ready!')
-			}
+			showToast('success', 'Your meal plan is ready!')
 		} catch (e: any) {
-			console.error('[App] generation error:', e)
 			setError(e?.message || 'Failed to generate meal plan.')
 			showToast('error', e?.message || 'Failed to generate meal plan.')
 		} finally {
@@ -96,214 +123,117 @@ export default function App() {
 	}, [diet, groceryItems, showToast, sourceText, effectivePlanDays])
 
 	const handleRegenerate = useCallback(() => {
-		if (!canGenerate) return
-		void handleGenerate()
+		if (canGenerate) void handleGenerate()
 	}, [canGenerate, handleGenerate])
 
 	const handleCopy = useCallback(async () => {
 		if (!result) return
 		const text = result.days.map(d =>
-			`${d.day}\n- Breakfast: ${d.Breakfast.title} (⏱️ Prep: ${d.Breakfast.prepTime} min | Cook: ${d.Breakfast.cookTime} min | Total: ${d.Breakfast.totalTime} min)\n- Lunch: ${d.Lunch.title} (⏱️ Prep: ${d.Lunch.prepTime} min | Cook: ${d.Lunch.cookTime} min | Total: ${d.Lunch.totalTime} min)\n- Dinner: ${d.Dinner.title} (⏱️ Prep: ${d.Dinner.prepTime} min | Cook: ${d.Dinner.cookTime} min | Total: ${d.Dinner.totalTime} min)`
+			`${d.day}\n- Breakfast: ${d.Breakfast.title}\n- Lunch: ${d.Lunch.title}\n- Dinner: ${d.Dinner.title}`
 		).join('\n\n')
 		try {
 			await navigator.clipboard.writeText(text)
-			alert('Meal plan copied to clipboard.')
+			alert('Copied!')
 		} catch {
-			alert('Could not copy to clipboard.')
+			alert('Failed to copy.')
 		}
 	}, [result])
 
 	const handlePrint = useReactToPrint({
 		contentRef: printRef,
-		documentTitle: result ? `Edible.io – Your ${result.totalDays}-Day ${result.diet} Meal Plan` : 'Edible.io-Meal-Plan',
-		pageStyle: `
-			@page {
-				margin: 1in;
-			}
-			@media print {
-				.no-print {
-					display: none !important;
-				}
-				.print-only {
-					display: block !important;
-				}
-			}
-		`
+		documentTitle: 'Meal Plan'
 	})
 
 	const triggerDownload = useCallback(async () => {
-		if (!printRef.current) {
-			console.error('[Print] Ref is null')
-			showToast('error', 'Content not ready for printing')
-			return
-		}
-
-		const element = printRef.current
-		const filename = 'edible-meal-plan.pdf'
-
-		// We'll clone the print element and inject lightweight PDF-specific styles
-		const clone = element.cloneNode(true) as HTMLElement
-		// Inline styles for PDF readability
-		const style = document.createElement('style')
-		style.innerHTML = `
-		  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; }
-		  .card { box-shadow: none !important; border: none !important; page-break-inside: avoid; }
-		  .print-only { display: block !important; }
-		  .no-print { display: none !important; }
-		  .heading { font-size: 18px; }
-		  .card h3 { font-size: 14px; margin: 0 0 6px 0 }
-		  .card ul { font-size: 12px }
-		  /* Force page breaks between grid items when necessary */
-		  .print-page-break { page-break-after: always; }
-		`
-		clone.prepend(style)
-
-		// Wrap clone in a container so html2pdf picks up styles
-		const wrapper = document.createElement('div')
-		wrapper.style.padding = '0.5in'
-		wrapper.appendChild(clone)
-
+		if (!printRef.current) return
 		const opt = {
 			margin: 0.5,
-			filename,
+			filename: 'meal-plan.pdf',
 			image: { type: 'jpeg', quality: 0.98 },
-			html2canvas: { scale: 2, useCORS: true },
-			jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-			pagebreak: { mode: ['css', 'legacy'] }
+			html2canvas: { scale: 2 },
+			jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
 		}
-
 		try {
-			// html2pdf expects an element; call from the wrapper
-			await html2pdf().set(opt).from(wrapper).save()
-			showToast('success', 'Downloaded meal plan PDF')
-		} catch (err) {
-			console.error('[PDF] html2pdf error:', err)
+			await html2pdf().set(opt).from(printRef.current).save()
+			showToast('success', 'Downloaded PDF')
+		} catch {
 			showToast('error', 'Failed to generate PDF')
-			// Fallback to print dialog
-			try { handlePrint(); showToast('info', 'Opened print dialog — choose "Save as PDF" to export') } catch { /* ignore */ }
 		}
-	}, [handlePrint, showToast])
+	}, [showToast])
+
+	const handleBackToEditor = () => {
+		setResult(null)
+		setGroceryItems([])
+		setSourceText('')
+		setError(null)
+		navigate('/')
+		window.scrollTo({ top: 0, behavior: 'smooth' })
+	}
 
 	return (
-		<ErrorBoundary onError={(error) => {
-			console.error('[App] Error boundary caught:', error)
-			showToast('error', 'An unexpected error occurred. Please refresh and try again.')
-		}}>
-			<div className="min-h-full flex flex-col">
-				<ToastContainer toasts={toasts} onDismiss={dismissToast} />
-				<Header />
-				
-				{/* Landing Page Sections - Show when no result */}
-				{!result && (
+		<div className="min-h-full flex flex-col">
+			<ToastContainer toasts={toasts} onDismiss={dismissToast} />
+
+			<ReceiptConfirmation
+				isOpen={showConfirmation}
+				isParsing={isParsing}
+				parsedItems={parsedItems}
+				onConfirm={handleConfirmItems}
+				onCancel={() => setShowConfirmation(false)}
+			/>
+
+			<Header />
+
+			<Routes>
+				<Route path="/" element={
 					<>
-						<div className="flex-1">
-							<div className="max-w-5xl mx-auto px-4 py-8 md:py-12">
-								<HeroSection />
-
-								<div id="upload-section" className="card p-5 md:p-8 mb-6">
-									<div className="grid gap-8">
-										<UploadArea onItemsDetected={onItemsDetected} onError={onItemError} disabled={isLoading} />
-
-										{/* Diet Selection Section */}
-										<div className="border-t pt-8">
-											<DietSelector value={diet} onChange={setDiet} disabled={isLoading} />
-										</div>
-
-										{/* Meal Plan Length Section */}
-										<div className="border-t pt-6">
-											<div className="mb-6">
-												<label className="text-sm font-semibold text-gray-900 block mb-2">Meal Plan Duration</label>
-												<select
-													className="border-2 border-gray-200 rounded-lg px-3 py-2 text-sm font-medium focus:outline-none focus:border-purple-500 transition-colors"
-													value={planDaysSelection}
-													onChange={(e) => {
-														const v = e.target.value
-														if (v === 'auto') setPlanDaysSelection('auto')
-														else setPlanDaysSelection(Number(v))
-													}}
-												>
-													<option value={'auto'}>Auto ({autoPlanDays} days)</option>
-													<option value={3}>3 days</option>
-													<option value={5}>5 days</option>
-													<option value={7}>7 days</option>
-												</select>
-												<div className="text-sm text-gray-600 mt-3">
-													{groceryItems.length > 0 
-														? `Based on ${groceryItems.length} items • Recommended ${autoPlanDays} days`
-														: '👆 Upload a receipt to see recommended days'
-													}
-												</div>
+						{!result && (
+							<div className="flex-1">
+								<div className="max-w-5xl mx-auto px-4 py-8 md:py-12">
+									<HeroSection />
+									<div id="upload-section" className="card p-5 md:p-8 mb-6">
+										<div className="grid gap-8">
+											<UploadArea onItemsDetected={onItemsDetected} onError={onItemError} disabled={isLoading} />
+											<div className="border-t pt-8">
+												<DietSelector value={diet} onChange={setDiet} disabled={isLoading} />
 											</div>
-
-											{/* Generate Button Section */}
-											<div className="pt-2">
-												<div className="relative group">
-													<button
-														className={`
-															w-full md:w-auto px-6 py-3 rounded-lg font-semibold transition-all duration-200 text-base
-															${canGenerate && !isLoading
-																? 'bg-purple-600 text-white hover:bg-purple-700 hover:-translate-y-0.5 shadow-md hover:shadow-lg cursor-pointer'
-																: 'bg-purple-600 text-white opacity-50 cursor-not-allowed'
-															}
-														`}
-														disabled={!canGenerate || isLoading}
-														onClick={handleGenerate}
+											<div className="border-t pt-6">
+												<div className="mb-6">
+													<label className="text-sm font-semibold text-gray-900 block mb-2">Duration</label>
+													<select
+														className="border-2 border-gray-200 rounded-lg px-3 py-2 text-sm font-medium focus:outline-none focus:border-purple-500"
+														value={planDaysSelection}
+														onChange={(e) => setPlanDaysSelection(e.target.value === 'auto' ? 'auto' : Number(e.target.value))}
 													>
-														{isLoading ? 'Generating...' : 'Generate Meal Plan'}
-													</button>
-													
-													{/* Tooltip on hover */}
-													{!canGenerate && (
-														<div className="absolute left-0 bottom-full mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
-															Upload a receipt or paste ingredients first
-														</div>
-													)}
+														<option value="auto">Auto ({autoPlanDays} days)</option>
+														<option value={3}>3 days</option>
+														<option value={5}>5 days</option>
+														<option value={7}>7 days</option>
+													</select>
 												</div>
-
-												{/* Helper text */}
-												{!canGenerate && (
-													<div className="text-sm text-gray-600 mt-4 text-center md:text-left">
-														👆 Upload your grocery receipt above to get started
-													</div>
-												)}
+												<button
+													className={`px-6 py-3 rounded-lg font-semibold transition-all ${canGenerate && !isLoading ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-purple-600/50 text-white cursor-not-allowed'}`}
+													disabled={!canGenerate || isLoading}
+													onClick={handleGenerate}
+												>
+													{isLoading ? 'Generating...' : 'Generate Plan'}
+												</button>
 											</div>
 										</div>
 									</div>
+									{isLoading && <Loading />}
+									{error && <div className="p-4 text-red-700 bg-red-50 rounded-lg">{error}</div>}
 								</div>
-
-								{isLoading && (
-									<div className="card p-6 mb-6">
-										<Loading />
-									</div>
-								)}
-
-								{error && (
-									<div className="card p-4 border-red-200">
-										<p className="text-sm text-red-700">{error}</p>
-									</div>
-								)}
+								<HowItWorks />
+								<ComparisonSection />
+								<Testimonials />
+								<FinalCTA onCTAClick={handleBackToEditor} />
+								<FAQ />
 							</div>
-						</div>
+						)}
 
-						{/* Landing Page Sections */}
-						<HowItWorks />
-						<Features />
-						<Testimonials />
-						<FinalCTA onCTAClick={() => {
-							setGroceryItems([])
-							setSourceText('')
-							setError(null)
-							setResult(null)
-						}} />
-						<FAQ />
-					</>
-				)}
-
-				{/* Result View - Full Screen */}
-				{result && !isLoading && (
-					<div className="flex-1">
-						<div className="max-w-5xl mx-auto px-4 py-8 md:py-12">
-							<div className="card p-5 md:p-6">
+						{result && !isLoading && (
+							<div className="flex-1 max-w-5xl mx-auto px-4 py-8 md:py-12">
 								<Results
 									result={result}
 									onCopy={handleCopy}
@@ -311,30 +241,113 @@ export default function App() {
 									onRegenerate={handleRegenerate}
 									ref={printRef}
 								/>
+								<div className="text-center mt-8">
+									<button onClick={handleBackToEditor} className="text-purple-600 font-semibold hover:underline">
+										← Create Another Plan
+									</button>
+								</div>
 							</div>
-
-							{/* Back to Editor Link */}
-							<div className="text-center mt-8">
-								<button
-									onClick={() => {
-										setResult(null)
-										setGroceryItems([])
-										setSourceText('')
-										setError(null)
-										window.scrollTo({ top: 0, behavior: 'smooth' })
-									}}
-									className="text-purple-600 hover:text-purple-700 font-semibold transition-colors"
-								>
-									← Create Another Meal Plan
-								</button>
+						)}
+					</>
+				} />
+				<Route path="/recipe/:dayIndex/:mealType" element={
+					<ErrorBoundary
+						onError={(error, info) => console.error('[RecipeView] Critical Error:', error, info)}
+						fallback={(error, reset) => (
+							<div className="flex-1 flex flex-col items-center justify-center py-20 px-4 text-center">
+								<div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6">
+									<AlertCircle className="w-10 h-10 text-red-600" />
+								</div>
+								<h2 className="text-3xl font-black text-gray-900 mb-4">Oops! This recipe couldn't be loaded.</h2>
+								<p className="text-gray-500 mb-8 max-w-md">
+									We encountered an unexpected error while preparing your recipe details. Don't worry, your meal plan is still safe.
+								</p>
+								<div className="flex gap-4">
+									<button
+										onClick={() => {
+											reset()
+											navigate('/')
+										}}
+										className="px-6 py-3 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-all flex items-center gap-2"
+									>
+										<ArrowLeft className="w-5 h-5" />
+										Back to Meal Plan
+									</button>
+								</div>
 							</div>
-						</div>
-					</div>
-				)}
+						)}
+					>
+						<RecipeWrapper onBack={() => navigate('/')} result={result} showToast={showToast} />
+					</ErrorBoundary>
+				} />
+			</Routes>
 
-				{/* Footer */}
-				<Footer />
+			<Footer />
+		</div>
+	)
+}
+
+function RecipeWrapper({ onBack, result, showToast }: {
+	onBack: () => void,
+	result: MealPlanResult | null,
+	showToast: (type: ToastKind, message: string) => void
+}) {
+	const { dayIndex, mealType } = useParams<{ dayIndex: string, mealType: string }>()
+	const location = useLocation()
+
+	const parsedDayIndex = useMemo(() => parseInt(dayIndex || '0'), [dayIndex])
+	const isValidMealType = mealType === 'Breakfast' || mealType === 'Lunch' || mealType === 'Dinner'
+
+	// Get meal from location state (preferred) or result
+	const meal = useMemo(() => {
+		if (location.state?.meal) return location.state.meal
+		if (!result || !isValidMealType) return null
+		if (parsedDayIndex < 0 || parsedDayIndex >= result.days.length) return null
+		return result.days[parsedDayIndex][mealType as 'Breakfast' | 'Lunch' | 'Dinner']
+	}, [location.state?.meal, result, parsedDayIndex, mealType, isValidMealType])
+
+	// If the meal is missing and we don't even have a result, it might be a direct link
+	// We'll let RecipeDetail show the skeleton while it "loads" if we want, 
+	// or show an error if it's definitely an invalid request.
+	const isInvalidRequest = !location.state?.meal && (!isValidMealType || (result && (parsedDayIndex < 0 || parsedDayIndex >= result.days.length)))
+
+	if (isInvalidRequest) {
+		return (
+			<div className="flex-1 flex flex-col items-center justify-center py-32 px-4 text-center">
+				<div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mb-6">
+					<AlertCircle className="w-10 h-10 text-amber-500" />
+				</div>
+				<h2 className="text-3xl font-black text-gray-900 mb-4">Invalid Recipe Link</h2>
+				<p className="text-gray-500 mb-8 max-w-md">
+					We couldn't find the recipe you're looking for. This can happen if the link is outdated or incorrect.
+				</p>
+				<button
+					onClick={onBack}
+					className="px-6 py-3 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-all"
+				>
+					Back to Home
+				</button>
 			</div>
+		)
+	}
+
+	return (
+		<RecipeDetail
+			meal={meal}
+			mealType={(mealType as any) || 'Breakfast'}
+			dayName={`Day ${parsedDayIndex + 1}`}
+			onBack={onBack}
+			showToast={showToast}
+		/>
+	)
+}
+
+export default function App() {
+	return (
+		<ErrorBoundary onError={(error) => console.error('[App] Error:', error)}>
+			<Router>
+				<MainContent />
+			</Router>
 		</ErrorBoundary>
 	)
 }

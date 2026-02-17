@@ -59,12 +59,17 @@ module.exports = {
 					'0%, 100%': { transform: 'translate(0, 0) scale(1)' },
 					'33%': { transform: 'translate(30px, -50px) scale(1.1)' },
 					'66%': { transform: 'translate(-20px, 20px) scale(0.9)' }
+				},
+				scroll: {
+					'0%': { transform: 'translateX(0)' },
+					'100%': { transform: 'translateX(-50%)' }
 				}
 			},
 			animation: {
 				fadeIn: 'fadeIn 400ms ease-out both',
 				float: 'float 3s ease-in-out infinite',
-				blob: 'blob 7s infinite'
+				blob: 'blob 7s infinite',
+				scroll: 'scroll 40s linear infinite'
 			},
 			backdropBlur: {
 				xs: '2px',

@@ -1,5 +1,6 @@
 import { memo } from 'react'
 import { UtensilsCrossed, House, Sparkles, CreditCard, MessageCircleQuestion, ArrowUpRight, Menu } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 const Header = memo(function Header() {
 	return (
@@ -8,12 +9,12 @@ const Header = memo(function Header() {
 			<div className="fixed inset-0 -z-10 w-full h-screen bg-purple-50"></div>
 
 			{/* Floating Sticky Header */}
-			<header className="sticky top-4 z-50 flex justify-center px-4">
+			<header className="sticky top-4 z-40 flex justify-center px-4">
 				{/* Fatter container (p-3), stronger shadow for 'pop' */}
 				<nav className="flex items-center gap-1 p-3 pl-6 pr-3 bg-white/90 backdrop-blur-md rounded-full shadow-[0_8px_40px_rgba(0,0,0,0.08)] border border-white/50 max-w-5xl w-full mx-auto">
 
 					{/* Logo Section */}
-					<div className="flex items-center gap-3">
+					<Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
 						{/* Icon Box */}
 						<div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-900">
 							<UtensilsCrossed className="w-4 h-4 text-white" />
@@ -22,15 +23,15 @@ const Header = memo(function Header() {
 						<span className="text-lg font-bold text-gray-900 tracking-tight">
 							Edible.io
 						</span>
-					</div>
+					</Link>
 
 					{/* Navigation Links - Centered, Hidden on mobile */}
 					<div className="hidden md:flex flex-1 items-center justify-center gap-1">
 						{/* Home */}
-						<a href="#home" className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200">
+						<Link to="/" className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200">
 							<House className="w-4 h-4" />
 							<span>Home</span>
-						</a>
+						</Link>
 
 						{/* Services */}
 						<a href="#how-it-works" className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200">

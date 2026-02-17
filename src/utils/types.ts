@@ -9,6 +9,13 @@ export interface Meal {
 	totalTime: number
 	instructions: string
 	ingredients: string[]
+	nutrition?: {
+		calories: number
+		protein: number
+		carbs: number
+		fat: number
+		fiber?: number
+	}
 }
 
 export interface DayMeals {
@@ -39,7 +46,7 @@ export interface OcrResult {
 	confidence?: number
 }
 
-export type FoodCategory = 
+export type FoodCategory =
 	| 'protein'
 	| 'vegetable'
 	| 'fruit'
