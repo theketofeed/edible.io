@@ -12,6 +12,7 @@ const RECEIPT_METADATA_PATTERNS = [
 	/^loyalty$/i,
 	/^date$/i,
 	/^receipt$/i,
+	/^thank\s+you$/i,
 ]
 
 const EXCLUDED_PATTERNS = [
@@ -63,7 +64,7 @@ const EXCLUDED_PATTERNS = [
 	/^\$\s*\d/i, // Dollar amounts like "$ 4.00"
 ];
 
-const isExcluded = (text: string) => 
+const isExcluded = (text: string) =>
 	EXCLUDED_PATTERNS.some(pattern => pattern.test(text));
 
 // Food keywords that indicate a valid food item
@@ -87,7 +88,7 @@ const FOOD_KEYWORDS = new Set([
 	'bread', 'rice', 'pasta', 'noodles', 'quinoa', 'oats', 'oatmeal', 'wheat', 'barley', 'couscous', 'tortilla', 'wrap',
 	'croissant', 'cookies',
 	// Other / pantry
-	'oil', 'olive', 'olive oil', 'vinegar', 'balsamic', 'balsamic vinegar', 'salt', 'sugar', 'flour', 'honey', 'jam', 'jelly', 
+	'oil', 'olive', 'olive oil', 'vinegar', 'balsamic', 'balsamic vinegar', 'salt', 'sugar', 'flour', 'honey', 'jam', 'jelly',
 	'peanut', 'peanuts', 'almond', 'almonds', 'walnut', 'walnuts', 'cashew', 'cashews', 'seed', 'seeds', 'nut', 'nuts',
 	// Herbs and spices
 	'cilantro', 'parsley', 'basil', 'oregano', 'thyme', 'rosemary', 'sage', 'mint', 'garlic', 'ginger', 'cumin',
@@ -103,26 +104,10 @@ function normalizeItem(value: string): string {
 		.trim()
 		.toLowerCase()
 		.replace(/\s+/g, ' ')
-	
+
 	if (!cleaned || cleaned.length < 2) return ''
-	
-	// Remove quantity/weight suffixes like "2x", "0.778kg", "2.5 lbs", etc.
-	cleaned = cleaned
-		.replace(/\s*\d+\s*x\s*$/i, '') // "2x" at end
-		.replace(/\s*\d+[\.,]\d+\s*kg\s*$/i, '') // "0.778 kg" at end
-		.replace(/\s*\d+[\.,]\d+\s*lbs?\s*$/i, '') // "2.5 lbs" at end
-		.replace(/\s*\d+[\.,]\d+\s*oz\s*$/i, '') // "5.5 oz" at end
-		.replace(/\s*\d+\s*kg\s*$/i, '') // "2 kg" at end
-		.replace(/\s*\d+\s*lbs?\s*$/i, '') // "5 lbs" at end
-		.replace(/\s*\d+\s*oz\s*$/i, '') // "3 oz" at end
-		.trim()
-	
-	// Remove prices at the end
-	cleaned = cleaned.replace(/\s*\$\d+[\.,]\d{2}\s*$/, '').trim()
-	
-	// Remove line numbers at start
-	cleaned = cleaned.replace(/^\d+[\s.\-:]+/, '').trim()
-	
+
+
 	return cleaned
 }
 
@@ -157,7 +142,7 @@ function looksLikeFood(item: string): boolean {
 
 export function cleanGroceryList(inputItems: string[]): string[] {
 	console.log('[Cleaning] Processing', inputItems.length, 'items from OCR')
-	
+
 	const cleaned: string[] = []
 	const seen = new Set<string>()
 
@@ -347,8 +332,8 @@ ${rawOcrText}`
 				item: String(item.item || 'Unknown item').trim(),
 				quantity: String(item.quantity || '1 unit').trim(),
 				price: String(item.price || 'Unknown').trim(),
-				category: (validCategories.includes(String(item.category || '').toLowerCase()) 
-					? String(item.category).toLowerCase() 
+				category: (validCategories.includes(String(item.category || '').toLowerCase())
+					? String(item.category).toLowerCase()
 					: 'miscellaneous') as import('./types').FoodCategory
 			}))
 

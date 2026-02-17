@@ -1,0 +1,27 @@
+﻿PASS [0]: "370 kg chicken" -> "chicken"
+PASS [1]: "Bean (Green) .370 kg @ $4.39/kg" -> "bean (green)"
+PASS [2]: "Lemon Regular 1@ 3/$2.50" -> "lemon regular"
+PASS [3]: "2x Peanut Butter" -> "peanut butter"
+PASS [4]: "2.5 lb chicken" -> "chicken"
+PASS [5]: "1.5 lbs beef" -> "beef"
+PASS [6]: "500g broccoli" -> "broccoli"
+PASS [7]: "16 oz milk" -> "milk"
+PASS [8]: "12 pack water" -> "water"
+PASS [9]: "3 count lemons" -> "lemons"
+node : FAIL [10]: "organic 2x chicken 
+breast 500g @ $5.99/kg" -> 
+Normalized: "organic  chicken 
+breast", IsFood: true, Expected: 
+"organic chicken breast"
+At line:1 char:31
++ node verify_logic.js *>$null; node 
+verify_logic.js 2>&1 | Out-File -F ...
++                               
+~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpec 
+   ified: (FAIL [10]: "org...chicken  
+   breast":String) [], RemoteExcept   
+ ion
+    + FullyQualifiedErrorId : NativeC 
+   ommandError
+ 
