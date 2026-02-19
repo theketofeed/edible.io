@@ -77,6 +77,7 @@ const MealCard = memo(function MealCard({
 	onNavigate: (dayIndex: number, mealType: string, meal: Meal) => void
 }) {
 	const [imageUrl, setImageUrl] = useState<string | null>(null)
+	const [imageError, setImageError] = useState(false)
 
 	useEffect(() => {
 		async function getImg() {
@@ -86,55 +87,46 @@ const MealCard = memo(function MealCard({
 		getImg()
 	}, [meal])
 
+	const fallbackSvg = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Crect fill='%23f3f4f6' width='56' height='56'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle' font-size='28' font-family='Arial'%3E${getMealTypeIcon(mealType)}%3C/text%3E%3C/svg%3E`
+
 	return (
 		<div
-			className="bg-white rounded-2xl p-4 shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer flex flex-col gap-3 w-full hover:scale-102"
+			className="group bg-white border border-gray-200 rounded-xl p-3 cursor-pointer flex flex-row items-center gap-3 hover:shadow-md hover:border-purple-200 hover:-translate-y-0.5 transition-all duration-200"
 			onClick={() => onNavigate(dayIndex, mealType, meal)}
+			style={{ height: '80px' }}
 		>
-			{/* Top section: Image and meal type badge */}
-			<div className="flex items-start gap-3">
-				{/* Food Image - Smaller */}
-				<div className="flex-shrink-0">
-					<img
-						src={imageUrl || getMealPlaceholder(mealType)}
-						alt={meal.title}
-						className="w-14 h-14 rounded-full object-cover shadow-sm"
-					/>
+			{/* Image: 56x56px square on the left */}
+			<img
+				src={imageError ? fallbackSvg : imageUrl || `https://source.unsplash.com/60x60/?${encodeURIComponent(meal.title)},food`}
+				alt={meal.title}
+				className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+				onError={() => setImageError(true)}
+			/>
+
+			{/* Content wrapper */}
+			<div className="flex-1 min-w-0 flex flex-col">
+				{/* Row 1: Badge and Calorie count */}
+				<div className="flex items-center justify-between mb-1">
+					<span className={`px-2 py-0.5 text-xs font-bold ${getMealTypeColor(mealType)}`}>
+						{mealType}
+					</span>
+					<span className="text-sm font-semibold text-gray-900">
+						{meal.nutrition?.calories || 0} kcal
+					</span>
 				</div>
 
-				{/* Meal Type Badge */}
-				<div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold uppercase mt-0.5 ${getMealTypeColor(mealType)} flex-shrink-0`}>
-					<span>{getMealTypeIcon(mealType)}</span>
-					<span>{mealType}</span>
-				</div>
-			</div>
-
-			{/* Meal Title - Allow text wrap */}
-			<div className="flex-1">
-				<h3 className="font-bold text-sm text-gray-900 mb-2 leading-snug">
+				{/* Row 2: Meal title */}
+				<h3 className="text-base font-semibold text-gray-900 line-clamp-1 group-hover:text-purple-600 transition-colors mb-1">
 					{meal.title}
 				</h3>
 
-				{/* Nutrition Badges - Compact, wrapping layout */}
-				<div className="flex flex-wrap gap-1">
-					<span className="bg-gray-100 text-gray-700 rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap">
-						{meal.nutrition?.calories || 0}cal
+				{/* Row 3: Nutrition + Arrow */}
+				<div className="flex items-center justify-between">
+					<span className="text-xs text-gray-600">
+						P:{meal.nutrition?.protein || 0} C:{meal.nutrition?.carbs || 0} F:{meal.nutrition?.fat || 0}
 					</span>
-					<span className="bg-gray-100 text-gray-700 rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap">
-						P:{meal.nutrition?.protein || 0}
-					</span>
-					<span className="bg-gray-100 text-gray-700 rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap">
-						C:{meal.nutrition?.carbs || 0}
-					</span>
-					<span className="bg-gray-100 text-gray-700 rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap">
-						F:{meal.nutrition?.fat || 0}
-					</span>
+					<ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-purple-600 transition-colors flex-shrink-0" />
 				</div>
-			</div>
-
-			{/* Click indicator at bottom */}
-			<div className="flex justify-end pt-1 border-t border-gray-100">
-				<ChevronRight className="w-4 h-4 text-gray-300" />
 			</div>
 		</div>
 	)
@@ -151,13 +143,13 @@ const DayCard = memo(function DayCard({
 	onNavigate: (dayIndex: number, mealType: string, meal: Meal) => void
 }) {
 	return (
-		<div className="flex flex-col space-y-4 w-full bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
-			<h2 className="text-2xl font-bold text-gray-800 mb-2 px-1">
+		<div className="flex flex-col space-y-3 w-full bg-gray-50/30 p-4 md:p-5 rounded-3xl border border-gray-100/50 border-b border-gray-200">
+			<h2 className="text-xl font-black text-gray-900 mb-1 px-1 tracking-tight w-8 h-8">
 				{day.day}
 			</h2>
 
 			{/* Meal Cards - Full width, stacked vertically */}
-			<div className="space-y-4 w-full">
+			<div className="space-y-2 w-full">
 				<MealCard meal={day.Breakfast} mealType="Breakfast" dayIndex={index} onNavigate={onNavigate} />
 				<MealCard meal={day.Lunch} mealType="Lunch" dayIndex={index} onNavigate={onNavigate} />
 				<MealCard meal={day.Dinner} mealType="Dinner" dayIndex={index} onNavigate={onNavigate} />
@@ -208,7 +200,7 @@ const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result
 				</div>
 
 				{/* Days Grid */}
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+				<div className="grid md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 w-full">
 					{days.map((d, index) => (
 						<DayCard key={d.day} day={d} index={index} onNavigate={handleNavigate} />
 					))}

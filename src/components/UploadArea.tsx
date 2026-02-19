@@ -9,10 +9,12 @@ import {
 	Upload,
 	CheckCircle,
 	AlertCircle,
-	Loader2
+	Loader2,
+	Camera
 } from 'lucide-react'
 import { extractGroceryItems } from '../utils/grocery'
 import { runOcrSpace } from '../lib/ocrSpaceOcr'
+import CameraCapture from './CameraCapture'
 
 interface Props {
 	onItemsDetected: (items: string[], rawText: string) => void
@@ -32,6 +34,7 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 	const [ocrConfidence, setOcrConfidence] = useState<number | undefined>()
 	const [detectedCount, setDetectedCount] = useState<number | null>(null)
 	const [errorMessage, setErrorMessage] = useState<string>('')
+	const [showCamera, setShowCamera] = useState(false)
 
 	useEffect(() => {
 		if (selectedFile && selectedFile.type.startsWith('image/')) {
@@ -165,6 +168,14 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 		onItemsDetected(items, manualText)
 	}, [manualText, onItemsDetected, onError])
 
+	const handleCameraCapture = useCallback((file: File) => {
+		console.log('[UploadArea] Camera photo captured')
+		setShowCamera(false)
+		const dt = new DataTransfer()
+		dt.items.add(file)
+		void handleFiles(dt.files)
+	}, [handleFiles])
+
 	const getDropzoneClass = () => {
 		let baseClass = 'dropzone'
 		if (uploadState === 'dragOver') return `${baseClass} dropzone-drag-over`
@@ -209,6 +220,7 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 								We support receipts from major stores • JPG, PNG, PDF
 							</p>
 						</div>
+					<div className="flex flex-col sm:flex-row gap-3 justify-center">
 						<button
 							type="button"
 							onClick={() => inputRef.current?.click()}
@@ -218,6 +230,16 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 							<FileUp className="w-4 h-4 mr-2" />
 							Choose File
 						</button>
+						<button
+							type="button"
+							onClick={() => setShowCamera(true)}
+							className="btn btn-outline text-sm border border-gray-300 hover:bg-gray-50"
+							disabled={disabled}
+						>
+							<Camera className="w-4 h-4 mr-2" />
+							Take Photo
+						</button>
+					</div>
 						<p className="text-xs text-black/50 flex items-center gap-1">
 							💡 Tip: Upload a clear photo for best results
 						</p>
@@ -357,6 +379,14 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 					disabled={disabled}
 				/>
 			</div>
+
+			{/* Camera Capture Modal */}
+			{showCamera && (
+				<CameraCapture
+					onCapture={handleCameraCapture}
+					onClose={() => setShowCamera(false)}
+				/>
+			)}
 
 			{/* Manual Text Input Section */}
 			<div className="grid gap-3 pt-4 border-t border-gray-200">

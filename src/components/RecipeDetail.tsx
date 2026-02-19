@@ -82,7 +82,7 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, showToas
         ...meal,
         title: meal.title || 'Untitled Recipe',
         ingredients: Array.isArray(meal.ingredients) ? meal.ingredients : [],
-        instructions: meal.instructions || 'No instructions provided.',
+        instructions: Array.isArray(meal.instructions) ? meal.instructions : [meal.instructions || 'No instructions provided.'],
         nutrition: meal.nutrition,
         prepTime: meal.prepTime || 0,
         cookTime: meal.cookTime || 0,
@@ -94,34 +94,14 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, showToas
         return `edible-recipe-${dayName}-${mealType}-${safeMeal.title.replace(/\s+/g, '-').toLowerCase()}`
     }, [dayName, mealType, safeMeal.title])
 
-    // Helper function to parse instructions into individual steps
-    function parseInstructions(instructions: string): string[] {
-        return instructions
-            .split('\n')
-            .map(step => step.trim())
-            .filter(step => step.length > 0)
-            .map(step => {
-                // Remove existing step numbers if present
-                return step.replace(/^\d+\.\s*/, '')
-            })
-    }
-
     // Parse instructions into distinct steps
     const instructionSteps = useMemo(() => {
-        if (!safeMeal.instructions) return []
-
-        try {
-            const steps = parseInstructions(safeMeal.instructions)
-            return steps.length > 0 ? steps : [safeMeal.instructions]
-        } catch (e) {
-            console.error('Error parsing instructions:', e)
-            return [safeMeal.instructions]
-        }
+        return safeMeal.instructions
     }, [safeMeal.instructions])
 
     const handleShare = async () => {
         const ingredients = safeMeal.ingredients.map(i => `- ${i}`).join('\n')
-        const steps = instructionSteps.map((s, i) => `${i + 1}. ${s}`).join('\n\n')
+        const steps = safeMeal.instructions.map((s, i) => `${i + 1}. ${s}`).join('\n\n')
         const nutra = safeMeal.nutrition as any
         const nutrition = nutra
             ? `\n📊 Nutrition (per serving):\n🔥 ${nutra.calories || 'N/A'} kcal | 🥩 ${nutra.protein || 'N/A'}g | 🍞 ${nutra.carbs || 'N/A'}g | 🥑 ${nutra.fat || 'N/A'}g`
@@ -345,6 +325,40 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, showToas
         }
     ]
 
+    const tipsContent = useMemo(() => {
+        if (!safeMeal.tips || safeMeal.tips.length === 0) return null
+
+        return (
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25, duration: 0.4 }}
+                className="bg-purple-900 text-white rounded-[2rem] shadow-xl p-8 md:p-10 mb-8 md:mb-12 relative overflow-hidden group"
+            >
+                <div className="absolute top-0 right-0 w-64 h-64 bg-purple-800 rounded-full blur-3xl -mr-32 -mt-32 opacity-50 group-hover:scale-110 transition-transform duration-700"></div>
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-pink-500 rounded-full blur-3xl -ml-16 -mb-16 opacity-20"></div>
+
+                <h2 className="text-xl md:text-2xl font-black mb-6 flex items-center gap-4 relative z-10">
+                    <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30 shadow-lg">
+                        <Zap className="w-6 h-6 text-yellow-300 fill-yellow-300" />
+                    </div>
+                    Chef's Tips
+                </h2>
+
+                <div className="space-y-4 relative z-10">
+                    {safeMeal.tips.map((tip, idx) => (
+                        <div key={idx} className="flex gap-4 items-start bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/10 hover:bg-white/15 transition-colors">
+                            <span className="text-2xl mt-1 leading-none">✨</span>
+                            <p className="text-purple-50 font-medium leading-relaxed italic">
+                                "{tip}"
+                            </p>
+                        </div>
+                    ))}
+                </div>
+            </motion.div>
+        )
+    }, [safeMeal.tips])
+
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -512,6 +526,9 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, showToas
                         <NutritionBadges nutrition={safeMeal.nutrition} />
                     </motion.div>
                 )}
+
+                {/* Tips Section */}
+                {tipsContent}
 
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}

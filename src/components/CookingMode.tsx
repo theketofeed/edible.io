@@ -9,18 +9,7 @@ interface CookingModeProps {
     storageKey?: string
 }
 
-// Helper function to parse instructions into individual steps
-function parseInstructions(instructions: string): string[] {
-    return instructions
-        .split('\n')
-        .map(step => step.trim())
-        .filter(step => step.length > 0)
-        .map(step => {
-            // Remove existing step numbers if present
-            return step.replace(/^\d+\.\s*/, '')
-        })
-}
-
+// Cooking Mode Component
 export default function CookingMode({ steps, onClose, mealTitle, storageKey }: CookingModeProps) {
     const [currentStepIndex, setCurrentStepIndex] = useState(0)
     const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set())
@@ -194,8 +183,8 @@ export default function CookingMode({ steps, onClose, mealTitle, storageKey }: C
                             exit={{ opacity: 0, y: -20 }}
                             transition={{ duration: 0.4, ease: 'easeOut' }}
                             className={`text-4xl md:text-6xl font-black leading-tight md:leading-[1.1] mb-12 ${completedSteps.has(currentStepIndex)
-                                    ? 'text-gray-500 line-through'
-                                    : 'text-gray-900'
+                                ? 'text-gray-500 line-through'
+                                : 'text-gray-900'
                                 }`}
                         >
                             {currentStep}

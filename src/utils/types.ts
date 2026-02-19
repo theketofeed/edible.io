@@ -7,8 +7,9 @@ export interface Meal {
 	prepTime: number
 	cookTime: number
 	totalTime: number
-	instructions: string
+	instructions: string[]
 	ingredients: string[]
+	tips?: string[]
 	nutrition?: {
 		calories: number
 		protein: number
