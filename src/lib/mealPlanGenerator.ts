@@ -106,6 +106,112 @@ export const PANTRY_STAPLES = [
 	'water', 'chicken broth', 'vegetable broth', 'beef broth', 'milk'
 ]
 
+function extractIngredientsFromResponse(aiResponse: string): string[] {
+	console.log('[Validation] Extracting ingredients from AI response...')
+
+	// Find all "ingredients": [...] arrays in the JSON
+	const ingredientPattern = /"ingredients"\s*:\s*\[(.*?)\]/gs
+	const allIngredients = new Set<string>()
+	let match
+
+	while ((match = ingredientPattern.exec(aiResponse)) !== null) {
+		const arrayContent = match[1]
+		// Extract quoted strings from the array
+		const itemMatches = arrayContent.match(/"([^"]+)"/g)
+
+		if (itemMatches) {
+			for (const item of itemMatches) {
+				// Remove quotes, lowercase, and trim
+				const cleanedItem = item.replace(/^"|"$/g, '').toLowerCase().trim()
+				if (cleanedItem) {
+					allIngredients.add(cleanedItem)
+				}
+			}
+		}
+	}
+
+	const result = Array.from(allIngredients)
+	console.log(`[Validation] Extracted ${result.length} unique ingredients from response`)
+	console.log('[Validation] Ingredients found:', result)
+
+	return result
+}
+
+function preValidateIngredients(aiResponse: string, allowedItems: string[]): { valid: boolean; violations: string[] } {
+	console.log('[PreValidation] Starting ingredient pre-validation before JSON parsing...')
+
+	const usedIngredients = extractIngredientsFromResponse(aiResponse)
+
+	// Create a Set of allowed ingredients (lowercase, trimmed)
+	const allowedSet = new Set<string>()
+	for (const item of allowedItems) {
+		allowedSet.add(item.toLowerCase().trim())
+	}
+
+	// Define pantry basics
+	const pantryBasics = new Set<string>([
+		'salt', 'pepper', 'water', 'oil', 'olive oil', 'black pepper',
+		'garlic powder', 'onion powder', 'paprika', 'cumin', 'oregano', 'basil',
+		'vegetable oil', 'canola oil', 'butter', 'vinegar', 'lemon juice', 'soy sauce', 'hot sauce',
+		'white pepper', 'coriander', 'chili powder', 'cayenne pepper', 'rosemary', 'parsley', 'bay leaves',
+		'cinnamon', 'nutmeg', 'ginger powder', 'turmeric', 'white vinegar', 'apple cider vinegar',
+		'balsamic vinegar', 'worcestershire sauce', 'garlic', 'onion', 'fresh ginger', 'green onions', 'shallots',
+		'all-purpose flour', 'cornstarch', 'baking powder', 'baking soda', 'sugar', 'brown sugar', 'honey', 'maple syrup',
+		'chicken broth', 'vegetable broth', 'beef broth', 'milk'
+	])
+
+	const violations: string[] = []
+
+	for (const ingredient of usedIngredients) {
+		let isAllowed = false
+
+		// Check exact match in allowed items
+		if (allowedSet.has(ingredient)) {
+			isAllowed = true
+		}
+
+		// Check if ingredient is a pantry basic
+		if (pantryBasics.has(ingredient)) {
+			isAllowed = true
+		}
+
+		// Flexible matching: check if allowed item contains or is contained by ingredient
+		if (!isAllowed) {
+			for (const allowed of allowedSet) {
+				if (ingredient.includes(allowed) || allowed.includes(ingredient)) {
+					isAllowed = true
+					break
+				}
+			}
+		}
+
+		// Check pantry basics with flexible matching
+		if (!isAllowed) {
+			for (const pantry of pantryBasics) {
+				if (ingredient.includes(pantry) || pantry.includes(ingredient)) {
+					isAllowed = true
+					break
+				}
+			}
+		}
+
+		if (!isAllowed) {
+			violations.push(ingredient)
+		}
+	}
+
+	if (violations.length > 0) {
+		console.error(`[PreValidation] ❌ CRITICAL: Found ${violations.length} forbidden ingredients in AI response!`)
+		console.error('[PreValidation] Forbidden ingredients:', violations.join(', '))
+		console.error('[PreValidation] This indicates Claude is attempting to hallucinate ingredients.')
+		console.error('[PreValidation] The response will be rejected before JSON parsing.')
+		return { valid: false, violations }
+	}
+
+	console.log('[PreValidation] ✅ All ingredients passed pre-validation!')
+	return { valid: true, violations: [] }
+}
+
 function buildPrompt(items: string[], diet: DietType, days?: number): string {
 	const itemsList = items.map((item, index) => `${index + 1}. ${item}`).join('\n')
 	const requestedDays = days || 3
@@ -150,6 +256,80 @@ ALLOWED INGREDIENTS ONLY:
 YOUR GROCERY LIST (use ONLY these):
 ${itemsList}
 
+═══════════════════════════════════════════════════════════
+🚫 EXPLICIT FORBIDDEN EXAMPLES - COMMON HALLUCINATIONS 🚫
+═══════════════════════════════════════════════════════════
+
+These ingredients are FREQUENTLY HALLUCINATED. DO NOT USE unless explicitly found in your grocery list above:
+
+🚫 STRICTLY FORBIDDEN (Hallucination Risk):
+- Banana, berries, strawberries, blueberries, raspberries
+- Milk, yogurt, Greek yogurt, cream, sour cream
+- Eggs, egg whites, egg yolks
+- Bread, toast, bagels, baguettes, pita, naan, wraps, flour tortillas
+- Pasta, spaghetti, noodles, lasagna sheets
+- Rice, risotto, brown rice, white rice, quinoa
+- Cheese (all types), feta, cheddar, mozzarella, parmesan
+- Avocado (ONLY if explicitly in your list above)
+- Chickpeas, kidney beans, black beans, white beans, lentils
+- Peanut butter, almond butter, cashews, walnuts, pecans, almonds
+- Mushrooms, portobello, shiitake
+- Bell peppers, sweet peppers, chili peppers
+- Salmon, shrimp, tuna, cod, any fish not listed
+- Honey, maple syrup, agave nectar
+- Sesame oil, peanut oil, coconut oil (unless listed)
+- Ginger, turmeric, cumin (beyond basic spices)
+
+═══════════════════════════════════════════════════════════
+✅ TWO-STEP VALIDATION PROCESS
+═══════════════════════════════════════════════════════════
+
+STEP 1 - VERIFICATION: Before using ANY ingredient in a recipe, you MUST:
+  a) Check if it appears in the GROCERY LIST above
+  b) If NOT in the list → DO NOT USE
+  c) If in the list → Proceed to step 2
+
+STEP 2 - CONFIRMATION: For every meal, mentally verify:
+  ✅ All ingredients are on the grocery list
+  ❌ NO items from the forbidden list above
+  ✅ Only basic pantry staples added (salt, pepper, oil, garlic powder, etc.)
+
+═══════════════════════════════════════════════════════════
+❌ REJECTED EXAMPLE (HALLUCINATION ERROR)
+═══════════════════════════════════════════════════════════
+
+❌ WRONG - "Peanut Butter Banana Oatmeal"
+- Contains: Banana (hallucinated - was NOT in list)
+- Contains: Peanut Butter (hallucinated - was NOT in list)
+- Contains: Oats (hallucinated - was NOT in list)
+WHY REJECTED: Uses 3 items not in the provided grocery list. This violates the core rule.
+
+═══════════════════════════════════════════════════════════
+✅ ACCEPTED EXAMPLE (CORRECT USAGE)
+═══════════════════════════════════════════════════════════
+
+✅ CORRECT - "Lemon Peanut Butter Chicken"
+- Contains: Lemon (✅ verified on grocery list)
+- Contains: Peanut Butter (✅ verified on grocery list - was included above)
+- Contains: Chicken (✅ verified on grocery list)
+- Prepared with: Salt, pepper, olive oil (✅ basic pantry staples)
+WHY ACCEPTED: Uses ONLY ingredients that are either on the grocery list or standard pantry items.
+
+═══════════════════════════════════════════════════════════
+⚠️ FINAL WARNING - NON-NEGOTIABLE
+═══════════════════════════════════════════════════════════
+
+🛑 ANY MEAL PLAN CONTAINING INGREDIENTS NOT ON THE LIST ABOVE WILL BE AUTOMATICALLY REJECTED 🛑
+
+Before generating recipes:
+1. Look at the grocery list (20-30 items typically)
+2. Work ONLY with those items
+3. Combine them creatively with basic pantry staples
+4. If the list seems limited, make variations (e.g., 3 different chicken recipes)
+5. NEVER add "helpful" ingredients thinking they're normal to include
+
+Your job: Creative meal planning with CONSTRAINTS, not unlimited cooking.
+
 ✅ STRATEGY:
 - For each meal, pick 2-3 items from the list above + basic pantry staples
 - Create realistic recipes combining these exact items
@@ -159,9 +339,11 @@ ${itemsList}
 
 Recipe requirements:
 - Real recipe names (searchable on cooking sites)
-- 4-8 detailed instruction steps
+- Exactly 4-8 detailed instruction steps, returned as an ARRAY of strings
 - Include cooking times and techniques
 - Be specific: "dice into 1/4 inch pieces", "sauté for 5-7 minutes until golden"
+- Include 2-3 specific "Tips" (ingredient swaps, storage, or cooking tricks) as an ARRAY of strings
+- MANDATORY: The VERY LAST step of EVERY recipe's instructions array MUST be exactly "ENJOY!❤️"
 - Always include nutrition data: {calories, protein, carbs, fat, fiber}
 
 Generate exactly ${requestedDays} complete ${requestedDays === 1 ? "day" : "days"} (Breakfast, Lunch, Dinner each day) using ONLY the groceries listed above.`;
@@ -183,8 +365,9 @@ Return your response as valid JSON matching this EXACT structure. Each day MUST 
       "day": "Day 1",
       "Breakfast": {
         "title": "Recipe Name",
-        "instructions": "Step 1... Step 2... etc",
+        "instructions": ["Step 1 content", "Step 2 content", "ENJOY!❤️"],
         "ingredients": ["item 1", "item 2"],
+        "tips": ["Tip 1", "Tip 2"],
         "prepTime": 10,
         "cookTime": 15,
         "totalTime": 25,
@@ -228,12 +411,28 @@ function validateNutritionData(nutrition: any, context: string) {
 
 function coerceMeal(meal: any, fallbackTitle: string, context: string = 'Unknown meal'): Meal {
 	if (meal && typeof meal === 'object' && meal.title) {
-		const rawInstructions = String(meal.instructions || 'Prepare according to recipe.').trim()
+		let instructions: string[] = []
+		if (Array.isArray(meal.instructions)) {
+			instructions = meal.instructions.map(String)
+		} else if (typeof meal.instructions === 'string') {
+			instructions = meal.instructions.split('\n').map(s => s.trim()).filter(Boolean)
+			// Remove step numbers if they exist
+			instructions = instructions.map(s => s.replace(/^\d+\.\s*/, ''))
+		}
+
+		const tips = Array.isArray(meal.tips) ? meal.tips.map(String) : []
 		const ingredients = Array.isArray(meal.ingredients) ? meal.ingredients.map(String) : []
 
+		// Ensure "ENJOY!❤️" is at the end
+		if (instructions.length > 0 && !instructions[instructions.length - 1].includes('ENJOY!')) {
+			instructions.push('ENJOY!❤️')
+		} else if (instructions.length === 0) {
+			instructions = ['Prepare according to recipe.', 'ENJOY!❤️']
+		}
+
 		// Validation: Warn if instructions are too short (likely vague)
-		if (rawInstructions.length < 50) {
-			console.warn(`[Coerce] ⚠️ Instructions too short (<50 chars) for ${context}: "${rawInstructions}"`)
+		if (instructions.join(' ').length < 50) {
+			console.warn(`[Coerce] ⚠️ Instructions too short (<50 chars) for ${context}: "${instructions.join(' ')}"`)
 		}
 
 		// Validation: Warn if ingredient list is too short
@@ -246,8 +445,9 @@ function coerceMeal(meal: any, fallbackTitle: string, context: string = 'Unknown
 			prepTime: Number(meal.prepTime) || 5,
 			cookTime: Number(meal.cookTime) || 5,
 			totalTime: Number(meal.totalTime) || (Number(meal.prepTime) || 5) + (Number(meal.cookTime) || 5),
-			instructions: rawInstructions,
-			ingredients: ingredients
+			instructions,
+			ingredients,
+			tips: tips.length > 0 ? tips : undefined
 		}
 
 		// Add nutrition if present
@@ -266,27 +466,13 @@ function coerceMeal(meal: any, fallbackTitle: string, context: string = 'Unknown
 
 		return baseMeal
 	}
-	// Fallback for old string format
-	if (typeof meal === 'string') {
-		const instructions = meal.includes('(') ? meal.split('(')[1]?.split(')')[0] || 'Prepare according to recipe.' : 'Prepare according to recipe.'
-		if (instructions.length < 50) {
-			console.warn(`[Coerce] ⚠️ Instructions too short (<50 chars) for old format meal: "${instructions}"`)
-		}
-		return {
-			title: meal.split('(')[0].trim() || fallbackTitle,
-			prepTime: 10,
-			cookTime: 10,
-			totalTime: 20,
-			instructions: instructions,
-			ingredients: []
-		}
-	}
+	// Fallback for old formats
 	return {
 		title: fallbackTitle,
 		prepTime: 10,
 		cookTime: 10,
 		totalTime: 20,
-		instructions: 'Prepare according to recipe.',
+		instructions: ['Prepare according to recipe.', 'ENJOY!❤️'],
 		ingredients: []
 	}
 }
@@ -552,13 +738,14 @@ function validateRecipeQuality(result: { totalDays: number; days: DayMeals[] }):
 			}
 
 			// Check instruction length
-			if (meal.instructions.length < 100) {
-				console.warn(`[Quality] Instructions too short (${meal.instructions.length} chars): "${meal.title}"`)
+			const fullInstructions = meal.instructions.join(' ')
+			if (fullInstructions.length < 100) {
+				console.warn(`[Quality] Instructions too short (${fullInstructions.length} chars): "${meal.title}"`)
 				warnings++
 			}
 
 			// Check number of steps
-			const stepCount = meal.instructions.split('\n').length
+			const stepCount = meal.instructions.length
 			if (stepCount < 4) {
 				console.warn(`[Quality] Too few steps (${stepCount}): "${meal.title}"`)
 				warnings++
@@ -597,14 +784,15 @@ function calculateRecipeQualityScore(meal: Meal): number {
 	}
 
 	// Instruction length (20 points)
-	if (meal.instructions.length >= 200) score += 20
-	else if (meal.instructions.length >= 100) score += 10
+	const fullInstructionsScore = meal.instructions.join(' ')
+	if (fullInstructionsScore.length >= 200) score += 20
+	else if (fullInstructionsScore.length >= 100) score += 10
 
 	// Number of steps (20 points)
-	const stepCount = meal.instructions.split('\n').length
-	if (stepCount >= 6) score += 20
-	else if (stepCount >= 4) score += 15
-	else if (stepCount >= 3) score += 10
+	const stepCountScore = meal.instructions.length
+	if (stepCountScore >= 6) score += 20
+	else if (stepCountScore >= 4) score += 15
+	else if (stepCountScore >= 3) score += 10
 
 	// Ingredient count (15 points)
 	if (meal.ingredients.length >= 5) score += 15
@@ -615,7 +803,7 @@ function calculateRecipeQualityScore(meal: Meal): number {
 
 	// Cooking techniques used (10 points)
 	const techniques = ['sauté', 'roast', 'grill', 'bake', 'simmer', 'fry', 'steam']
-	const hasTechnique = techniques.some(t => meal.instructions.toLowerCase().includes(t))
+	const hasTechnique = techniques.some(t => meal.instructions.join(' ').toLowerCase().includes(t))
 	if (hasTechnique) score += 10
 
 	return Math.min(score, maxScore)
@@ -648,7 +836,7 @@ function logRecipeQualityScores(result: { days: DayMeals[] }): void {
 	}
 }
 
-async function callClaude(prompt: string, diet: DietType): Promise<{ totalDays: number; days: DayMeals[] } | null> {
+async function callClaude(prompt: string, diet: DietType, items: string[]): Promise<{ totalDays: number; days: DayMeals[] } | null> {
 	console.log('[Claude] Attempting to use Claude API for diet:', diet)
 
 	try {
@@ -675,6 +863,20 @@ async function callClaude(prompt: string, diet: DietType): Promise<{ totalDays: 
 
 		console.log('[Claude] Raw AI response:', content)
 
+		// PRE-VALIDATION: Check for hallucinated ingredients BEFORE parsing JSON
+		console.log('[Claude] ========== PRE-VALIDATION: Checking for ingredient hallucinations ==========')
+		const preValidation = preValidateIngredients(content, items)
+
+		if (!preValidation.valid) {
+			console.error('[Claude] ❌ PRE-VALIDATION FAILED')
+			console.error(`[Claude] The AI response contains ${preValidation.violations.length} forbidden ingredients:`)
+			console.error(`[Claude] ${preValidation.violations.join(', ')}`)
+			console.error('[Claude] Rejecting response to prevent hallucinated meal plans.')
+			throw new Error(`Pre-validation failed: Detected ${preValidation.violations.length} hallucinated ingredients: ${preValidation.violations.join(', ')}`)
+		}
+
+		console.log('[Claude] ✅ PRE-VALIDATION PASSED - All ingredients are allowed')
+
 		// Claude sometimes adds markdown code fences, strip them
 		const cleaned = content.replace(/```json\n?|\n?```/g, '').trim()
 
@@ -695,7 +897,7 @@ async function callClaude(prompt: string, diet: DietType): Promise<{ totalDays: 
 	}
 }
 
-async function callGroq(prompt: string, diet: DietType): Promise<{ totalDays: number; days: DayMeals[] } | null> {
+async function callGroq(prompt: string, diet: DietType, items: string[]): Promise<{ totalDays: number; days: DayMeals[] } | null> {
 	console.log('[Groq] Attempting to use Groq API as fallback for diet:', diet)
 
 	// Use literal import.meta.env for Vite static replacement
@@ -739,6 +941,21 @@ async function callGroq(prompt: string, diet: DietType): Promise<{ totalDays: nu
 		const content = json.choices?.[0]?.message?.content
 		if (!content) throw new Error('Missing content in Groq response')
 		console.log('[Groq] Raw AI response:', content)
+
+		// PRE-VALIDATION: Check for hallucinated ingredients BEFORE parsing JSON
+		console.log('[Groq] ========== PRE-VALIDATION: Checking for ingredient hallucinations ==========')
+		const preValidation = preValidateIngredients(content, items)
+
+		if (!preValidation.valid) {
+			console.error('[Groq] ❌ PRE-VALIDATION FAILED')
+			console.error(`[Groq] The AI response contains ${preValidation.violations.length} forbidden ingredients:`)
+			console.error(`[Groq] ${preValidation.violations.join(', ')}`)
+			console.error('[Groq] Rejecting response to prevent hallucinated meal plans.')
+			throw new Error(`Pre-validation failed: Detected ${preValidation.violations.length} hallucinated ingredients: ${preValidation.violations.join(', ')}`)
+		}
+
+		console.log('[Groq] ✅ PRE-VALIDATION PASSED - All ingredients are allowed')
+
 		const parsed = JSON.parse(content)
 		console.log('[Groq] Parsed JSON:', parsed)
 		const coerced = coerceDaysStructure(parsed)
@@ -755,12 +972,12 @@ async function callGroq(prompt: string, diet: DietType): Promise<{ totalDays: nu
 	}
 }
 
-async function callAI(prompt: string, diet: DietType): Promise<{ totalDays: number; days: DayMeals[] } | null> {
+async function callAI(prompt: string, diet: DietType, items: string[]): Promise<{ totalDays: number; days: DayMeals[] } | null> {
 	console.log('[AI] ========== STARTING AI CALL WITH CLAUDE (PRIMARY) ==========')
 
 	// Priority 1: Claude Haiku ($0.25 per 1M tokens - super cheap, ~$0.0005 per meal plan)
 	console.log('[AI] Trying Claude API (Primary)...')
-	const claudeResult = await callClaude(prompt, diet)
+	const claudeResult = await callClaude(prompt, diet, items)
 	if (claudeResult && claudeResult.totalDays && claudeResult.days.length) {
 		console.log('[AI] ✅ Claude succeeded! Using Claude result.')
 		return claudeResult
@@ -769,7 +986,7 @@ async function callAI(prompt: string, diet: DietType): Promise<{ totalDays: numb
 
 	// Priority 2: Groq (unlimited free)
 	console.log('[AI] Trying Groq API (Fallback)...')
-	const groqResult = await callGroq(prompt, diet)
+	const groqResult = await callGroq(prompt, diet, items)
 	if (groqResult && groqResult.totalDays && groqResult.days.length) {
 		console.log('[AI] ✅ Groq succeeded! Using Groq result.')
 		return groqResult
@@ -932,7 +1149,15 @@ function buildFallbackPlan(items: string[], diet: DietType, sourceText: string, 
 			: `Classic ${protein} & ${grain} Breakfast`
 
 		// Detailed instructions
-		const instructions = `1. Prepare your ingredients: gather ${protein}, ${grain}${extra ? `, and ${extra}` : ''}.\n2. Heat a non-stick skillet over medium heat with a knob of butter.\n3. Cook ${protein} for 5-7 minutes, seasoning with salt and pepper, until fully cooked or heated through.\n4. Meanwhile, prepare ${grain} according to package instructions or toast until golden brown.\n5. Plate the ${protein} alongside the ${grain}.\n6. ${extra ? `Finish by adding ${extra} on top or on the side.` : 'Serve hot and enjoy your balanced breakfast.'}`
+		const instructions = [
+			`Prepare your ingredients: gather ${protein}, ${grain}${extra ? `, and ${extra}` : ''}.`,
+			`Heat a non-stick skillet over medium heat with a knob of butter.`,
+			`Cook ${protein} for 5-7 minutes, seasoning with salt and pepper, until fully cooked or heated through.`,
+			`Meanwhile, prepare ${grain} according to package instructions or toast until golden brown.`,
+			`Plate the ${protein} alongside the ${grain}.`,
+			extra ? `Finish by adding ${extra} on top or on the side.` : 'Serve hot and enjoy your balanced breakfast.',
+			'ENJOY!❤️'
+		]
 
 		return {
 			title,
@@ -978,7 +1203,15 @@ function buildFallbackPlan(items: string[], diet: DietType, sourceText: string, 
 		}
 
 		// Detailed Instructions
-		const instructions = `1. Wash and chop ${veggie} into bite-sized pieces.\n2. If raw, season ${protein} with salt and pepper, then cook in a pan with olive oil over medium-high heat for 6-8 minutes until golden and cooked through.\n3. Prepare ${base} (if needed) or warm up if pre-cooked.\n4. In a large bowl, combine the ${base}, ${veggie}, and cooked ${protein}.\n5. Drizzle with ${fat === 'Olive Oil' ? 'extra olive oil' : fat} and a splash of lemon juice.\n6. Toss everything gently to combine and season with extra salt or pepper if needed.`
+		const instructions = [
+			`Wash and chop ${veggie} into bite-sized pieces.`,
+			`If raw, season ${protein} with salt and pepper, then cook in a pan with olive oil over medium-high heat for 6-8 minutes until golden and cooked through.`,
+			`Prepare ${base} (if needed) or warm up if pre-cooked.`,
+			`In a large bowl, combine the ${base}, ${veggie}, and cooked ${protein}.`,
+			`Drizzle with ${fat === 'Olive Oil' ? 'extra olive oil' : fat} and a splash of lemon juice.`,
+			`Toss everything gently to combine and season with extra salt or pepper if needed.`,
+			'ENJOY!❤️'
+		]
 
 		return {
 			title,
@@ -1017,7 +1250,15 @@ function buildFallbackPlan(items: string[], diet: DietType, sourceText: string, 
 		const title = `${method} ${protein} with ${veg1}`
 
 		// Detailed Instructions
-		const instructions = `1. Preheat your oven to 400°F (200°C) or heat a large skillet over medium-high heat.\n2. Pat ${protein} dry and season generously with salt, pepper, and dried herbs.\n3. Toss ${veg1} and ${veg2} with olive oil, minced garlic, salt, and pepper.\n4. If baking: Arrange everything on a sheet pan and roast for 20-25 minutes until ${protein} is cooked through and veggies are tender.\n5. If sautéing: Cook ${protein} in the skillet for 4-5 minutes per side, then remove. Add veggies to the same pan and sauté for 8-10 minutes until soft.\n6. Plate the ${protein} alongside the roasted vegetables and drizzle with any pan juices before serving.`
+		const instructions = [
+			`Preheat your oven to 400°F (200°C) or heat a large skillet over medium-high heat.`,
+			`Pat ${protein} dry and season generously with salt, pepper, and dried herbs.`,
+			`Toss ${veg1} and ${veg2} with olive oil, minced garlic, salt, and pepper.`,
+			`If baking: Arrange everything on a sheet pan and roast for 20-25 minutes until ${protein} is cooked through and veggies are tender.`,
+			`If sautéing: Cook ${protein} in the skillet for 4-5 minutes per side, then remove. Add veggies to the same pan and sauté for 8-10 minutes until soft.`,
+			`Plate the ${protein} alongside the roasted vegetables and drizzle with any pan juices before serving.`,
+			'ENJOY!❤️'
+		]
 
 		return {
 			title,
@@ -1082,7 +1323,8 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
 	console.log('[Generator] Prompt length:', prompt.length, 'characters')
 
 	// Use the new AI caller with priority fallback (Gemini -> Groq -> Fallback)
-	const aiResult = await callAI(prompt, diet)
+	// Pass cleanedItems for ingredient pre-validation
+	const aiResult = await callAI(prompt, diet, cleanedItems)
 	console.log('[Generator] AI result:', aiResult)
 	console.log('[Generator] AI result totalDays:', aiResult?.totalDays)
 	console.log('[Generator] AI result days count:', aiResult?.days?.length)
