@@ -21,13 +21,13 @@ function getMealPlaceholder(mealType: string): string {
 	return placeholders[mealType] || placeholders.Dinner
 }
 
-function getMealTypeColor(mealType: string): string {
-	const colors = {
-		Breakfast: 'bg-orange-100 text-orange-700 border border-orange-200',
-		Lunch: 'bg-green-100 text-green-700 border border-green-200',
-		Dinner: 'bg-purple-100 text-purple-700 border border-purple-200'
+function getMealTypeGlass(mealType: string): string {
+	const styles = {
+		Breakfast: 'bg-amber-50/80 text-amber-700 border border-amber-200/60 backdrop-blur-sm',
+		Lunch: 'bg-emerald-50/80 text-emerald-700 border border-emerald-200/60 backdrop-blur-sm',
+		Dinner: 'bg-violet-50/80 text-violet-700 border border-violet-200/60 backdrop-blur-sm'
 	}
-	return colors[mealType as keyof typeof colors] || 'bg-gray-100 text-gray-700'
+	return styles[mealType as keyof typeof styles] || 'bg-gray-100/80 text-gray-600 border border-gray-200/60'
 }
 
 function getMealTypeIcon(mealType: string): string {
@@ -87,47 +87,48 @@ const MealCard = memo(function MealCard({
 		getImg()
 	}, [meal])
 
-	const fallbackSvg = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Crect fill='%23f3f4f6' width='56' height='56'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle' font-size='28' font-family='Arial'%3E${getMealTypeIcon(mealType)}%3C/text%3E%3C/svg%3E`
+	const fallbackSvg = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Crect fill='%23f3f4f6' width='56' height='56' rx='10'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle' font-size='26'%3E${getMealTypeIcon(mealType)}%3C/text%3E%3C/svg%3E`
+
+	const cal = meal.nutrition?.calories ?? 0
+	const p = meal.nutrition?.protein ?? 0
+	const c = meal.nutrition?.carbs ?? 0
+	const f = meal.nutrition?.fat ?? 0
 
 	return (
 		<div
-			className="group bg-white border border-gray-200 rounded-xl p-3 cursor-pointer flex flex-row items-center gap-3 hover:shadow-md hover:border-purple-200 hover:-translate-y-0.5 transition-all duration-200"
+			className="group bg-white rounded-2xl border border-gray-100 shadow-sm cursor-pointer flex flex-row items-center gap-3 px-3 py-3 hover:shadow-md hover:border-purple-100 hover:-translate-y-0.5 transition-all duration-200"
 			onClick={() => onNavigate(dayIndex, mealType, meal)}
-			style={{ height: '80px' }}
 		>
-			{/* Image: 56x56px square on the left */}
+			{/* Image */}
 			<img
-				src={imageError ? fallbackSvg : imageUrl || `https://source.unsplash.com/60x60/?${encodeURIComponent(meal.title)},food`}
+				src={imageError ? fallbackSvg : (imageUrl || fallbackSvg)}
 				alt={meal.title}
-				className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+				className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
 				onError={() => setImageError(true)}
 			/>
 
-			{/* Content wrapper */}
-			<div className="flex-1 min-w-0 flex flex-col">
-				{/* Row 1: Badge and Calorie count */}
-				<div className="flex items-center justify-between mb-1">
-					<span className={`px-2 py-0.5 text-xs font-bold ${getMealTypeColor(mealType)}`}>
+			{/* Content */}
+			<div className="flex-1 min-w-0">
+				{/* Title */}
+				<p className="text-sm font-bold text-gray-900 leading-snug line-clamp-1 group-hover:text-purple-700 transition-colors mb-1.5">
+					{meal.title}
+				</p>
+
+				{/* Badge — centered between title and macros */}
+				<div className="mb-1.5">
+					<span className={`inline-block text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${getMealTypeGlass(mealType)}`}>
 						{mealType}
 					</span>
-					<span className="text-sm font-semibold text-gray-900">
-						{meal.nutrition?.calories || 0} kcal
-					</span>
 				</div>
 
-				{/* Row 2: Meal title */}
-				<h3 className="text-base font-semibold text-gray-900 line-clamp-1 group-hover:text-purple-600 transition-colors mb-1">
-					{meal.title}
-				</h3>
-
-				{/* Row 3: Nutrition + Arrow */}
-				<div className="flex items-center justify-between">
-					<span className="text-xs text-gray-600">
-						P:{meal.nutrition?.protein || 0} C:{meal.nutrition?.carbs || 0} F:{meal.nutrition?.fat || 0}
-					</span>
-					<ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-purple-600 transition-colors flex-shrink-0" />
-				</div>
+				{/* Macros — all on one line */}
+				<p className="text-[11px] text-gray-400 font-medium tracking-wide">
+				<span className="font-bold text-gray-900">{cal}</span>kcal &nbsp;·&nbsp; <span className="font-bold text-gray-900">{c}</span>C &nbsp;·&nbsp; <span className="font-bold text-gray-900">{p}</span>P &nbsp;·&nbsp; <span className="font-bold text-gray-900">{f}</span>F
+				</p>
 			</div>
+
+			{/* Arrow */}
+			<ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-purple-400 transition-colors flex-shrink-0" />
 		</div>
 	)
 })
@@ -144,7 +145,7 @@ const DayCard = memo(function DayCard({
 }) {
 	return (
 		<div className="flex flex-col space-y-3 w-full bg-gray-50/30 p-4 md:p-5 rounded-3xl border border-gray-100/50 border-b border-gray-200">
-			<h2 className="text-xl font-black text-gray-900 mb-1 px-1 tracking-tight w-8 h-8">
+			<h2 className="text-lg font-black text-gray-900 mb-2 tracking-tight whitespace-nowrap">
 				{day.day}
 			</h2>
 
