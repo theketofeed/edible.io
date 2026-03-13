@@ -121,9 +121,14 @@ function extractIngredientsFromResponse(aiResponse: string): string[] {
 
 		if (itemMatches) {
 			for (const item of itemMatches) {
-				// Remove quotes, lowercase, and trim
-				const cleanedItem = item.replace(/^"|"$/g, '').toLowerCase().trim()
-				if (cleanedItem) {
+				// Remove quotes and trim
+				let cleanedItem = item.replace(/^"|"$/g, '').trim()
+				
+				// IMPORTANT: Extract base ingredient (removes quantities, measurements, processing methods)
+				// This handles cases like "1 hass avocado", "2 cups rotisserie chicken", "juice of 1 lime", etc.
+				cleanedItem = extractBaseIngredient(cleanedItem)
+				
+				if (cleanedItem && cleanedItem.length > 0) {
 					allIngredients.add(cleanedItem)
 				}
 			}
@@ -144,8 +149,11 @@ function preValidateIngredients(aiResponse: string, allowedItems: string[]): { v
 
 	// Create a Set of allowed ingredients (lowercase, trimmed)
 	const allowedSet = new Set<string>()
+	const allowedBaseSet = new Set<string>()
+	
 	for (const item of allowedItems) {
 		allowedSet.add(item.toLowerCase().trim())
+		allowedBaseSet.add(extractBaseIngredient(item))
 	}
 
 	// Define pantry basics
@@ -192,6 +200,14 @@ function preValidateIngredients(aiResponse: string, allowedItems: string[]): { v
 					isAllowed = true
 					break
 				}
+			}
+		}
+
+		// Check base ingredient matching (handles "lime juice" when "limes" is available)
+		if (!isAllowed) {
+			const ingredientBase = extractBaseIngredient(ingredient)
+			if (allowedBaseSet.has(ingredientBase)) {
+				isAllowed = true
 			}
 		}
 
@@ -342,7 +358,13 @@ Recipe requirements:
 - Exactly 4-8 detailed instruction steps, returned as an ARRAY of strings
 - Include cooking times and techniques
 - Be specific: "dice into 1/4 inch pieces", "sauté for 5-7 minutes until golden"
-- Include 2-3 specific "Tips" (ingredient swaps, storage, or cooking tricks) as an ARRAY of strings
+- Include exactly 2-3 "Tips" as an ARRAY of strings. These MUST be recipe-specific, not generic:
+  * Each tip must reference actual ingredients used in this recipe by name
+  * Tips should address: what commonly goes wrong with this dish, a technique that improves it, or a smart way to use a specific ingredient here
+  * BAD tip (reject these): "Season to taste", "Store leftovers in the fridge", "Adjust spices as desired"
+  * GOOD tip example: "Zucchini releases a lot of moisture — pat it completely dry before adding to the pan or your dish will be watery"
+  * GOOD tip example: "The pork loin will seize up if overcooked — pull it at 145°F internal and let it rest 5 minutes before slicing"
+  * Think like a chef who has made this exact dish before and knows where home cooks go wrong
 - MANDATORY: The VERY LAST step of EVERY recipe's instructions array MUST be exactly "ENJOY!❤️"
 - Always include nutrition data: {calories, protein, carbs, fat, fiber}
 
@@ -504,6 +526,37 @@ function coerceDaysStructure(raw: any): { totalDays: number; days: DayMeals[] } 
 	return { totalDays: finalTotalDays, days }
 }
 
+function extractBaseIngredient(ingredient: string): string {
+	// Strip common modifiers and processing methods to get the base ingredient
+	// "lime juice" → "lime", "shredded chicken" → "chicken", etc.
+	const modifiers = [
+		'juice', 'juiced', 'zest', 'zested',
+		'sauce', 'paste', 'powder', 'ground', 'minced', 'diced', 'sliced', 'chopped', 'shredded', 'grated',
+		'cooked', 'grilled', 'roasted', 'baked', 'fried', 'sautéed', 'steamed', 'boiled',
+		'fresh', 'dried', 'raw', 'blanched', 'caramelized', 'candied', 'crushed', 'mashed',
+		'oil', 'water', 'broth', 'extract', 'distilled',
+		'large', 'medium', 'small', 'whole', 'half', 'halved',
+		'tbsp', 'tsp', 'cup', 'cups', 'oz', 'lb', 'g', 'ml', 'clove', 'cloves', 'can', 'cans', 'package', 'pkg', 'slice', 'slices',
+	]
+
+	let base = ingredient.toLowerCase().trim()
+
+	// Remove quantities and measurements
+	base = base.replace(/\d+(\.\d+)?/g, '') // Remove numbers
+		.replace(/\s*[\(\[].*?[\)\]]/g, '') // Remove parenthetical info
+
+	// Remove each modifier word
+	for (const modifier of modifiers) {
+		const regex = new RegExp(`\\b${modifier}\\b`, 'g')
+		base = base.replace(regex, ' ')
+	}
+
+	// Clean up extra spaces
+	base = base.trim().replace(/\s+/g, ' ')
+
+	return base
+}
+
 function isIngredientAllowed(ingredient: string, allowedItems: string[]): boolean {
 	const lowerIngredient = ingredient.toLowerCase().trim()
 	if (!lowerIngredient) return true
@@ -516,12 +569,25 @@ function isIngredientAllowed(ingredient: string, allowedItems: string[]): boolea
 		}
 	}
 
-	// 2. Check Grocery List
+	// 2. Check Grocery List - exact and substring matching
 	for (const allowed of allowedItems) {
 		const lowerAllowed = allowed.toLowerCase()
 		if (lowerIngredient === lowerAllowed ||
 			lowerIngredient.includes(lowerAllowed) ||
 			lowerAllowed.includes(lowerIngredient)) {
+			return true
+		}
+	}
+
+	// 3. Check Grocery List - base ingredient matching
+	// This handles cases like "lime juice" when we have "limes" in the list
+	const baseIngredient = extractBaseIngredient(ingredient)
+	for (const allowed of allowedItems) {
+		const baseAllowed = extractBaseIngredient(allowed)
+		// Match if bases are close enough
+		if (baseIngredient === baseAllowed ||
+			(baseIngredient.length > 2 && baseAllowed.length > 2 &&
+				(baseIngredient.includes(baseAllowed) || baseAllowed.includes(baseIngredient)))) {
 			return true
 		}
 	}
@@ -863,6 +929,12 @@ async function callClaude(prompt: string, diet: DietType, items: string[]): Prom
 
 		console.log('[Claude] Raw AI response:', content)
 
+		// SANITIZE JSON: escape unescaped control characters that Claude sometimes includes
+		const sanitized = content
+			.replace(/[\r\n]+/g, ' ') // Replace newlines with space
+			.replace(/[\t]+/g, ' ')   // Replace tabs with space
+			.replace(/[\x00-\x1F\x7F]/g, ' ') // Remove ASCII control characters
+
 		// PRE-VALIDATION: Check for hallucinated ingredients BEFORE parsing JSON
 		console.log('[Claude] ========== PRE-VALIDATION: Checking for ingredient hallucinations ==========')
 		const preValidation = preValidateIngredients(content, items)
@@ -878,7 +950,7 @@ async function callClaude(prompt: string, diet: DietType, items: string[]): Prom
 		console.log('[Claude] ✅ PRE-VALIDATION PASSED - All ingredients are allowed')
 
 		// Claude sometimes adds markdown code fences, strip them
-		const cleaned = content.replace(/```json\n?|\n?```/g, '').trim()
+		const cleaned = sanitized.replace(/```json\n?|\n?```/g, '').trim()
 
 		const parsed = JSON.parse(cleaned)
 		console.log('[Claude] Parsed JSON:', parsed)
@@ -942,6 +1014,12 @@ async function callGroq(prompt: string, diet: DietType, items: string[]): Promis
 		if (!content) throw new Error('Missing content in Groq response')
 		console.log('[Groq] Raw AI response:', content)
 
+		// SANITIZE JSON: escape unescaped control characters
+		const sanitized = content
+			.replace(/[\r\n]+/g, ' ') // Replace newlines with space
+			.replace(/[\t]+/g, ' ')   // Replace tabs with space
+			.replace(/[\x00-\x1F\x7F]/g, ' ') // Remove ASCII control characters
+
 		// PRE-VALIDATION: Check for hallucinated ingredients BEFORE parsing JSON
 		console.log('[Groq] ========== PRE-VALIDATION: Checking for ingredient hallucinations ==========')
 		const preValidation = preValidateIngredients(content, items)
@@ -956,7 +1034,7 @@ async function callGroq(prompt: string, diet: DietType, items: string[]): Promis
 
 		console.log('[Groq] ✅ PRE-VALIDATION PASSED - All ingredients are allowed')
 
-		const parsed = JSON.parse(content)
+		const parsed = JSON.parse(sanitized)
 		console.log('[Groq] Parsed JSON:', parsed)
 		const coerced = coerceDaysStructure(parsed)
 		console.log('[Groq] Coerced result - totalDays:', coerced.totalDays, 'days count:', coerced.days.length)
@@ -1293,6 +1371,78 @@ function buildFallbackPlan(items: string[], diet: DietType, sourceText: string, 
 	}
 }
 
+// Expanded forbidden patterns per diet (more thorough than DIET_STRICT)
+const DIET_FILTER_PATTERNS: Record<DietType, string[]> = {
+	Paleo: [
+		'pasta', 'noodle', 'spaghetti', 'bread', 'tortilla', 'wrap', 'pita', 'bagel',
+		'rice', 'quinoa', 'oat', 'oats', 'cereal', 'cracker', 'mix', 'flour', 'grain',
+		'beans', 'bean', 'lentil', 'chickpea', 'pea', 'peas', 'hummus', 'soy', 'tofu',
+		'peanut', 'legume', 'edamame',
+		'milk', 'cheese', 'yogurt', 'cream', 'butter', 'dairy', 'whey',
+		'fries', 'chips', 'processed', 'refined',
+	],
+	Keto: [
+		'bread', 'tortilla', 'pasta', 'rice', 'quinoa', 'oat', 'oats', 'grain', 'flour', 'cereal',
+		'potato', 'potatoes', 'sweet potato', 'yam',
+		'beans', 'bean', 'lentil', 'chickpea',
+		'apple', 'banana', 'grape', 'mango', 'orange', 'pear',
+		'sugar', 'honey', 'syrup', 'juice',
+		'fries',
+	],
+	Vegan: [
+		'chicken', 'beef', 'pork', 'turkey', 'ham', 'bacon', 'sausage', 'lamb',
+		'fish', 'salmon', 'tuna', 'shrimp', 'cod', 'tilapia',
+		'egg', 'eggs',
+		'milk', 'cheese', 'yogurt', 'cream', 'butter', 'whey', 'casein', 'ghee',
+		'honey', 'gelatin',
+	],
+	Vegetarian: [
+		'chicken', 'beef', 'pork', 'turkey', 'ham', 'bacon', 'sausage', 'lamb',
+		'fish', 'salmon', 'tuna', 'shrimp', 'cod', 'tilapia',
+		'gelatin',
+	],
+	'Low-Carb': [
+		'bread', 'pasta', 'rice', 'potato', 'potatoes', 'tortilla', 'wrap',
+		'oat', 'oats', 'cereal', 'grain', 'quinoa',
+		'sugar', 'honey', 'syrup', 'juice',
+		'banana', 'grape', 'mango',
+		'fries', 'chips',
+	],
+	'High-Protein': [], // No hard exclusions
+	Balanced: [],       // No hard exclusions
+	Mediterranean: [],  // Very permissive — no hard exclusions needed
+}
+
+function filterItemsByDiet(items: string[], diet: DietType): {
+	compliant: string[]
+	excluded: string[]
+} {
+	const patterns = DIET_FILTER_PATTERNS[diet]
+	if (!patterns || patterns.length === 0) {
+		return { compliant: items, excluded: [] }
+	}
+
+	const compliant: string[] = []
+	const excluded: string[] = []
+
+	for (const item of items) {
+		const lowerItem = item.toLowerCase()
+		const isForbidden = patterns.some(pattern => lowerItem.includes(pattern))
+
+		if (isForbidden) {
+			excluded.push(item)
+		} else {
+			compliant.push(item)
+		}
+	}
+
+	if (excluded.length > 0) {
+		console.log(`[DietFilter] Removed ${excluded.length} non-compliant items for ${diet}:`, excluded)
+	}
+
+	return { compliant, excluded }
+}
+
 export async function generateMealPlan(params: GenerateMealPlanParams): Promise<MealPlanResult> {
 	const { items, diet, sourceText, days } = params
 	console.log('[Generator] ========== MEAL PLAN GENERATION START ==========')
@@ -1307,24 +1457,36 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
 
 	const cleanedItems = cleanGroceryList(items)
 	console.log('[Generator] Cleaned items count:', cleanedItems.length)
+
+	// 🔑 Filter items that violate the selected diet BEFORE sending to AI
+	const { compliant: dietItems, excluded: dietExcluded } = filterItemsByDiet(cleanedItems, diet)
+	console.log(`[Generator] Diet-compliant items for ${diet}: ${dietItems.length}/${cleanedItems.length}`)
+	if (dietExcluded.length > 0) {
+		console.log(`[Generator] Excluded non-${diet} items:`, dietExcluded)
+	}
+
+	// Use dietItems (not cleanedItems) for everything below
+	const effectiveItems = dietItems.length >= 3 ? dietItems : cleanedItems // safety fallback
+	console.log(`[Generator] Using ${effectiveItems.length} items for prompt (fallback: ${effectiveItems === cleanedItems})`)
+
 	const isRestrictiveDiet = ['paleo', 'keto', 'vegan', 'mediterranean', 'vegetarian', 'low-carb'].includes(diet.toLowerCase())
 	let effectiveDays = days || 3
-	if (isRestrictiveDiet && cleanedItems.length < effectiveDays * 3) {
-		const maxDays = Math.max(1, Math.floor(cleanedItems.length / 3))
+	if (isRestrictiveDiet && effectiveItems.length < effectiveDays * 3) {
+		const maxDays = Math.max(1, Math.floor(effectiveItems.length / 3))
 		if (maxDays < effectiveDays) {
-			console.log(`[Generator] ⚠️ Restrictive diet (${diet}) with ${cleanedItems.length} items. Reducing days from ${effectiveDays} to ${maxDays}`)
+			console.log(`[Generator] ⚠️ Restrictive diet (${diet}) with ${effectiveItems.length} items. Reducing days from ${effectiveDays} to ${maxDays}`)
 			effectiveDays = maxDays
 		}
 	}
-	console.log(`[Generator] Requesting ${effectiveDays} days for diet: ${diet} (items available: ${cleanedItems.length})`)
+	console.log(`[Generator] Requesting ${effectiveDays} days for diet: ${diet} (items available: ${effectiveItems.length})`)
 
-	const prompt = buildPrompt(cleanedItems, diet, effectiveDays)
+	const prompt = buildPrompt(effectiveItems, diet, effectiveDays)
 	console.log('[Generator] Prompt includes days instruction:', days ? `Generate exactly ${days} complete days` : 'Auto-determine days')
 	console.log('[Generator] Prompt length:', prompt.length, 'characters')
 
 	// Use the new AI caller with priority fallback (Gemini -> Groq -> Fallback)
-	// Pass cleanedItems for ingredient pre-validation
-	const aiResult = await callAI(prompt, diet, cleanedItems)
+	// Pass effectiveItems for ingredient pre-validation
+	const aiResult = await callAI(prompt, diet, effectiveItems)
 	console.log('[Generator] AI result:', aiResult)
 	console.log('[Generator] AI result totalDays:', aiResult?.totalDays)
 	console.log('[Generator] AI result days count:', aiResult?.days?.length)
@@ -1334,15 +1496,15 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
 			console.warn(`[Generator] AI returned ${aiResult.days.length} days but ${days} were requested`)
 		}
 
-		const validation = validateIngredientUsage(aiResult, cleanedItems)
+		const validation = validateIngredientUsage(aiResult, effectiveItems)
 		if (!validation.isValid) {
 			console.error('[Generator] AI used ingredients not in grocery list:', validation.violations)
-			console.error('[Generator] Available ingredients were:', cleanedItems)
+			console.error('[Generator] Available ingredients were:', effectiveItems)
 			console.warn(`[Generator] Rejecting AI plan due to ${validation.violations.length} ingredient violations`)
 			console.warn(`[Generator] Hallucinated ingredients: ${validation.hallucinatedIngredients.join(', ')}`)
 			console.warn(`[Generator] Falling back to safe plan.`)
 		} else {
-			logUnusedIngredients(aiResult, cleanedItems)
+			logUnusedIngredients(aiResult, effectiveItems)
 			validateProteinVariety(aiResult)
 
 			const ok = validatePlanCompliance(aiResult, diet, items)
@@ -1376,5 +1538,5 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
 	}
 
 	console.log('[Generator] Using fallback plan with', days, 'days')
-	return buildFallbackPlan(cleanedItems, diet, sourceText, days)
+	return buildFallbackPlan(effectiveItems, diet, sourceText, days)
 }
