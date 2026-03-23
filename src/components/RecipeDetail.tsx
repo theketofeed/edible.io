@@ -5,7 +5,7 @@ import type { Meal } from '../utils/types'
 import Tabs, { Tab } from './Tabs'
 import NutritionBadges from './NutritionBadges'
 import type { ToastKind } from './Toast'
-import { fetchRecipeImage } from '../lib/unsplashApi'
+import { fetchMealImage } from '../lib/unsplashApi'
 import CookingMode from './CookingMode'
 
 interface RecipeDetailProps {
@@ -120,7 +120,7 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, showToas
 
     const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set())
     const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set())
-    const [recipeImage, setRecipeImage] = useState<{ url: string; attribution: any } | null>(null)
+    const [recipeImage, setRecipeImage] = useState<string | null>(null)
     const [isImageLoading, setIsImageLoading] = useState(true)
     const [isCookingModeOpen, setIsCookingModeOpen] = useState(false)
 
@@ -129,9 +129,9 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, showToas
         let isMounted = true
         const loadImage = async () => {
             setIsImageLoading(true)
-            const imageData = await fetchRecipeImage(safeMeal)
+            const imageUrl = await fetchMealImage(safeMeal.title)
             if (isMounted) {
-                setRecipeImage(imageData)
+                setRecipeImage(imageUrl)
                 setIsImageLoading(false)
             }
         }
@@ -433,7 +433,7 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, showToas
                         ) : recipeImage ? (
                             <>
                                 <img
-                                    src={recipeImage.url}
+                                    src={recipeImage}
                                     alt={safeMeal.title}
                                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                                 />
@@ -442,12 +442,12 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, showToas
                                 {/* Photo Attribution */}
                                 <div className="absolute bottom-4 right-4 z-10">
                                     <a
-                                        href={`${recipeImage.attribution.profileUrl}?utm_source=Edible&utm_medium=referral`}
+                                        href="https://unsplash.com/?utm_source=Edible&utm_medium=referral"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-[10px] md:text-xs text-white/80 hover:text-white bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-full transition-all border border-white/10"
                                     >
-                                        Photo by <span className="font-bold underline">{recipeImage.attribution.name}</span> on Unsplash
+                                        Photo from <span className="font-bold underline">Unsplash</span>
                                     </a>
                                 </div>
                             </>

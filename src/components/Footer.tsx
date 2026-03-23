@@ -1,114 +1,98 @@
 import { memo } from 'react'
-
-interface FooterLink {
-	label: string
-	href: string
-}
-
-interface FooterColumn {
-	title: string
-	links: FooterLink[]
-}
-
-const FOOTER_COLUMNS: FooterColumn[] = [
-	{
-		title: 'Product',
-		links: [
-			{ label: 'Features', href: '#features' },
-			{ label: 'How It Works', href: '#how-it-works' },
-			{ label: 'Pricing', href: '#pricing' },
-			{ label: 'Download', href: '#download' }
-		]
-	},
-	{
-		title: 'Company',
-		links: [
-			{ label: 'About', href: '#about' },
-			{ label: 'Blog', href: '#blog' },
-			{ label: 'Careers', href: '#careers' },
-			{ label: 'Contact', href: '#contact' }
-		]
-	},
-	{
-		title: 'Legal',
-		links: [
-			{ label: 'Privacy', href: '#privacy' },
-			{ label: 'Terms', href: '#terms' },
-			{ label: 'Cookies', href: '#cookies' },
-			{ label: 'Disclaimer', href: '#disclaimer' }
-		]
-	}
-]
-
-const SOCIAL_LINKS = [
-	{ label: 'Twitter', icon: '𝕏', href: 'https://twitter.com' },
-	{ label: 'Instagram', icon: '📷', href: 'https://instagram.com' },
-	{ label: 'Facebook', icon: 'f', href: 'https://facebook.com' }
-]
+import { Twitter, Instagram, Facebook } from 'lucide-react'
+import logo from '../assets/Transparent logo.png'
 
 const Footer = memo(function Footer() {
 	const currentYear = new Date().getFullYear()
 
 	return (
 		<footer className="bg-gray-900 text-white">
-			{/* Main Footer Content */}
-			<div className="max-w-5xl mx-auto px-4 py-16 md:py-20">
-				<div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 mb-12">
-					{/* Branding */}
-					<div className="col-span-2 md:col-span-1">
-						<h3 className="text-xl font-bold mb-4">Edible.io</h3>
-						<p className="text-gray-400 text-sm leading-relaxed">
-							Transform your groceries into delicious meal plans with AI
+			<div className="max-w-5xl mx-auto px-4">
+
+				{/* Top Row */}
+				<div className="py-16 flex flex-col md:flex-row md:items-start md:justify-between gap-12">
+
+					{/* Brand Block */}
+					<div className="max-w-xs">
+						{/* Logo + Wordmark */}
+						<div className="flex items-center gap-2.5 mb-3">
+							<img src={logo} alt="Edible.io" className="w-10 h-10 object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
+							<span className="text-xl font-bold text-white">Edible.io</span>
+						</div>
+						<p className="text-gray-400 text-sm leading-relaxed mt-2">
+							Turn your groceries into delicious, personalized meal plans, powered by Edible.
 						</p>
+
+						{/* Social Icons */}
+						<div className="flex gap-3 mt-6">
+							<a
+								href="https://twitter.com"
+								target="_blank"
+								rel="noopener noreferrer"
+								title="Twitter / X"
+								className="w-9 h-9 rounded-full bg-gray-800 hover:bg-purple-600 transition-colors flex items-center justify-center"
+							>
+								<Twitter className="w-4 h-4" />
+							</a>
+							<a
+								href="https://instagram.com"
+								target="_blank"
+								rel="noopener noreferrer"
+								title="Instagram"
+								className="w-9 h-9 rounded-full bg-gray-800 hover:bg-purple-600 transition-colors flex items-center justify-center"
+							>
+								<Instagram className="w-4 h-4" />
+							</a>
+							<a
+								href="https://facebook.com"
+								target="_blank"
+								rel="noopener noreferrer"
+								title="Facebook"
+								className="w-9 h-9 rounded-full bg-gray-800 hover:bg-purple-600 transition-colors flex items-center justify-center"
+							>
+								<Facebook className="w-4 h-4" />
+							</a>
+						</div>
 					</div>
 
-					{/* Footer Links */}
-					{FOOTER_COLUMNS.map((column, idx) => (
-						<div key={idx}>
-							<h4 className="font-semibold text-white mb-4 text-sm md:text-base">
-								{column.title}
-							</h4>
+					{/* Link Columns */}
+					<div className="flex gap-12 md:gap-16">
+						{/* Product */}
+						<div>
+							<h4 className="text-white font-semibold text-sm mb-4">Product</h4>
 							<ul className="space-y-2">
-								{column.links.map((link) => (
-									<li key={link.label}>
-										<a
-											href={link.href}
-											className="text-gray-400 hover:text-purple-400 transition-colors duration-200 text-sm"
-										>
-											{link.label}
-										</a>
-									</li>
-								))}
+								<li><a href="#how-it-works" className="text-gray-400 hover:text-purple-400 text-sm transition-colors">How It Works</a></li>
+								<li><a href="#pricing" className="text-gray-400 hover:text-purple-400 text-sm transition-colors">Pricing</a></li>
 							</ul>
 						</div>
-					))}
-				</div>
 
-				{/* Bottom Row */}
-				<div className="border-t border-gray-800 pt-8 md:pt-12">
-					<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-						{/* Copyright */}
-						<p className="text-gray-400 text-xs md:text-sm">
-							© {currentYear} Edible.io. All rights reserved.
-						</p>
+						{/* Company */}
+						<div>
+							<h4 className="text-white font-semibold text-sm mb-4">Company</h4>
+							<ul className="space-y-2">
+								<li><a href="#contact" className="text-gray-400 hover:text-purple-400 text-sm transition-colors">Contact Us</a></li>
+							</ul>
+						</div>
 
-						{/* Social Links */}
-						<div className="flex gap-4">
-							{SOCIAL_LINKS.map((link) => (
-								<a
-									key={link.label}
-									href={link.href}
-									target="_blank"
-									rel="noopener noreferrer"
-									className="w-10 h-10 rounded-full bg-gray-800 hover:bg-purple-600 transition-colors duration-200 flex items-center justify-center text-white"
-									title={link.label}
-								>
-									<span className="text-lg">{link.icon}</span>
-								</a>
-							))}
+						{/* Legal */}
+						<div>
+							<h4 className="text-white font-semibold text-sm mb-4">Legal</h4>
+							<ul className="space-y-2">
+								<li><a href="#privacy" className="text-gray-400 hover:text-purple-400 text-sm transition-colors">Privacy Policy</a></li>
+								<li><a href="#terms" className="text-gray-400 hover:text-purple-400 text-sm transition-colors">Terms & Conditions</a></li>
+							</ul>
 						</div>
 					</div>
 				</div>
+
+				{/* Bottom Strip */}
+				<div className="border-t border-gray-800 py-6">
+					<div className="flex flex-col md:flex-row items-center justify-between gap-3">
+						<p className="text-gray-500 text-xs">© {currentYear} Edible.io. All rights reserved.</p>
+						<p className="text-gray-500 text-xs">Made with ❤️ for home cooks everywhere.</p>
+					</div>
+				</div>
+
 			</div>
 		</footer>
 	)

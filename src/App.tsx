@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowUp, AlertCircle, ArrowLeft } from 'lucide-react'
 import { BrowserRouter as Router, Routes, Route, useNavigate, useParams, useLocation } from 'react-router-dom'
 import Header from './components/Header'
@@ -15,6 +15,9 @@ import Testimonials from './components/Testimonials'
 import FinalCTA from './components/FinalCTA'
 import FAQ from './components/FAQ'
 import Footer from './components/Footer'
+import AuthModal from './components/AuthModal'
+import ProfileModal from './components/Profilemodal'
+import { useAuth } from './context/AuthContext'
 import { generateMealPlan } from './lib/mealPlanGenerator'
 import type { DietType, MealPlanResult } from './utils/types'
 import { useReactToPrint } from 'react-to-print'
@@ -22,10 +25,20 @@ import html2pdf from 'html2pdf.js/dist/include/html2pdf.es.js'
 import ToastContainer, { ToastKind, ToastMessage } from './components/Toast'
 import ReceiptConfirmation from './components/ReceiptConfirmation'
 import { parseReceiptWithGemini, ParsedItem } from './services/receiptParser'
+import { saveReceipt, saveMealPlan } from './lib/db'
 
 function MainContent() {
 	const navigate = useNavigate()
 	const location = useLocation()
+	const { user } = useAuth()
+	const [authOpen, setAuthOpen] = useState(false)
+	const [profileOpen, setProfileOpen] = useState(false)
+
+	// Auto-close modal when login succeeds
+	useEffect(() => {
+		if (user) setAuthOpen(false)
+	}, [user])
+
 	const [diet, setDiet] = useState<DietType>('Balanced')
 	const [groceryItems, setGroceryItems] = useState<string[]>([])
 	const [planDaysSelection, setPlanDaysSelection] = useState<number | 'auto'>('auto')
@@ -49,6 +62,20 @@ function MainContent() {
 	const dismissToast = useCallback((id: string) => {
 		setToasts((prev) => prev.filter((toast) => toast.id !== id))
 	}, [])
+
+	const handleSavePlan = useCallback(async (planData: any, currentGroceryItems: string[], rawOcr: string) => {
+		if (!user) return // not logged in, skip silently
+
+		try {
+			// Save the receipt first, get back its ID
+			const receipt = await saveReceipt(rawOcr, currentGroceryItems)
+			// Then save the meal plan linked to that receipt
+			await saveMealPlan(planData, 'My Meal Plan', receipt.id)
+			console.log('✅ Plan saved to Supabase')
+		} catch (err) {
+			console.error('Failed to save plan:', err)
+		}
+	}, [user])
 
 	const canGenerate = useMemo(() => groceryItems.length > 0, [groceryItems])
 
@@ -114,13 +141,14 @@ function MainContent() {
 			const plan = await generateMealPlan({ items: groceryItems, diet, sourceText, days: effectivePlanDays })
 			setResult(plan)
 			showToast('success', 'Your meal plan is ready!')
+			void handleSavePlan(plan, groceryItems, sourceText)
 		} catch (e: any) {
 			setError(e?.message || 'Failed to generate meal plan.')
 			showToast('error', e?.message || 'Failed to generate meal plan.')
 		} finally {
 			setIsLoading(false)
 		}
-	}, [diet, groceryItems, showToast, sourceText, effectivePlanDays])
+	}, [diet, groceryItems, showToast, sourceText, effectivePlanDays, handleSavePlan])
 
 	const handleRegenerate = useCallback(() => {
 		if (canGenerate) void handleGenerate()
@@ -174,6 +202,9 @@ function MainContent() {
 		<div className="min-h-full flex flex-col">
 			<ToastContainer toasts={toasts} onDismiss={dismissToast} />
 
+			<AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
+			<ProfileModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
+
 			<ReceiptConfirmation
 				isOpen={showConfirmation}
 				isParsing={isParsing}
@@ -182,7 +213,7 @@ function MainContent() {
 				onCancel={() => setShowConfirmation(false)}
 			/>
 
-			<Header />
+			<Header onAuthClick={() => setAuthOpen(true)} onOpenProfile={() => setProfileOpen(true)} />
 
 			<Routes>
 				<Route path="/" element={
@@ -241,6 +272,19 @@ function MainContent() {
 									onRegenerate={handleRegenerate}
 									ref={printRef}
 								/>
+								{!user && (
+									<div className="mt-4 flex items-center gap-3 px-4 py-3 bg-purple-50 border border-purple-100 rounded-2xl">
+										<span className="text-sm text-purple-700">
+											🔒 Sign in to save this meal plan to your account
+										</span>
+										<button
+											onClick={() => setAuthOpen(true)}
+											className="ml-auto text-xs font-semibold text-white bg-purple-500 hover:bg-purple-600 px-4 py-1.5 rounded-full transition-colors"
+										>
+											Sign in
+										</button>
+									</div>
+								)}
 								<div className="text-center mt-8">
 									<button onClick={handleBackToEditor} className="text-purple-600 font-semibold hover:underline">
 										← Create Another Plan

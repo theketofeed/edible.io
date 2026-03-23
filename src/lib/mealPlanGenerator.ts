@@ -106,127 +106,9 @@ export const PANTRY_STAPLES = [
 	'water', 'chicken broth', 'vegetable broth', 'beef broth', 'milk'
 ]
 
-function extractIngredientsFromResponse(aiResponse: string): string[] {
-	console.log('[Validation] Extracting ingredients from AI response...')
 
-	// Find all "ingredients": [...] arrays in the JSON
-	const ingredientPattern = /"ingredients"\s*:\s*\[(.*?)\]/gs
-	const allIngredients = new Set<string>()
-	let match
 
-	while ((match = ingredientPattern.exec(aiResponse)) !== null) {
-		const arrayContent = match[1]
-		// Extract quoted strings from the array
-		const itemMatches = arrayContent.match(/"([^"]+)"/g)
 
-		if (itemMatches) {
-			for (const item of itemMatches) {
-				// Remove quotes and trim
-				let cleanedItem = item.replace(/^"|"$/g, '').trim()
-				
-				// IMPORTANT: Extract base ingredient (removes quantities, measurements, processing methods)
-				// This handles cases like "1 hass avocado", "2 cups rotisserie chicken", "juice of 1 lime", etc.
-				cleanedItem = extractBaseIngredient(cleanedItem)
-				
-				if (cleanedItem && cleanedItem.length > 0) {
-					allIngredients.add(cleanedItem)
-				}
-			}
-		}
-	}
-
-	const result = Array.from(allIngredients)
-	console.log(`[Validation] Extracted ${result.length} unique ingredients from response`)
-	console.log('[Validation] Ingredients found:', result)
-
-	return result
-}
-
-function preValidateIngredients(aiResponse: string, allowedItems: string[]): { valid: boolean; violations: string[] } {
-	console.log('[PreValidation] Starting ingredient pre-validation before JSON parsing...')
-
-	const usedIngredients = extractIngredientsFromResponse(aiResponse)
-
-	// Create a Set of allowed ingredients (lowercase, trimmed)
-	const allowedSet = new Set<string>()
-	const allowedBaseSet = new Set<string>()
-	
-	for (const item of allowedItems) {
-		allowedSet.add(item.toLowerCase().trim())
-		allowedBaseSet.add(extractBaseIngredient(item))
-	}
-
-	// Define pantry basics
-	const pantryBasics = new Set<string>([
-		'salt', 'pepper', 'water', 'oil', 'olive oil', 'black pepper',
-		'garlic powder', 'onion powder', 'paprika', 'cumin', 'oregano', 'basil',
-		'vegetable oil', 'canola oil', 'butter', 'vinegar', 'lemon juice', 'soy sauce', 'hot sauce',
-		'white pepper', 'coriander', 'chili powder', 'cayenne pepper', 'rosemary', 'parsley', 'bay leaves',
-		'cinnamon', 'nutmeg', 'ginger powder', 'turmeric', 'white vinegar', 'apple cider vinegar',
-		'balsamic vinegar', 'worcestershire sauce', 'garlic', 'onion', 'fresh ginger', 'green onions', 'shallots',
-		'all-purpose flour', 'cornstarch', 'baking powder', 'baking soda', 'sugar', 'brown sugar', 'honey', 'maple syrup',
-		'chicken broth', 'vegetable broth', 'beef broth', 'milk'
-	])
-
-	const violations: string[] = []
-
-	for (const ingredient of usedIngredients) {
-		let isAllowed = false
-
-		// Check exact match in allowed items
-		if (allowedSet.has(ingredient)) {
-			isAllowed = true
-		}
-
-		// Check if ingredient is a pantry basic
-		if (pantryBasics.has(ingredient)) {
-			isAllowed = true
-		}
-
-		// Flexible matching: check if allowed item contains or is contained by ingredient
-		if (!isAllowed) {
-			for (const allowed of allowedSet) {
-				if (ingredient.includes(allowed) || allowed.includes(ingredient)) {
-					isAllowed = true
-					break
-				}
-			}
-		}
-
-		// Check pantry basics with flexible matching
-		if (!isAllowed) {
-			for (const pantry of pantryBasics) {
-				if (ingredient.includes(pantry) || pantry.includes(ingredient)) {
-					isAllowed = true
-					break
-				}
-			}
-		}
-
-		// Check base ingredient matching (handles "lime juice" when "limes" is available)
-		if (!isAllowed) {
-			const ingredientBase = extractBaseIngredient(ingredient)
-			if (allowedBaseSet.has(ingredientBase)) {
-				isAllowed = true
-			}
-		}
-
-		if (!isAllowed) {
-			violations.push(ingredient)
-		}
-	}
-
-	if (violations.length > 0) {
-		console.error(`[PreValidation] ❌ CRITICAL: Found ${violations.length} forbidden ingredients in AI response!`)
-		console.error('[PreValidation] Forbidden ingredients:', violations.join(', '))
-		console.error('[PreValidation] This indicates Claude is attempting to hallucinate ingredients.')
-		console.error('[PreValidation] The response will be rejected before JSON parsing.')
-		return { valid: false, violations }
-	}
-
-	console.log('[PreValidation] ✅ All ingredients passed pre-validation!')
-	return { valid: true, violations: [] }
-}
 
 function buildPrompt(items: string[], diet: DietType, days?: number): string {
 	const itemsList = items.map((item, index) => `${index + 1}. ${item}`).join('\n')
@@ -902,7 +784,7 @@ function logRecipeQualityScores(result: { days: DayMeals[] }): void {
 	}
 }
 
-async function callClaude(prompt: string, diet: DietType, items: string[]): Promise<{ totalDays: number; days: DayMeals[] } | null> {
+async function callClaude(prompt: string, diet: any): Promise<{ totalDays: number; days: any[] } | null> {
 	console.log('[Claude] Attempting to use Claude API for diet:', diet)
 
 	try {
@@ -910,12 +792,8 @@ async function callClaude(prompt: string, diet: DietType, items: string[]): Prom
 
 		const response = await fetch('http://localhost:3001/api/claude', {
 			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
-				prompt: prompt
-			})
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ prompt })
 		})
 
 		if (!response.ok) {
@@ -927,41 +805,14 @@ async function callClaude(prompt: string, diet: DietType, items: string[]): Prom
 		const content = json.content?.[0]?.text
 		if (!content) throw new Error('Missing content in Claude response')
 
-		console.log('[Claude] Raw AI response:', content)
+		console.log('[Claude] Raw AI response:', content.substring(0, 500) + '...')
 
-		// SANITIZE JSON: escape unescaped control characters that Claude sometimes includes
-		const sanitized = content
-			.replace(/[\r\n]+/g, ' ') // Replace newlines with space
-			.replace(/[\t]+/g, ' ')   // Replace tabs with space
-			.replace(/[\x00-\x1F\x7F]/g, ' ') // Remove ASCII control characters
-
-		// PRE-VALIDATION: Check for hallucinated ingredients BEFORE parsing JSON
-		console.log('[Claude] ========== PRE-VALIDATION: Checking for ingredient hallucinations ==========')
-		const preValidation = preValidateIngredients(content, items)
-
-		if (!preValidation.valid) {
-			console.error('[Claude] ❌ PRE-VALIDATION FAILED')
-			console.error(`[Claude] The AI response contains ${preValidation.violations.length} forbidden ingredients:`)
-			console.error(`[Claude] ${preValidation.violations.join(', ')}`)
-			console.error('[Claude] Rejecting response to prevent hallucinated meal plans.')
-			throw new Error(`Pre-validation failed: Detected ${preValidation.violations.length} hallucinated ingredients: ${preValidation.violations.join(', ')}`)
-		}
-
-		console.log('[Claude] ✅ PRE-VALIDATION PASSED - All ingredients are allowed')
-
-		// Claude sometimes adds markdown code fences, strip them
-		const cleaned = sanitized.replace(/```json\n?|\n?```/g, '').trim()
-
+		const cleaned = content.replace(/```json\n?|\n?```/g, '').trim()
 		const parsed = JSON.parse(cleaned)
-		console.log('[Claude] Parsed JSON:', parsed)
+		console.log('[Claude] Parsed JSON successfully')
 
 		const coerced = coerceDaysStructure(parsed)
 		console.log('[Claude] Coerced result - totalDays:', coerced.totalDays, 'days count:', coerced.days.length)
-
-		// Validate recipe quality before returning
-		validateRecipeQuality(coerced)
-		logRecipeQualityScores(coerced)
-
 		return coerced
 	} catch (err) {
 		console.error('[Claude] Error:', err)
@@ -969,17 +820,12 @@ async function callClaude(prompt: string, diet: DietType, items: string[]): Prom
 	}
 }
 
-async function callGroq(prompt: string, diet: DietType, items: string[]): Promise<{ totalDays: number; days: DayMeals[] } | null> {
+async function callGroq(prompt: string, diet: any): Promise<{ totalDays: number; days: any[] } | null> {
 	console.log('[Groq] Attempting to use Groq API as fallback for diet:', diet)
 
-	// Use literal import.meta.env for Vite static replacement
-	let apiKey: string | undefined = undefined
-	try {
-		apiKey = import.meta.env.VITE_GROQ_API_KEY
-	} catch (e) {
-		// Fallback for Node/test environment
-		apiKey = (process as any)?.env?.VITE_GROQ_API_KEY
-	}
+	const GROQ_BASE_URL = 'https://api.groq.com/openai/v1'
+	const GROQ_MODEL = 'llama-3.3-70b-versatile'
+	const apiKey = import.meta.env.VITE_GROQ_API_KEY as string | undefined
 
 	if (!apiKey || apiKey.trim() === '' || apiKey === 'your_key_here') {
 		console.warn('[Groq] No valid Groq API key found.')
@@ -1005,44 +851,20 @@ async function callGroq(prompt: string, diet: DietType, items: string[]): Promis
 				response_format: { type: 'json_object' }
 			})
 		})
+
 		if (!res.ok) {
 			const text = await res.text().catch(() => '')
 			throw new Error(`Groq HTTP ${res.status}: ${text}`)
 		}
+
 		const json = await res.json()
 		const content = json.choices?.[0]?.message?.content
 		if (!content) throw new Error('Missing content in Groq response')
-		console.log('[Groq] Raw AI response:', content)
 
-		// SANITIZE JSON: escape unescaped control characters
-		const sanitized = content
-			.replace(/[\r\n]+/g, ' ') // Replace newlines with space
-			.replace(/[\t]+/g, ' ')   // Replace tabs with space
-			.replace(/[\x00-\x1F\x7F]/g, ' ') // Remove ASCII control characters
-
-		// PRE-VALIDATION: Check for hallucinated ingredients BEFORE parsing JSON
-		console.log('[Groq] ========== PRE-VALIDATION: Checking for ingredient hallucinations ==========')
-		const preValidation = preValidateIngredients(content, items)
-
-		if (!preValidation.valid) {
-			console.error('[Groq] ❌ PRE-VALIDATION FAILED')
-			console.error(`[Groq] The AI response contains ${preValidation.violations.length} forbidden ingredients:`)
-			console.error(`[Groq] ${preValidation.violations.join(', ')}`)
-			console.error('[Groq] Rejecting response to prevent hallucinated meal plans.')
-			throw new Error(`Pre-validation failed: Detected ${preValidation.violations.length} hallucinated ingredients: ${preValidation.violations.join(', ')}`)
-		}
-
-		console.log('[Groq] ✅ PRE-VALIDATION PASSED - All ingredients are allowed')
-
-		const parsed = JSON.parse(sanitized)
-		console.log('[Groq] Parsed JSON:', parsed)
+		console.log('[Groq] Raw AI response (first 500 chars):', content.substring(0, 500))
+		const parsed = JSON.parse(content)
 		const coerced = coerceDaysStructure(parsed)
 		console.log('[Groq] Coerced result - totalDays:', coerced.totalDays, 'days count:', coerced.days.length)
-
-		// Validate recipe quality before returning
-		validateRecipeQuality(coerced)
-		logRecipeQualityScores(coerced)
-
 		return coerced
 	} catch (err) {
 		console.error('[Groq] Error:', err)
@@ -1055,7 +877,7 @@ async function callAI(prompt: string, diet: DietType, items: string[]): Promise<
 
 	// Priority 1: Claude Haiku ($0.25 per 1M tokens - super cheap, ~$0.0005 per meal plan)
 	console.log('[AI] Trying Claude API (Primary)...')
-	const claudeResult = await callClaude(prompt, diet, items)
+	const claudeResult = await callClaude(prompt, diet)
 	if (claudeResult && claudeResult.totalDays && claudeResult.days.length) {
 		console.log('[AI] ✅ Claude succeeded! Using Claude result.')
 		return claudeResult
@@ -1064,7 +886,7 @@ async function callAI(prompt: string, diet: DietType, items: string[]): Promise<
 
 	// Priority 2: Groq (unlimited free)
 	console.log('[AI] Trying Groq API (Fallback)...')
-	const groqResult = await callGroq(prompt, diet, items)
+	const groqResult = await callGroq(prompt, diet)
 	if (groqResult && groqResult.totalDays && groqResult.days.length) {
 		console.log('[AI] ✅ Groq succeeded! Using Groq result.')
 		return groqResult

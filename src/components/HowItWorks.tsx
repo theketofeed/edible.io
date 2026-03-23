@@ -32,7 +32,7 @@ const STEPS: Step[] = [
 
 const HowItWorks = memo(function HowItWorks() {
 	return (
-		<section className="py-12 md:py-16 bg-gradient-to-b from-purple-50 via-purple-50/50 to-white">
+		<section id="how-it-works" className="py-12 md:py-16 bg-gradient-to-b from-purple-50 via-purple-50/50 to-white">
 			<div className="max-w-6xl mx-auto px-6 md:px-8">
 				{/* Section Header */}
 				<div className="text-center mb-16">
