@@ -1,4 +1,4 @@
-import { memo, useState, useEffect } from 'react'
+import { memo, useState, useEffect, useCallback } from 'react'
 
 const HeroSection = memo(function HeroSection() {
 	const [displayText, setDisplayText] = useState('')
@@ -8,24 +8,20 @@ const HeroSection = memo(function HeroSection() {
 	useEffect(() => {
 		const words = ['receipts', 'lists']
 		const currentWord = words[wordIndex]
-		const typingSpeed = isDeleting ? 50 : 100 // Faster deletion
-		const pauseDuration = 2000 // 2 second pause when word is complete
+		const typingSpeed = isDeleting ? 50 : 100
+		const pauseDuration = 2000
 
 		const timeout = setTimeout(() => {
 			if (!isDeleting) {
-				// Typing forward
 				if (displayText.length < currentWord.length) {
 					setDisplayText(currentWord.substring(0, displayText.length + 1))
 				} else {
-					// Word is complete, pause then start deleting
 					setTimeout(() => setIsDeleting(true), pauseDuration)
 				}
 			} else {
-				// Deleting backward
 				if (displayText.length > 0) {
 					setDisplayText(displayText.substring(0, displayText.length - 1))
 				} else {
-					// Finished deleting, move to next word
 					setIsDeleting(false)
 					setWordIndex((wordIndex + 1) % words.length)
 				}
@@ -34,6 +30,13 @@ const HeroSection = memo(function HeroSection() {
 
 		return () => clearTimeout(timeout)
 	}, [displayText, wordIndex, isDeleting])
+
+	const scrollToUpload = useCallback(() => {
+		const el = document.getElementById('upload-section')
+		if (el) {
+			el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+		}
+	}, [])
 
 	return (
 		<section id="home" className="mt-8 mb-10 md:mt-11 md:mb-14">
@@ -62,9 +65,12 @@ const HeroSection = memo(function HeroSection() {
 					Upload a grocery receipt or list and get a personalized, diet‑friendly plan that uses only what you bought.
 				</p>
 
-				{/* CTAs */}
-				<div className="flex flex-wrap items-center justify-center gap-3 mb-6 md:mb-8">
-					<button className="inline-flex items-center justify-center px-8 md:px-10 py-3 md:py-4 rounded-full text-base font-semibold bg-[#C6A0F6] text-gray-900 shadow-md hover:bg-[#b58df5] transition-colors duration-200">
+				{/* CTA */}
+				<div className="flex justify-center mb-6 md:mb-8">
+					<button
+						onClick={scrollToUpload}
+						className="inline-flex items-center justify-center px-8 md:px-10 py-3 md:py-4 rounded-full text-base font-semibold bg-[#C6A0F6] text-gray-900 shadow-md hover:bg-[#b58df5] transition-colors duration-200"
+					>
 						Try Edible for Free
 					</button>
 				</div>

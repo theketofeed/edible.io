@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@supabase/supabase-js": "^2.99.2",
     "@types/tesseract.js": "^0.0.2",
     "concurrently": "^9.2.1",
     "cors": "^2.8.6",
@@ -23,6 +24,7 @@
     "express": "^5.2.1",
     "framer-motion": "^12.33.0",
     "html2pdf.js": "^0.9.3",
+    "lottie-react": "^2.4.1",
     "lucide-react": "^0.460.0",
     "node-fetch": "^2.7.0",
     "openai": "^4.70.2",

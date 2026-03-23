@@ -2,7 +2,7 @@ import { forwardRef, memo, useMemo, useEffect, useState } from 'react'
 import { Copy, Download, RefreshCw, ChevronRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { MealPlanResult, DayMeals, Meal } from '../utils/types'
-import { fetchRecipeImage } from '../lib/unsplashApi'
+import { fetchMealImage } from '../lib/unsplashApi'
 
 interface Props {
 	result: MealPlanResult
@@ -81,11 +81,11 @@ const MealCard = memo(function MealCard({
 
 	useEffect(() => {
 		async function getImg() {
-			const data = await fetchRecipeImage(meal)
-			if (data) setImageUrl(data.url)
+			const url = await fetchMealImage(meal.title)
+			if (url) setImageUrl(url)
 		}
 		getImg()
-	}, [meal])
+	}, [meal.title])
 
 	const fallbackSvg = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Crect fill='%23f3f4f6' width='56' height='56' rx='10'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle' font-size='26'%3E${getMealTypeIcon(mealType)}%3C/text%3E%3C/svg%3E`
 

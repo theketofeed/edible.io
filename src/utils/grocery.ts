@@ -107,8 +107,71 @@ function normalizeItem(value: string): string {
 
 	if (!cleaned || cleaned.length < 2) return ''
 
+	// ── Strip LEADING weight measurements ──────────────────
+	// Handles: "0.778kg zucchini", "1.5 lb chicken", "200g spinach"
+	cleaned = cleaned
+		.replace(/^\d+[\.,]?\d*\s*kg\s+/i, '')	   // "0.778kg zucchini" → "zucchini"
+		.replace(/^\d+[\.,]?\d*\s*lbs?\s+/i, '')  // "1.5 lb chicken" → "chicken"
+		.replace(/^\d+[\.,]?\d*\s*oz\s+/i, '')    // "5.5oz salmon" → "salmon"
+		.replace(/^\d+[\.,]?\d*\s*g\s+/i, '')	    // "200g spinach" → "spinach"
+		.trim()
+	// ────────────────────────────────────────────────────────
+
+	// Strip TRAILING weight suffixes
+	cleaned = cleaned
+		.replace(/\s*\d+\s*x\s*$/i, '')
+		.replace(/\s*\d+[\.,]\d+\s*kg\s*$/i, '')
+		.replace(/\s*\d+[\.,]\d+\s*lbs?\s*$/i, '')
+		.replace(/\s*\d+[\.,]\d+\s*oz\s*$/i, '')
+		.replace(/\s*\d+\s*kg\s*$/i, '')
+		.replace(/\s*\d+\s*lbs?\s*$/i, '')
+		.replace(/\s*\d+\s*oz\s*$/i, '')
+		.trim()
+
+	// Strip prices at the end
+	cleaned = cleaned.replace(/\s*\$\d+[\.,]\d{2}\s*$/, '').trim()
+
+	// Strip line numbers at start
+	cleaned = cleaned.replace(/^\d+[\s.\-:]+/, '').trim()
 
 	return cleaned
+}
+
+/**
+ * Convert weight quantities to human-readable format
+ * Examples: "1.85 lb" → "1 lb 13 oz", "0.778 kg" → "~778g"
+ */
+export function humanReadableWeight(quantity: string | number): string {
+	const raw = String(quantity).trim()
+
+	// Parse "1.85 lb" format
+	const lbMatch = raw.match(/^(\d+[\.,]?\d*)\s*lbs?$/i)
+	if (lbMatch) {
+		const lbs = parseFloat(lbMatch[1].replace(',', '.'))
+		if (lbs < 0.25) return `${Math.round(lbs * 453.6)}g`
+		if (lbs < 1) return `${Math.round(lbs * 16)} oz`
+		const wholeLbs = Math.floor(lbs)
+		const remOz = Math.round((lbs - wholeLbs) * 16)
+		return remOz > 0 ? `${wholeLbs} lb ${remOz} oz` : `${wholeLbs} lb`
+	}
+
+	// Parse "0.778 kg" format
+	const kgMatch = raw.match(/^(\d+[\.,]?\d*)\s*kg$/i)
+	if (kgMatch) {
+		const kg = parseFloat(kgMatch[1].replace(',', '.'))
+		if (kg < 1) return `~${Math.round(kg * 1000)}g`
+		return `${kg.toFixed(2).replace(/\.?0+$/, '')} kg`
+	}
+
+	// Parse "200 g" format
+	const gMatch = raw.match(/^(\d+[\.,]?\d*)\s*g$/i)
+	if (gMatch) {
+		const g = parseFloat(gMatch[1].replace(',', '.'))
+		if (g >= 1000) return `${(g / 1000).toFixed(1)} kg`
+		return `~${Math.round(g)}g`
+	}
+
+	return raw  // return as-is if no match
 }
 
 function looksLikeFood(item: string): boolean {
@@ -327,15 +390,15 @@ ${rawOcrText}`
 		// Validate and clean up the parsed items
 		const validCategories = ['protein', 'vegetable', 'fruit', 'dairy', 'grain', 'pantry', 'frozen', 'miscellaneous']
 		const items = parsedItems
-			.filter(item => item?.item && typeof item.item === 'string' && item.item.trim().length >= 2)
 			.map(item => ({
-				item: String(item.item || 'Unknown item').trim(),
+				item: normalizeItem(String(item.item || 'Unknown item')),
 				quantity: String(item.quantity || '1 unit').trim(),
 				price: String(item.price || 'Unknown').trim(),
 				category: (validCategories.includes(String(item.category || '').toLowerCase())
 					? String(item.category).toLowerCase()
 					: 'miscellaneous') as import('./types').FoodCategory
 			}))
+			.filter(item => item.item && item.item.length >= 3)
 
 		console.log('[ReceiptAI] Final parsed items:', items.length)
 		return {
