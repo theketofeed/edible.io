@@ -17,7 +17,9 @@ const Footer = memo(function Footer() {
 						{/* Logo + Wordmark */}
 						<div className="flex items-center gap-2.5 mb-3">
 							<img src={logo} alt="Edible.io" className="w-10 h-10 object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
-							<span className="text-xl font-bold text-white">Edible.io</span>
+							<span className="text-xl font-bold text-white">
+								Edible<span className="text-[#C6A0F6]">.io</span>
+							</span>
 						</div>
 						<p className="text-gray-400 text-sm leading-relaxed mt-2">
 							Turn your groceries into delicious, personalized meal plans, powered by Edible.

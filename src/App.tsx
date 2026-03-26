@@ -25,7 +25,7 @@ import html2pdf from 'html2pdf.js/dist/include/html2pdf.es.js'
 import ToastContainer, { ToastKind, ToastMessage } from './components/Toast'
 import ReceiptConfirmation from './components/ReceiptConfirmation'
 import { parseReceiptWithGemini, ParsedItem } from './services/receiptParser'
-import { saveReceipt, saveMealPlan } from './lib/db'
+import EdibleDashboard from './pages/dashboard'
 
 function MainContent() {
 	const navigate = useNavigate()
@@ -62,20 +62,6 @@ function MainContent() {
 	const dismissToast = useCallback((id: string) => {
 		setToasts((prev) => prev.filter((toast) => toast.id !== id))
 	}, [])
-
-	const handleSavePlan = useCallback(async (planData: any, currentGroceryItems: string[], rawOcr: string) => {
-		if (!user) return // not logged in, skip silently
-
-		try {
-			// Save the receipt first, get back its ID
-			const receipt = await saveReceipt(rawOcr, currentGroceryItems)
-			// Then save the meal plan linked to that receipt
-			await saveMealPlan(planData, 'My Meal Plan', receipt.id)
-			console.log('✅ Plan saved to Supabase')
-		} catch (err) {
-			console.error('Failed to save plan:', err)
-		}
-	}, [user])
 
 	const canGenerate = useMemo(() => groceryItems.length > 0, [groceryItems])
 
@@ -141,14 +127,13 @@ function MainContent() {
 			const plan = await generateMealPlan({ items: groceryItems, diet, sourceText, days: effectivePlanDays })
 			setResult(plan)
 			showToast('success', 'Your meal plan is ready!')
-			void handleSavePlan(plan, groceryItems, sourceText)
 		} catch (e: any) {
 			setError(e?.message || 'Failed to generate meal plan.')
 			showToast('error', e?.message || 'Failed to generate meal plan.')
 		} finally {
 			setIsLoading(false)
 		}
-	}, [diet, groceryItems, showToast, sourceText, effectivePlanDays, handleSavePlan])
+	}, [diet, groceryItems, showToast, sourceText, effectivePlanDays])
 
 	const handleRegenerate = useCallback(() => {
 		if (canGenerate) void handleGenerate()
@@ -213,7 +198,9 @@ function MainContent() {
 				onCancel={() => setShowConfirmation(false)}
 			/>
 
-			<Header onAuthClick={() => setAuthOpen(true)} onOpenProfile={() => setProfileOpen(true)} />
+			{!location.pathname.startsWith("/dashboard") && (
+				<Header onAuthClick={() => setAuthOpen(true)} onOpenProfile={() => setProfileOpen(true)} />
+			)}
 
 			<Routes>
 				<Route path="/" element={
@@ -269,8 +256,8 @@ function MainContent() {
 									result={result}
 									onCopy={handleCopy}
 									onDownload={triggerDownload}
-									onRegenerate={handleRegenerate}
-									ref={printRef}
+									onRegenerate={handleRegenerate}									setAuthOpen={setAuthOpen}
+									showToast={showToast}									ref={printRef}
 								/>
 								{!user && (
 									<div className="mt-4 flex items-center gap-3 px-4 py-3 bg-purple-50 border border-purple-100 rounded-2xl">
@@ -324,6 +311,7 @@ function MainContent() {
 						<RecipeWrapper onBack={() => navigate('/')} result={result} showToast={showToast} />
 					</ErrorBoundary>
 				} />
+				<Route path="/dashboard" element={<EdibleDashboard />} />
 			</Routes>
 
 			<Footer />

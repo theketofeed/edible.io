@@ -1,12 +1,13 @@
 import { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Clock, ChefHat, Timer, ArrowLeft, CheckCircle2, Circle, Share2, Zap, Download } from 'lucide-react'
+import { Clock, ChefHat, Timer, ArrowLeft, CheckCircle2, Circle, Share2, Zap, Download, Heart } from 'lucide-react'
 import type { Meal } from '../utils/types'
 import Tabs, { Tab } from './Tabs'
 import NutritionBadges from './NutritionBadges'
 import type { ToastKind } from './Toast'
 import { fetchMealImage } from '../lib/unsplashApi'
 import CookingMode from './CookingMode'
+import { useAuth } from '../context/AuthContext'
 
 interface RecipeDetailProps {
     meal?: Meal
@@ -94,6 +95,54 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, showToas
         return `edible-recipe-${dayName}-${mealType}-${safeMeal.title.replace(/\s+/g, '-').toLowerCase()}`
     }, [dayName, mealType, safeMeal.title])
 
+    // Storage key for saved recipes
+    const savedRecipeKey = useMemo(() => {
+        return `edible-saved-recipes`
+    }, [])
+
+    // Check if recipe is saved on mount
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem(savedRecipeKey)
+            if (saved) {
+                const savedRecipes = new Set(JSON.parse(saved))
+                const recipeId = `${dayName}-${mealType}-${safeMeal.title}`
+                setIsSaved(savedRecipes.has(recipeId))
+            }
+        } catch (e) {
+            console.error('Failed to load saved recipes:', e)
+        }
+    }, [savedRecipeKey, dayName, mealType, safeMeal.title])
+
+    // Handle heart/save button click
+    const handleSaveRecipe = () => {
+        if (!user) {
+            showToast?.('info', 'Sign in to save recipes')
+            return
+        }
+
+        try {
+            const saved = localStorage.getItem(savedRecipeKey)
+            const savedRecipes = new Set(saved ? JSON.parse(saved) : [])
+            const recipeId = `${dayName}-${mealType}-${safeMeal.title}`
+
+            if (savedRecipes.has(recipeId)) {
+                savedRecipes.delete(recipeId)
+                setIsSaved(false)
+                showToast?.('success', 'Recipe removed from saved')
+            } else {
+                savedRecipes.add(recipeId)
+                setIsSaved(true)
+                showToast?.('success', 'Recipe saved!')
+            }
+
+            localStorage.setItem(savedRecipeKey, JSON.stringify(Array.from(savedRecipes)))
+        } catch (e) {
+            console.error('Failed to save recipe:', e)
+            showToast?.('error', 'Failed to save recipe')
+        }
+    }
+
     // Parse instructions into distinct steps
     const instructionSteps = useMemo(() => {
         return safeMeal.instructions
@@ -118,11 +167,13 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, showToas
         }
     }
 
+    const { user } = useAuth()
     const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set())
     const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set())
     const [recipeImage, setRecipeImage] = useState<string | null>(null)
     const [isImageLoading, setIsImageLoading] = useState(true)
     const [isCookingModeOpen, setIsCookingModeOpen] = useState(false)
+    const [isSaved, setIsSaved] = useState(false)
 
     // Fetch Unsplash Image
     useEffect(() => {
@@ -401,6 +452,15 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, showToas
                         >
                             <Download className="w-4 h-4 text-purple-600" />
                             <span className="text-sm md:text-base">PDF</span>
+                        </button>
+
+                        <button
+                            onClick={handleSaveRecipe}
+                            aria-label={isSaved ? 'Remove from saved recipes' : 'Save this recipe'}
+                            className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 bg-rose-50 text-rose-600 rounded-xl font-bold hover:bg-rose-100 hover:scale-105 active:scale-95 transition-all duration-300 group shadow-sm border border-rose-100 min-h-[44px] focus-visible:ring-2 focus-visible:ring-rose-500 ring-offset-2"
+                        >
+                            <Heart className={`w-4 h-4 group-hover:scale-110 transition-transform duration-300 ${isSaved ? 'fill-rose-600' : ''}`} aria-hidden="true" />
+                            <span className="text-sm md:text-base">{isSaved ? 'Saved' : 'Save'}</span>
                         </button>
 
                         <button
