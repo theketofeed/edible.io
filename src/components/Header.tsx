@@ -1,7 +1,17 @@
 import { memo, useCallback } from 'react'
-import { UtensilsCrossed, House, Sparkles, CreditCard, MessageCircleQuestion, ArrowUpRight, Menu } from 'lucide-react'
+import { House, Sparkles, CreditCard, MessageCircleQuestion, ArrowUpRight, Menu } from 'lucide-react'
+import logo from '../assets/Transparent logo.png'
+import { useAuth } from '../context/AuthContext'
+import UserMenu from './Usermenu'
 
-const Header = memo(function Header() {
+interface HeaderProps {
+	onAuthClick: () => void
+	onOpenProfile: () => void
+}
+
+const Header = memo(function Header({ onAuthClick, onOpenProfile }: HeaderProps) {
+	const { user } = useAuth()
+
 	const scrollToUpload = useCallback(() => {
 		const el = document.getElementById('upload-section')
 		if (el) {
@@ -20,14 +30,10 @@ const Header = memo(function Header() {
 				<nav className="flex items-center gap-1 p-3 pl-6 pr-3 bg-white/90 backdrop-blur-md rounded-full shadow-[0_8px_40px_rgba(0,0,0,0.08)] border border-white/50 max-w-5xl w-full mx-auto">
 
 					{/* Logo Section */}
-					<div className="flex items-center gap-3">
-						{/* Icon Box */}
-						<div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-900">
-							<UtensilsCrossed className="w-4 h-4 text-white" />
-						</div>
-						{/* Brand Text */}
+					<div className="flex items-center gap-2">
+						<img src={logo} alt="Edible.io" className="w-9 h-9 object-contain" />
 						<span className="text-lg font-bold text-gray-900 tracking-tight">
-							Edible.io
+							Edible<span className="text-[#C6A0F6]">.io</span>
 						</span>
 					</div>
 
@@ -60,21 +66,28 @@ const Header = memo(function Header() {
 
 					{/* CTA Section */}
 					<div className="flex items-center gap-2">
-						{/* Primary Button - scrolls to upload */}
-						<button
-							onClick={scrollToUpload}
-							className="flex items-center gap-2 bg-[#C6A0F6] text-gray-900 px-6 py-2.5 rounded-full text-sm font-semibold shadow-md hover:bg-[#b58df5] transition-colors duration-200"
-						>
-							Try Now
-						</button>
+						{user ? (
+							/* Logged in — show user menu */
+							<UserMenu onOpenProfile={onOpenProfile} />
+						) : (
+							<>
+								{/* Sign In button */}
+								<button
+									onClick={onAuthClick}
+									className="flex items-center gap-2 bg-[#C6A0F6] text-gray-900 px-6 py-2.5 rounded-full text-sm font-semibold shadow-md hover:bg-[#b58df5] transition-colors duration-200"
+								>
+									Sign In
+								</button>
 
-						{/* Secondary Circle Button - also scrolls to upload */}
-						<button
-							onClick={scrollToUpload}
-							className="flex items-center justify-center w-10 h-10 rounded-full bg-black text-white hover:bg-gray-800 transition-colors duration-200 group"
-						>
-							<ArrowUpRight className="w-5 h-5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
-						</button>
+								{/* Try Now arrow */}
+								<button
+									onClick={scrollToUpload}
+									className="flex items-center justify-center w-10 h-10 rounded-full bg-black text-white hover:bg-gray-800 transition-colors duration-200 group"
+								>
+									<ArrowUpRight className="w-5 h-5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
+								</button>
+							</>
+						)}
 
 						{/* Mobile Menu Button */}
 						<button className="md:hidden flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200 ml-1">

@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from 'react'
 import { LogOut, User, ChevronDown, LayoutDashboard, Sparkles } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
@@ -9,6 +10,7 @@ interface UserMenuProps {
 
 export default function UserMenu({ onOpenProfile }: UserMenuProps) {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -133,7 +135,7 @@ export default function UserMenu({ onOpenProfile }: UserMenuProps) {
           <div className="p-2">
             <button
               className="menu-item"
-              onClick={() => setOpen(false)}
+              onClick={() => { setOpen(false); navigate('/dashboard') }}
             >
               <span className="menu-icon"><LayoutDashboard className="w-4 h-4" /></span>
               Dashboard
@@ -141,7 +143,7 @@ export default function UserMenu({ onOpenProfile }: UserMenuProps) {
 
             <button
               className="menu-item"
-              onClick={() => { setOpen(false); onOpenProfile() }}
+              onClick={() => { setOpen(false); navigate('/dashboard') }}
             >
               <span className="menu-icon"><User className="w-4 h-4" /></span>
               Profile & Meal Plans

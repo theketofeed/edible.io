@@ -1,21 +1,25 @@
 import { memo, useCallback } from 'react'
+import type { ElementType } from 'react'
+import { Dumbbell, Flame, Leaf, Salad, Scale, Sprout, UtensilsCrossed, Wheat } from 'lucide-react'
 import type { DietType } from '../utils/types'
 
 interface DietInfo {
-	icon: string
+	icon: ElementType
 	description: string
+	col: string
+	bg: string
 }
 
 // Diet metadata with icons and descriptions
 const DIET_INFO: Record<DietType, DietInfo> = {
-	'Keto': { icon: '🥑', description: 'Low-carb, high-fat' },
-	'Vegan': { icon: '🌱', description: '100% plant-based' },
-	'Balanced': { icon: '⚖️', description: 'Nutritionally complete' },
-	'Paleo': { icon: '🥩', description: 'Whole foods only' },
-	'Vegetarian': { icon: '🥬', description: 'No meat or fish' },
-	'Low-Carb': { icon: '🥦', description: 'Reduced carbohydrates' },
-	'High-Protein': { icon: '🍗', description: 'Protein-focused meals' },
-	'Mediterranean': { icon: '🥙', description: 'Heart-healthy fats' }
+	'Keto': { icon: Flame, description: 'Low-carb, high-fat', col: '#b45309', bg: '#FEFCE8' },
+	'Vegan': { icon: Leaf, description: '100% plant-based', col: '#047857', bg: '#ECFDF5' },
+	'Balanced': { icon: Scale, description: 'Nutritionally complete', col: '#16a34a', bg: '#F0FDF4' },
+	'Paleo': { icon: UtensilsCrossed, description: 'Whole foods only', col: '#c2410c', bg: '#FFF7ED' },
+	'Vegetarian': { icon: Sprout, description: 'No meat or fish', col: '#15803d', bg: '#F0FDF4' },
+	'Low-Carb': { icon: Salad, description: 'Reduced carbohydrates', col: '#0ea5e9', bg: '#E0F2FE' },
+	'High-Protein': { icon: Dumbbell, description: 'Protein-focused meals', col: '#dc2626', bg: '#FEF2F2' },
+	'Mediterranean': { icon: Wheat, description: 'Heart-healthy fats', col: '#1d4ed8', bg: '#EFF6FF' }
 }
 
 // Popular diets (Row 1)
@@ -45,6 +49,7 @@ const DietButton = memo(function DietButton({
 }) {
 	const handleClick = useCallback(() => onClick(diet), [diet, onClick])
 	const info = DIET_INFO[diet]
+	const Icon = info.icon
 	
 	return (
 		<button
@@ -57,17 +62,33 @@ const DietButton = memo(function DietButton({
 				px-3 py-3 md:px-4 md:py-4
 				rounded-xl border-2 transition-all duration-200
 				${isPopular ? 'md:px-5 md:py-5' : ''}
-				${isActive 
-					? 'bg-purple-600 border-purple-600 text-white shadow-lg' 
-					: 'border-gray-200 bg-white text-gray-900 hover:border-purple-200 hover:shadow-md hover:-translate-y-0.5'
-				}
 				${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}
 				group relative
 			`}
+			style={{
+				background: isActive ? info.col : '#FFFFFF',
+				borderColor: isActive ? info.col : '#EDE9E2',
+				color: isActive ? '#FFFFFF' : '#111827',
+				boxShadow: isActive ? `0 12px 34px rgba(0,0,0,0.06)` : undefined
+			}}
 		>
-			<div className="text-2xl md:text-3xl mb-1">{info.icon}</div>
-			<div className="text-sm md:text-base font-semibold">{diet}</div>
-			<div className={`text-xs mt-1 ${isActive ? 'text-purple-100' : 'text-gray-500'}`}>
+			<div
+				style={{
+					width: 44,
+					height: 44,
+					borderRadius: 16,
+					background: isActive ? 'rgba(255,255,255,0.15)' : info.bg,
+					border: isActive ? 'none' : `1px solid rgba(0,0,0,0.04)`,
+					display: 'flex',
+					alignItems: 'center',
+					justifyContent: 'center',
+					marginBottom: 10,
+				}}
+			>
+				<Icon size={20} style={{ color: isActive ? '#FFFFFF' : info.col }} />
+			</div>
+			<div className="text-sm md:text-base font-semibold" style={{ textAlign: 'center' }}>{diet}</div>
+			<div className="text-xs mt-1" style={{ color: isActive ? 'rgba(255,255,255,0.9)' : '#6B7280', textAlign: 'center' }}>
 				{info.description}
 			</div>
 		</button>

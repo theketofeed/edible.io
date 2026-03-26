@@ -1,14 +1,18 @@
-import { forwardRef, memo, useMemo, useEffect, useState } from 'react'
-import { Copy, Download, RefreshCw, ChevronRight } from 'lucide-react'
+import { forwardRef, memo, useMemo, useEffect, useState, useCallback } from 'react'
+import { Copy, Download, RefreshCw, ChevronRight, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { MealPlanResult, DayMeals, Meal } from '../utils/types'
 import { fetchMealImage } from '../lib/unsplashApi'
+import { useAuth } from '../context/AuthContext'
+import { saveMealPlan } from '../lib/db'
 
 interface Props {
 	result: MealPlanResult
 	onCopy: () => void
 	onDownload: () => void
 	onRegenerate: () => void
+	setAuthOpen: (open: boolean) => void
+	showToast: (type: 'success' | 'error' | 'info', message: string) => void
 }
 
 // Helper to get high-quality placeholder images from Unsplash
@@ -159,8 +163,12 @@ const DayCard = memo(function DayCard({
 	)
 })
 
-const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result, onCopy, onDownload, onRegenerate }, ref) {
+const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result, onCopy, onDownload, onRegenerate, setAuthOpen, showToast }, ref) {
 	const navigate = useNavigate()
+	const { user } = useAuth()
+	const [showSaveModal, setShowSaveModal] = useState(false)
+	const [savePlanTitle, setSavePlanTitle] = useState(`My ${result.diet} Plan`)
+	const [isSaving, setIsSaving] = useState(false)
 
 	const title = useMemo(() => `Your ${result.totalDays}-Day ${result.diet} Meal Plan`, [result.totalDays, result.diet])
 	const days = useMemo(() => result.days, [result.days])
@@ -168,6 +176,31 @@ const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result
 	const handleNavigate = (dayIndex: number, mealType: string, meal: Meal) => {
 		navigate(`/recipe/${dayIndex}/${mealType}`, { state: { meal } })
 	}
+
+	const handleSavePlanClick = useCallback(() => {
+		if (!user) {
+			setAuthOpen(true)
+			return
+		}
+		setSavePlanTitle(`My ${result.diet} Plan`)
+		setShowSaveModal(true)
+	}, [user, result.diet, setAuthOpen])
+
+	const handleSaveConfirm = useCallback(async () => {
+		if (!user || !savePlanTitle.trim()) return
+
+		setIsSaving(true)
+		try {
+			await saveMealPlan(result, savePlanTitle.trim())
+			showToast('success', 'Meal plan saved successfully!')
+			setShowSaveModal(false)
+		} catch (error) {
+			console.error('Failed to save meal plan:', error)
+			showToast('error', 'Failed to save meal plan. Please try again.')
+		} finally {
+			setIsSaving(false)
+		}
+	}, [user, result, savePlanTitle, showToast])
 
 	return (
 		<div className="w-full max-w-7xl mx-auto px-4 py-8 animate-fadeIn">
@@ -177,7 +210,7 @@ const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result
 				</h1>
 				<p className="text-gray-500 text-sm text-center mb-6">Grounded in {result.sourceItems.length} grocery items</p>
 
-				<div className="flex items-center justify-center gap-2 no-print">
+				<div className="flex items-center justify-center gap-2 no-print flex-wrap">
 					<button className="btn border border-gray-300 bg-white hover:bg-gray-50 text-sm py-2 px-4 rounded-lg flex items-center shadow-sm transition-all" onClick={onCopy}>
 						<Copy className="w-4 h-4 mr-2" />
 						Copy Text
@@ -190,12 +223,20 @@ const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result
 						<RefreshCw className="w-4 h-4 mr-2" />
 						Regenerate
 					</button>
+					<button 
+						className="btn bg-emerald-600 text-white hover:bg-emerald-700 text-sm py-2 px-4 rounded-lg flex items-center shadow-md transition-all"
+						onClick={handleSavePlanClick}
+					>
+						💾 Save This Plan
+					</button>
 				</div>
 			</div>
 
 			<div ref={ref} className="w-full print-content">
 				<div className="print-only text-center mb-8">
-					<h1 className="heading text-3xl font-bold text-purple-900">Edible.io</h1>
+					<h1 className="heading text-3xl font-bold text-purple-900">
+						Edible<span style={{ color: '#C6A0F6' }}>.io</span>
+					</h1>
 					<p className="text-xl font-semibold text-gray-800">{title}</p>
 					<p className="text-sm text-gray-600">Generated from your uploaded grocery list</p>
 				</div>
@@ -207,6 +248,53 @@ const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result
 					))}
 				</div>
 			</div>
+
+			{/* Save Plan Modal */}
+			{showSaveModal && (
+				<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+					<div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-fadeIn">
+						<div className="flex items-center justify-between mb-4">
+							<h2 className="text-xl font-bold text-gray-900">Save Meal Plan</h2>
+							<button
+								onClick={() => setShowSaveModal(false)}
+								className="text-gray-400 hover:text-gray-600 transition-colors"
+								disabled={isSaving}
+							>
+								<X className="w-5 h-5" />
+							</button>
+						</div>
+
+						<div className="mb-6">
+							<label className="block text-sm font-semibold text-gray-700 mb-2">Plan Title</label>
+							<input
+								type="text"
+								value={savePlanTitle}
+								onChange={(e) => setSavePlanTitle(e.target.value)}
+								className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+								placeholder="e.g., My Balanced Plan"
+								disabled={isSaving}
+							/>
+						</div>
+
+						<div className="flex gap-3">
+							<button
+								onClick={() => setShowSaveModal(false)}
+								className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors"
+								disabled={isSaving}
+							>
+								Cancel
+							</button>
+							<button
+								onClick={handleSaveConfirm}
+								disabled={isSaving || !savePlanTitle.trim()}
+								className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium transition-colors disabled:bg-emerald-400 disabled:cursor-not-allowed"
+							>
+								{isSaving ? 'Saving...' : 'Save'}
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	)
 }))
