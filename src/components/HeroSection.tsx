@@ -1,4 +1,7 @@
 import { memo, useState, useEffect, useCallback } from 'react'
+import avatar1 from '../assets/avatars/avatar1.jpg'
+import avatar2 from '../assets/avatars/avatar2.jpg'
+import avatar3 from '../assets/avatars/avatar3.jpg'
 
 const HeroSection = memo(function HeroSection() {
 	const [displayText, setDisplayText] = useState('')
@@ -79,11 +82,11 @@ const HeroSection = memo(function HeroSection() {
 				<div className="flex flex-col items-center gap-2 text-xs md:text-sm text-gray-500">
 					<div className="flex items-center gap-2">
 						<div className="flex -space-x-2">
-							<div className="w-7 h-7 rounded-full bg-purple-200 border border-white" />
-							<div className="w-7 h-7 rounded-full bg-emerald-200 border border-white" />
-							<div className="w-7 h-7 rounded-full bg-sky-200 border border-white" />
+							<img src={avatar1} alt="User 1" className="w-7 h-7 rounded-full border border-white object-cover object-center" />
+							<img src={avatar2} alt="User 2" className="w-7 h-7 rounded-full border border-white object-cover object-center" />
+							<img src={avatar3} alt="User 3" className="w-7 h-7 rounded-full border border-white object-cover object-center" />
 						</div>
-						<span className="font-semibold text-gray-800">12k+</span>
+						<span className="font-semibold text-gray-800">1k+</span>
 						<span className="text-gray-500">meal plans generated for busy home cooks</span>
 					</div>
 				</div>

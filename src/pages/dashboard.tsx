@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import {
   LayoutDashboard, Calendar, BookmarkCheck, Heart, Sparkles,
@@ -10,6 +10,9 @@ import {
   Camera, PencilLine
 } from "lucide-react"
 import logo from "../assets/Transparent logo.png"
+import { useAuth } from "../context/AuthContext"
+import { getUserMealPlans, getProfile } from "../lib/db"
+import type { MealPlanResult } from "../utils/types"
 
 const C = {
   white:"#FFFFFF",
@@ -29,6 +32,8 @@ const C = {
 }
 
 type DietKey = "All"|"Balanced"|"Keto"|"Vegan"|"High-Protein"|"Mediterranean"|"Vegetarian"|"Paleo"
+type UserData = { name: string; email: string; joined: string }
+const DEFAULT_USER_DATA: UserData = { name:"User", email:"user@edible.io", joined:"2026" }
 const DIET: Record<DietKey, { icon: React.ElementType; col: string; bg: string }> = {
   All:            { icon: Sparkles, col: C.purple, bg: "#F5F3FF" },
   Balanced:       { icon: Scale, col: "#16a34a", bg: "#F0FDF4" },
@@ -101,9 +106,9 @@ const MICON:Record<string, React.ElementType> = { Breakfast:Sunrise, Lunch:Sun, 
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 type NavId = "overview"|"planner"|"plans"|"recipes"|"generate"|"profile"|"logout"
-interface SidebarProps { active: string; onNav: (id: NavId) => void }
+interface SidebarProps { active: string; onNav: (id: NavId) => void; userData: UserData }
 
-function Sidebar({ active, onNav }: SidebarProps) {
+function Sidebar({ active, onNav, userData }: SidebarProps) {
   const main = [
     { id:"overview" as NavId, icon:LayoutDashboard, label:"Overview"      },
     { id:"planner"  as NavId, icon:Calendar,        label:"Meal Planner"  },
@@ -147,14 +152,11 @@ function Sidebar({ active, onNav }: SidebarProps) {
       height:"100%",borderRight:`1px solid ${C.sideBdr}`,flexShrink:0}}>
       <div style={{padding:"18px 16px 14px",borderBottom:`1px solid ${C.sideBdr}`}}>
         <div style={{display:"flex",alignItems:"center",gap:9}}>
-          <div style={{width:32,height:32,borderRadius:9,background:`linear-gradient(135deg,${C.accent},${C.accentDark})`,
-            display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <img
-              src={logo}
-              alt="Edible.io"
-              style={{width:16,height:16,objectFit:"contain",filter:"brightness(0) invert(1)"}}
-            />
-          </div>
+          <img
+            src={logo}
+            alt="Edible.io"
+            style={{width:32,height:32,objectFit:"contain"}}
+          />
           <span style={{fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:16,fontWeight:800,color:C.txt}}>
             Edible<span style={{color:C.accent}}>.io</span>
           </span>
@@ -193,8 +195,8 @@ function Sidebar({ active, onNav }: SidebarProps) {
             />
           </div>
           <div style={{flex:1,minWidth:0}}>
-            <p style={{color:C.txt,fontSize:11.5,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>Sarah Mitchell</p>
-            <p style={{color:C.faint,fontSize:10,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>sarah@edible.io</p>
+            <p style={{color:C.txt,fontSize:11.5,fontWeight:700,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{userData.name}</p>
+            <p style={{color:C.faint,fontSize:10,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{userData.email}</p>
           </div>
         </div>
       </div>
@@ -203,9 +205,9 @@ function Sidebar({ active, onNav }: SidebarProps) {
 }
 
 // ─── Overview ─────────────────────────────────────────────────────────────────
-interface OverviewProps { plans: Plan[]; onNav: (id: NavId) => void }
+interface OverviewProps { plans: Plan[]; onNav: (id: NavId) => void; userData: UserData }
 
-function Overview({ plans, onNav }: OverviewProps) {
+function Overview({ plans, onNav, userData }: OverviewProps) {
   const totalDays  = plans.reduce((a, p) => a + p.days.length, 0)
   const totalMeals = totalDays * 3
   const todayMeals = PLANNER[TODAY] || []
@@ -240,7 +242,7 @@ function Overview({ plans, onNav }: OverviewProps) {
             </div>
           </div>
           <h1 style={{fontSize:25,fontWeight:800,color:C.txt,marginBottom:20}}>
-            Good morning, Sarah{" "}
+            Good morning, {userData.name.split(' ')[0]}{" "}
             <span style={{fontSize:18,display:"inline-block",verticalAlign:"middle",transform:"translateY(-1px)"}}>👋</span>
           </h1>
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
@@ -733,7 +735,20 @@ function SearchResults({
 
 // ─── Generate ─────────────────────────────────────────────────────────────────
 function Generate() {
+  const navigate = useNavigate()
   const [hov, setHov] = useState<number|null>(null)
+  
+  const handleGenerate = () => {
+    // Navigate to home where the actual generate flow happens
+    navigate('/')
+    setTimeout(() => {
+      const uploadSection = document.getElementById('upload-section')
+      if (uploadSection) {
+        uploadSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }, 100)
+  }
+  
   return (
     <div>
       <h1 style={{fontSize:24,fontWeight:800,color:C.txt,marginBottom:6}}>Generate a Meal Plan</h1>
@@ -744,6 +759,7 @@ function Generate() {
           { Icon: PencilLine, label:"Type or Paste", desc:"Enter your grocery items directly" },
         ].map((o,i) => (
           <div key={i} onMouseEnter={() => setHov(i)} onMouseLeave={() => setHov(null)}
+            onClick={handleGenerate}
             style={{background:C.white,borderRadius:16,
               border:`2px solid ${hov === i ? C.accent : C.cardBdr}`,
               padding:28,cursor:"pointer",transition:"all .15s",textAlign:"center"}}>
@@ -770,7 +786,9 @@ function Generate() {
           ))}
         </div>
       </div>
-      <button style={{background:C.accent,color:"white",padding:"12px 28px",borderRadius:999,
+      <button 
+        onClick={handleGenerate}
+        style={{background:C.accent,color:"white",padding:"12px 28px",borderRadius:999,
         fontWeight:700,fontSize:14,border:"none",cursor:"pointer",
         display:"flex",alignItems:"center",gap:8,
         fontFamily:"'Plus Jakarta Sans',sans-serif",
@@ -782,7 +800,7 @@ function Generate() {
 }
 
 // ─── Profile ──────────────────────────────────────────────────────────────────
-interface ProfileProps { user: typeof USER_DATA; plans: Plan[] }
+interface ProfileProps { user: UserData; plans: Plan[] }
 
 function Profile({ user, plans }: ProfileProps) {
   const totalDays = plans.reduce((a, p) => a + p.days.length, 0)
@@ -869,15 +887,91 @@ function Profile({ user, plans }: ProfileProps) {
 // ─── Root Dashboard ───────────────────────────────────────────────────────────
 export default function EdibleDashboard() {
   const navigate = useNavigate()
-  const [view,     setView]     = useState<NavId>("overview")
-  const [search,   setSearch]   = useState("")
+  const { user, isLoading: authLoading } = useAuth()
+  const [view, setView] = useState<NavId>("overview")
+  const [search, setSearch] = useState("")
   const [showDrop, setShowDrop] = useState(false)
+  const [plans, setPlans] = useState<Plan[]>(PLANS)
+  const [isLoadingPlans, setIsLoadingPlans] = useState(true)
+  const [userData, setUserData] = useState<UserData>(DEFAULT_USER_DATA)
+  const [isLoadingUser, setIsLoadingUser] = useState(true)
+
+  // Fetch user data from Supabase on mount
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!user || authLoading) return
+      try {
+        setIsLoadingUser(true)
+        const profile = await getProfile()
+        if (profile) {
+          setUserData({
+            name: profile.name || user.email?.split('@')[0] || 'User',
+            email: profile.email || user.email || '',
+            joined: profile.joined || new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+          })
+        } else {
+          setUserData({
+            name: user.email?.split('@')[0] || 'User',
+            email: user.email || '',
+            joined: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+          })
+        }
+      } catch (error) {
+        console.error('Failed to load user profile:', error)
+        setUserData({
+          name: user.email?.split('@')[0] || 'User',
+          email: user.email || '',
+          joined: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+        })
+      } finally {
+        setIsLoadingUser(false)
+      }
+    }
+
+    fetchUserData()
+  }, [user, authLoading])
+
+  // Fetch meal plans from Supabase on mount
+  useEffect(() => {
+    const fetchPlans = async () => {
+      if (!user || authLoading) return
+      try {
+        setIsLoadingPlans(true)
+        const mealPlans = await getUserMealPlans()
+        
+        // Transform Supabase meal plans to dashboard format
+        const transformedPlans: Plan[] = mealPlans.map(mp => ({
+          id: mp.id,
+          title: mp.title,
+          diet: (mp.plan_data?.diet || 'Balanced') as DietKey,
+          date: mp.created_at || new Date().toISOString(),
+          days: mp.plan_data?.days || []
+        }))
+        
+        setPlans(transformedPlans.length > 0 ? transformedPlans : PLANS)
+      } catch (error) {
+        console.error('Failed to load meal plans:', error)
+        setPlans(PLANS) // Fall back to mock data
+      } finally {
+        setIsLoadingPlans(false)
+      }
+    }
+
+    fetchPlans()
+  }, [user, authLoading])
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/')
+    }
+  }, [user, authLoading, navigate])
 
   const query = search.trim().toLowerCase()
   const showSearch = query.length > 1
 
   const matchedPlans = showSearch
-    ? PLANS.filter(p => p.title.toLowerCase().includes(query) || p.diet.toLowerCase().includes(query))
+    ? plans.filter(p => p.title.toLowerCase().includes(query) || p.diet.toLowerCase().includes(query))
     : []
   const matchedRecipes = showSearch
     ? RECIPES.filter(r => r.title.toLowerCase().includes(query) || r.type.toLowerCase().includes(query))
@@ -911,7 +1005,7 @@ export default function EdibleDashboard() {
       `}</style>
       <div style={{display:"flex",height:"100vh",overflow:"hidden",
         fontFamily:"'Plus Jakarta Sans',sans-serif",background:C.bg}}>
-        <Sidebar active={view} onNav={go} />
+        <Sidebar active={view} onNav={go} userData={userData} />
         <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
           <header style={{height:56,background:"rgba(245,243,239,0.92)",backdropFilter:"blur(10px)",
             borderBottom:"1px solid #EDE9E2",display:"flex",alignItems:"center",
@@ -996,18 +1090,18 @@ export default function EdibleDashboard() {
                 fontWeight:800,color:"white",fontSize:14,cursor:"pointer"}}>S</div>
             </div>
           </header>
-          <main style={{flex:1,overflowY:"auto",padding:"26px 28px"}}>
+          <main style={{flex:1,overflowY:"auto",padding:"16px 28px 32px 28px"}}>
             <div style={{maxWidth:860,margin:"0 auto"}}>
               {showSearch ? (
                 <SearchResults plans={matchedPlans} recipes={matchedRecipes} query={search.trim()} />
               ) : (
                 <>
-                  {view === "overview" && <Overview plans={PLANS} onNav={go} />}
+                  {view === "overview" && <Overview plans={plans} onNav={go} userData={userData} />}
                   {view === "planner"  && <MealPlanner />}
-                  {view === "plans"    && <SavedPlans plans={PLANS} />}
+                  {view === "plans"    && <SavedPlans plans={plans} />}
                   {view === "recipes"  && <SavedRecipes />}
                   {view === "generate" && <Generate />}
-                  {view === "profile"  && <Profile user={USER_DATA} plans={PLANS} />}
+                  {view === "profile"  && <Profile user={userData} plans={plans} />}
                 </>
               )}
             </div>

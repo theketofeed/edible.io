@@ -40,9 +40,13 @@ export async function saveReceipt(rawOcrText: string, parsedItems: string[]) {
 }
 
 export async function getUserReceipts() {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
   const { data, error } = await supabase
     .from('receipts')
     .select('*')
+    .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
   if (error) throw error
@@ -75,9 +79,13 @@ export async function saveMealPlan(
 }
 
 export async function getUserMealPlans() {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
   const { data, error } = await supabase
     .from('meal_plans')
     .select('*')
+    .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
   if (error) throw error
@@ -99,12 +107,22 @@ export async function getProfile() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
+  // First try to get profile from profiles table
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', user.id)
     .single()
 
+  if (error && error.code === 'PGRST116') {
+    // Profile doesn't exist, return user data
+    return {
+      id: user.id,
+      name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+      email: user.email,
+    }
+  }
+
   if (error) throw error
-  return data
+  return data || { id: user.id, name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User', email: user.email }
 }

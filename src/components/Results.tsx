@@ -1,5 +1,5 @@
 import { forwardRef, memo, useMemo, useEffect, useState, useCallback } from 'react'
-import { Copy, Download, RefreshCw, ChevronRight, X } from 'lucide-react'
+import { Copy, Download, RefreshCw, ChevronRight, X, Bookmark } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { MealPlanResult, DayMeals, Meal } from '../utils/types'
 import { fetchMealImage } from '../lib/unsplashApi'
@@ -227,7 +227,8 @@ const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result
 						className="btn bg-emerald-600 text-white hover:bg-emerald-700 text-sm py-2 px-4 rounded-lg flex items-center shadow-md transition-all"
 						onClick={handleSavePlanClick}
 					>
-						💾 Save This Plan
+						<Bookmark className="w-4 h-4 mr-2" />
+						Save This Plan
 					</button>
 				</div>
 			</div>
