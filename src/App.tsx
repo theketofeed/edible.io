@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowUp, AlertCircle, ArrowLeft } from 'lucide-react'
+import { ArrowUp, AlertCircle, ArrowLeft, Lock } from 'lucide-react'
 import { BrowserRouter as Router, Routes, Route, useNavigate, useParams, useLocation } from 'react-router-dom'
 import Header from './components/Header'
 import HeroSection from './components/HeroSection'
@@ -198,7 +198,7 @@ function MainContent() {
 				onCancel={() => setShowConfirmation(false)}
 			/>
 
-			{!location.pathname.startsWith("/dashboard") && (
+{!location.pathname.startsWith("/dashboard") && !isLoading && !result && !showConfirmation && !isParsing && !authOpen && (
 				<Header onAuthClick={() => setAuthOpen(true)} onOpenProfile={() => setProfileOpen(true)} />
 			)}
 
@@ -260,13 +260,23 @@ function MainContent() {
 									showToast={showToast}									ref={printRef}
 								/>
 								{!user && (
-									<div className="mt-4 flex items-center gap-3 px-4 py-3 bg-purple-50 border border-purple-100 rounded-2xl">
-										<span className="text-sm text-purple-700">
-											🔒 Sign in to save this meal plan to your account
-										</span>
-										<button
-											onClick={() => setAuthOpen(true)}
-											className="ml-auto text-xs font-semibold text-white bg-purple-500 hover:bg-purple-600 px-4 py-1.5 rounded-full transition-colors"
+								<div className="mt-4 flex items-center gap-4 px-6 py-4 bg-white border border-gray-200 rounded-2xl hover:shadow-md hover:border-gray-300 transition-all duration-200">
+									<div className="flex items-center gap-3 flex-1">
+										<div className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-purple-100 rounded-full">
+											<Lock className="w-5 h-5 text-purple-600" />
+										</div>
+										<div>
+											<p className="text-sm font-semibold text-gray-900">
+												Love this meal plan?
+											</p>
+											<p className="text-xs text-gray-600">
+												Sign in to save it to your account
+											</p>
+										</div>
+									</div>
+									<button
+										onClick={() => setAuthOpen(true)}
+										className="ml-auto text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 px-5 py-2 rounded-lg transition-colors whitespace-nowrap flex-shrink-0"
 										>
 											Sign in
 										</button>
