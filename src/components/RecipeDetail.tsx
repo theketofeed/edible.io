@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Clock, ChefHat, Timer, ArrowLeft, CheckCircle2, Circle, Share2, Zap, Download, Heart } from 'lucide-react'
+import { Clock, ChefHat, Timer, ArrowLeft, CheckCircle2, Circle, Share2, Zap, Download, Heart, Lightbulb } from 'lucide-react'
 import type { Meal } from '../utils/types'
 import Tabs, { Tab } from './Tabs'
 import NutritionBadges from './NutritionBadges'
@@ -14,16 +14,17 @@ interface RecipeDetailProps {
     mealType: 'Breakfast' | 'Lunch' | 'Dinner'
     dayName: string
     onBack: () => void
+    backLabel?: string
     showToast?: (type: ToastKind, message: string) => void
 }
 
-const RecipeDetailSkeleton = ({ onBack }: { onBack: () => void }) => (
+const RecipeDetailSkeleton = ({ onBack, backLabel }: { onBack: () => void, backLabel?: string }) => (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-lavender-50 pb-20 pt-[env(safe-area-inset-top)]">
         <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-purple-100">
             <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
                 <button onClick={onBack} className="flex items-center gap-2 text-purple-600 font-bold min-h-[44px]">
                     <ArrowLeft className="w-5 h-5" />
-                    Back to Meal Plan
+                    {backLabel || "Back to Meal Plan"}
                 </button>
             </div>
         </div>
@@ -75,8 +76,8 @@ const RecipeDetailSkeleton = ({ onBack }: { onBack: () => void }) => (
     </div>
 )
 
-export default function RecipeDetail({ meal, mealType, dayName, onBack, showToast }: RecipeDetailProps) {
-    if (!meal) return <RecipeDetailSkeleton onBack={onBack} />
+export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabel, showToast }: RecipeDetailProps) {
+    if (!meal) return <RecipeDetailSkeleton onBack={onBack} backLabel={backLabel} />
 
     // Defensive checks for required properties
     const safeMeal = useMemo(() => ({
@@ -260,9 +261,8 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, showToas
                         safeMeal.ingredients.map((ingredient, index) => (
                             <label
                                 key={index}
-                                className={`flex items-center gap-4 p-4 rounded-xl border transition-all duration-300 group cursor-pointer min-h-[44px]
-                                    focus-within:ring-2 focus-within:ring-purple-500 focus-within:ring-offset-2
-									${checkedIngredients.has(index) ? 'bg-gray-50 border-gray-100' : 'bg-white border-purple-50 hover:border-purple-200 hover:shadow-sm'}`}
+                                className={`flex items-center gap-4 p-5 rounded-2xl border transition-all duration-300 group cursor-pointer min-h-[44px]
+									${checkedIngredients.has(index) ? 'bg-gray-50 border-gray-100' : 'bg-white border-gray-50 hover:border-purple-200 hover:shadow-[0_4px_16px_rgba(0,0,0,0.02)]'}`}
                             >
                                 <input
                                     type="checkbox"
@@ -316,10 +316,8 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, showToas
                     {instructionSteps.length > 0 ? (
                         instructionSteps.map((step, index) => (
                             <label
-                                key={index}
-                                className={`flex items-start gap-4 md:gap-5 p-5 md:p-6 rounded-2xl border transition-all duration-300 group cursor-pointer min-h-[44px]
-                                    focus-within:ring-2 focus-within:ring-purple-500 focus-within:ring-offset-2
-									${completedSteps.has(index) ? 'bg-gray-50 border-gray-100 shadow-inner' : 'bg-white border-purple-50 hover:border-purple-200 hover:shadow-md'}`}
+                                className={`flex items-start gap-5 p-6 md:p-8 rounded-[2rem] border transition-all duration-300 group cursor-pointer min-h-[44px]
+									${completedSteps.has(index) ? 'bg-gray-50 border-gray-100 shadow-inner' : 'bg-white border-gray-50 hover:border-purple-200 hover:shadow-[0_8px_30px_rgba(0,0,0,0.03)]'}`}
                             >
                                 <input
                                     type="checkbox"
@@ -358,7 +356,7 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, showToas
                                 </div>
                                 <div className="flex-1">
                                     <p
-                                        className={`text-gray-900 leading-relaxed font-bold text-lg md:text-2xl transition-all duration-300 ${completedSteps.has(index) ? 'line-through text-gray-400 grayscale italic' : ''
+                                        className={`text-gray-900 leading-relaxed font-bold text-lg md:text-xl transition-all duration-300 ${completedSteps.has(index) ? 'line-through text-gray-400 grayscale italic' : ''
                                             }`}
                                     >
                                         {step}
@@ -384,23 +382,25 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, showToas
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.25, duration: 0.4 }}
-                className="bg-purple-900 text-white rounded-[2rem] shadow-xl p-8 md:p-10 mb-8 md:mb-12 relative overflow-hidden group"
+                className="bg-white rounded-[2.5rem] shadow-[0_20px_60px_rgba(198,160,246,0.12)] p-8 md:p-12 mb-12 border border-purple-100/50 relative overflow-hidden group"
             >
-                <div className="absolute top-0 right-0 w-64 h-64 bg-purple-800 rounded-full blur-3xl -mr-32 -mt-32 opacity-50 group-hover:scale-110 transition-transform duration-700"></div>
-                <div className="absolute bottom-0 left-0 w-32 h-32 bg-pink-500 rounded-full blur-3xl -ml-16 -mb-16 opacity-20"></div>
-
-                <h2 className="text-xl md:text-2xl font-black mb-6 flex items-center gap-4 relative z-10">
-                    <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30 shadow-lg">
-                        <Zap className="w-6 h-6 text-yellow-300 fill-yellow-300" />
+                <div className="absolute top-0 right-0 w-80 h-80 bg-purple-50 rounded-full blur-[100px] -mr-40 -mt-40 transition-transform duration-700 group-hover:scale-110"></div>
+                
+                <h2 className="text-xl md:text-2xl font-bold mb-8 flex items-center gap-4 relative z-10 text-gray-900">
+                    <div className="w-1.5 h-8 bg-[#C6A0F6] rounded-full shadow-[0_0_12px_rgba(198,160,246,0.5)]"></div>
+                    <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center border border-purple-100/50 shadow-sm transition-all duration-300 group-hover:scale-105 group-hover:shadow-md ml-1">
+                        <ChefHat className="w-6 h-6 text-purple-600" />
                     </div>
-                    Chef's Tips
+                    Chef Tips
                 </h2>
 
-                <div className="space-y-4 relative z-10">
+                <div className="grid gap-4 relative z-10">
                     {safeMeal.tips.map((tip, idx) => (
-                        <div key={idx} className="flex gap-4 items-start bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/10 hover:bg-white/15 transition-colors">
-                            <span className="text-2xl mt-1 leading-none">✨</span>
-                            <p className="text-purple-50 font-medium leading-relaxed italic">
+                        <div key={idx} className="flex gap-5 items-start bg-purple-50/20 backdrop-blur-sm p-6 rounded-2xl border border-purple-100/30 hover:bg-white hover:border-purple-200 hover:shadow-[0_4px_20px_rgba(198,160,246,0.06)] transition-all duration-300">
+                            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm flex-shrink-0 mt-0.5 border border-purple-100/20">
+                                <Lightbulb className="w-4 h-4 text-purple-500" />
+                            </div>
+                            <p className="text-gray-700 text-lg font-medium leading-relaxed italic">
                                 "{tip}"
                             </p>
                         </div>
@@ -425,51 +425,53 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, showToas
             </a>
 
             {/* Back Button */}
-            <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-purple-100">
-                <div className="max-w-4xl mx-auto px-4 py-3 md:py-4 flex items-center justify-between">
+            <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-lg border-b border-gray-100/60 shadow-[0_4px_24px_rgba(0,0,0,0.02)] transition-all">
+                <div className="max-w-4xl mx-auto px-4 py-3.5 flex items-center justify-between">
                     <button
                         onClick={onBack}
                         aria-label="Back to meal plan"
-                        className="flex items-center gap-2 text-purple-600 hover:text-purple-700 transition-all duration-300 font-bold group min-h-[44px] px-2 -ml-2 rounded-lg focus-visible:ring-2 focus-visible:ring-purple-500"
+                        className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-all duration-300 font-bold group min-h-[44px] px-2 -ml-2 rounded-lg"
                     >
-                        <ArrowLeft className="w-5 h-5 transform group-hover:-translate-x-1 transition-transform duration-300" aria-hidden="true" />
-                        <span className="hidden sm:inline">Back to Meal Plan</span>
-                        <span className="sm:hidden">Back</span>
+                        <ArrowLeft className="w-5 h-5 transform group-hover:-translate-x-1 transition-transform" strokeWidth={2.5} aria-hidden="true" />
+                        <span className="hidden sm:inline text-[15px]">{backLabel || "Back to Meal Plan"}</span>
+                        <span className="sm:hidden text-[15px]">Back</span>
                     </button>
 
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => setIsCookingModeOpen(true)}
-                            className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 hover:scale-105 active:scale-95 transition-all duration-300 group shadow-md min-h-[44px] focus-visible:ring-2 focus-visible:ring-purple-500 ring-offset-2"
+                            className="flex items-center gap-2 h-10 px-4 bg-[#C6A0F6] text-gray-900 rounded-full font-bold hover:shadow-[0_4px_16px_rgba(198,160,246,0.3)] hover:-translate-y-0.5 active:scale-95 transition-all duration-300 group"
                         >
-                            <ChefHat className="w-4 h-4 group-hover:rotate-12 transition-transform duration-300" />
-                            <span className="text-sm md:text-base">Start Cooking</span>
+                            <ChefHat className="w-4 h-4" />
+                            <span className="text-[14px]">Start Cooking</span>
                         </button>
+                    </div>
 
+                    <div className="flex items-center gap-3">
                         <button
                             onClick={() => window.print()}
-                            className="hidden sm:flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 bg-white text-gray-700 rounded-xl font-bold hover:bg-gray-50 hover:scale-105 active:scale-95 transition-all duration-300 group shadow-sm border border-gray-200 min-h-[44px] focus-visible:ring-2 focus-visible:ring-purple-500 ring-offset-2"
+                            className="hidden sm:flex items-center gap-2 h-10 px-4 bg-white text-gray-600 rounded-full font-bold shadow-[0_2px_8px_rgba(0,0,0,0.02)] border border-gray-100 hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all"
                         >
-                            <Download className="w-4 h-4 text-purple-600" />
-                            <span className="text-sm md:text-base">PDF</span>
+                            <Download className="w-4 h-4" />
+                            <span className="text-[13px]">PDF</span>
                         </button>
 
                         <button
                             onClick={handleSaveRecipe}
                             aria-label={isSaved ? 'Remove from saved recipes' : 'Save this recipe'}
-                            className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 bg-rose-50 text-rose-600 rounded-xl font-bold hover:bg-rose-100 hover:scale-105 active:scale-95 transition-all duration-300 group shadow-sm border border-rose-100 min-h-[44px] focus-visible:ring-2 focus-visible:ring-rose-500 ring-offset-2"
+                            className="flex items-center gap-2 h-10 px-4 bg-rose-50 text-rose-600 rounded-full font-bold border border-rose-100/50 hover:bg-rose-100 hover:-translate-y-0.5 transition-all"
                         >
-                            <Heart className={`w-4 h-4 group-hover:scale-110 transition-transform duration-300 ${isSaved ? 'fill-rose-600' : ''}`} aria-hidden="true" />
-                            <span className="text-sm md:text-base">{isSaved ? 'Saved' : 'Save'}</span>
+                            <Heart className={`w-4 h-4 ${isSaved ? 'fill-rose-600' : ''}`} aria-hidden="true" />
+                            <span className="text-[13px]">{isSaved ? 'Saved' : 'Save'}</span>
                         </button>
 
                         <button
                             onClick={handleShare}
                             aria-label="Share this recipe"
-                            className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 bg-purple-50 text-purple-600 rounded-xl font-bold hover:bg-purple-100 hover:scale-105 active:scale-95 transition-all duration-300 group shadow-sm border border-purple-100 min-h-[44px] focus-visible:ring-2 focus-visible:ring-purple-500 ring-offset-2"
+                            className="flex items-center gap-2 h-10 px-4 bg-gray-50 text-gray-600 rounded-full font-bold border border-gray-100/50 hover:bg-gray-100 hover:-translate-y-0.5 transition-all"
                         >
-                            <Share2 className="w-4 h-4 group-hover:rotate-12 transition-transform duration-300" aria-hidden="true" />
-                            <span className="text-sm md:text-base">Share</span>
+                            <Share2 className="w-4 h-4" aria-hidden="true" />
+                            <span className="text-[13px]">Share</span>
                         </button>
                     </div>
                 </div>
@@ -481,7 +483,7 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, showToas
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1, duration: 0.4 }}
-                    className="bg-white rounded-[2rem] md:rounded-[2.5rem] shadow-xl overflow-hidden mb-8 md:mb-12 border border-purple-100/50"
+                    className="bg-white rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.03)] overflow-hidden mb-8 md:mb-12 border border-gray-50/50"
                 >
                     {/* Food Image Hero */}
                     <div className="h-[200px] md:h-[300px] bg-purple-100 flex items-center justify-center relative group">
@@ -526,44 +528,44 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, showToas
                     <div className="p-6 md:p-12">
                         {/* Day and Meal Type Badge */}
                         <div className="flex items-center gap-4 mb-6 md:mb-8">
-                            <span className="text-[10px] md:text-xs font-black tracking-[0.2em] uppercase text-gray-400">{dayName}</span>
-                            <span className={`px-4 py-1.5 md:px-5 md:py-1.5 rounded-full text-[10px] md:text-xs font-black uppercase tracking-widest border shadow-sm ${getMealTypeColor()}`}>
+                            <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">{dayName}</span>
+                            <span className="px-5 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest bg-gray-50 text-gray-500 border border-gray-100 shadow-sm">
                                 {mealType}
                             </span>
                         </div>
 
                         {/* Title */}
-                        <h1 className="text-2xl md:text-4xl font-black text-gray-900 mb-6 md:mb-8 leading-tight tracking-tight">
+                        <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-8 md:mb-10 leading-[1.1] tracking-tight">
                             {safeMeal.title}
                         </h1>
 
                         {/* Time Information */}
-                        <div className="flex flex-wrap gap-4 md:gap-8">
+                        <div className="flex flex-wrap gap-6 md:gap-10">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center shadow-inner border border-orange-100">
+                                <div className="w-12 h-12 rounded-2xl bg-[#FFF7ED] flex items-center justify-center border border-orange-100/50">
                                     <Clock className="w-5 h-5 text-orange-500" />
                                 </div>
                                 <div>
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">Prep</p>
-                                    <p className="text-base font-bold text-gray-900">{safeMeal.prepTime}m</p>
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">Prep</p>
+                                    <p className="text-[17px] font-bold text-gray-900 leading-none">{safeMeal.prepTime}m</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shadow-inner border border-emerald-100">
+                                <div className="w-12 h-12 rounded-2xl bg-[#ECFDF5] flex items-center justify-center border border-emerald-100/50">
                                     <ChefHat className="w-5 h-5 text-emerald-500" />
                                 </div>
                                 <div>
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">Cook</p>
-                                    <p className="text-base font-bold text-gray-900">{safeMeal.cookTime}m</p>
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">Cook</p>
+                                    <p className="text-[17px] font-bold text-gray-900 leading-none">{safeMeal.cookTime}m</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-purple-600 flex items-center justify-center shadow-lg transform rotate-3">
-                                    <Timer className="w-5 h-5 text-white" />
+                                <div className="w-12 h-12 rounded-2xl bg-[#F5F3FF] flex items-center justify-center border border-purple-100/50">
+                                    <Timer className="w-5 h-5 text-purple-600" />
                                 </div>
                                 <div>
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-purple-300">Total</p>
-                                    <p className="text-base font-bold text-gray-900">{safeMeal.totalTime}m</p>
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">Total</p>
+                                    <p className="text-[17px] font-bold text-gray-900 leading-none">{safeMeal.totalTime}m</p>
                                 </div>
                             </div>
                         </div>
@@ -576,12 +578,12 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, showToas
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2, duration: 0.4 }}
-                        className="bg-white rounded-[1.5rem] md:rounded-[2rem] shadow-xl p-6 md:p-10 mb-8 md:mb-12 border border-purple-100/50 relative overflow-hidden"
+                        className="bg-white rounded-[2rem] md:rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.03)] p-8 md:p-12 mb-8 md:mb-12 border border-gray-50/50 relative overflow-hidden"
                     >
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-purple-50 rounded-full blur-3xl -mr-16 -mt-16"></div>
-                        <h2 className="text-xl md:text-2xl font-black text-gray-900 mb-6 md:mb-8 flex items-center gap-4">
-                            <div className="w-2 md:w-2.5 h-8 md:h-10 bg-purple-600 rounded-full shadow-lg shadow-purple-200"></div>
-                            Nutrition Facts
+                        <div className="absolute top-0 right-0 w-48 h-48 bg-purple-50 rounded-full blur-[80px] -mr-24 -mt-24"></div>
+                        <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-8 flex items-center gap-4">
+                            <div className="w-1.5 h-8 bg-[#C6A0F6] rounded-full shadow-[0_0_12px_rgba(198,160,246,0.5)]"></div>
+                            Nutrition Guide
                         </h2>
                         <NutritionBadges nutrition={safeMeal.nutrition} />
                     </motion.div>

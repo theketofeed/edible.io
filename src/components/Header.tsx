@@ -24,75 +24,43 @@ const Header = memo(function Header({ onAuthClick, onOpenProfile }: HeaderProps)
 			{/* Page Background - Light shade of lavender */}
 			<div className="fixed inset-0 -z-10 w-full h-screen bg-purple-50"></div>
 
-			{/* Floating Sticky Header */}
-			<header className="sticky top-4 z-50 flex justify-center px-4">
-				{/* Fatter container (p-3), stronger shadow for 'pop' */}
-				<nav className="flex items-center gap-1 p-3 pl-6 pr-3 bg-white/90 backdrop-blur-md rounded-full shadow-[0_8px_40px_rgba(0,0,0,0.08)] border border-white/50 max-w-5xl w-full mx-auto">
+			{/* Full-width Sticky Header */}
+			<header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-lg border-b border-gray-100/60 shadow-[0_4px_24px_rgba(0,0,0,0.02)] transition-all">
+				<nav className="flex items-center justify-between px-5 md:px-8 py-3.5 max-w-7xl mx-auto">
 
 					{/* Logo Section */}
-					<div className="flex items-center gap-2">
-						<img src={logo} alt="Edible.io" className="w-9 h-9 object-contain" />
-						<span className="text-lg font-bold text-gray-900 tracking-tight">
+					<div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo(0,0)}>
+						<img src={logo} alt="Edible.io" className="w-8 h-8 object-contain" />
+						<span className="text-xl font-bold text-gray-900 tracking-tight">
 							Edible<span className="text-[#C6A0F6]">.io</span>
 						</span>
 					</div>
 
-					{/* Navigation Links - Centered, Hidden on mobile */}
-					<div className="hidden md:flex flex-1 items-center justify-center gap-1">
-						{/* Home */}
-						<a href="#home" className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200">
-							<House className="w-4 h-4" />
-							<span>Home</span>
-						</a>
-
-						{/* Services */}
-						<a href="#how-it-works" className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200">
-							<Sparkles className="w-4 h-4" />
-							<span>Services</span>
-						</a>
-
-						{/* Pricing */}
-						<a href="#pricing" className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200">
-							<CreditCard className="w-4 h-4" />
-							<span>Pricing</span>
-						</a>
-
-						{/* FAQ */}
-						<a href="#faq" className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-all duration-200">
-							<MessageCircleQuestion className="w-4 h-4" />
-							<span>Features</span>
-						</a>
+					{/* Desktop Navigation Links — Centered */}
+					<div className="hidden md:flex items-center gap-10 absolute left-1/2 -translate-x-1/2">
+						<a href="#home" className="text-sm font-semibold text-gray-500 hover:text-gray-900 transition-colors">Home</a>
+						<a href="#how-it-works" className="text-sm font-semibold text-gray-500 hover:text-gray-900 transition-colors">Services</a>
+						<a href="#pricing" className="text-sm font-semibold text-gray-500 hover:text-gray-900 transition-colors">Pricing</a>
+						<a href="#faq" className="text-sm font-semibold text-gray-500 hover:text-gray-900 transition-colors">Features</a>
 					</div>
 
-					{/* CTA Section */}
-					<div className="flex items-center gap-2">
+					{/* Auth & Menu */}
+					<div className="flex items-center gap-5">
 						{user ? (
-							/* Logged in — show user menu */
 							<UserMenu onOpenProfile={onOpenProfile} />
 						) : (
-							<>
-								{/* Sign In button */}
+							<div className="flex items-center gap-4 md:gap-6">
 								<button
 									onClick={onAuthClick}
-									className="flex items-center gap-2 bg-[#C6A0F6] text-gray-900 px-6 py-2.5 rounded-full text-sm font-semibold shadow-md hover:bg-[#b58df5] transition-colors duration-200"
+									className="text-[15px] font-semibold text-gray-600 hover:text-gray-900 transition-colors"
 								>
 									Sign In
 								</button>
-
-								{/* Try Now arrow */}
-								<button
-									onClick={scrollToUpload}
-									className="flex items-center justify-center w-10 h-10 rounded-full bg-black text-white hover:bg-gray-800 transition-colors duration-200 group"
-								>
-									<ArrowUpRight className="w-5 h-5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200" />
+								<button className="md:hidden flex items-center justify-center text-gray-600 hover:text-gray-900 transition-colors">
+									<Menu strokeWidth={2.5} className="w-[26px] h-[26px]" />
 								</button>
-							</>
+							</div>
 						)}
-
-						{/* Mobile Menu Button */}
-						<button className="md:hidden flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200 ml-1">
-							<Menu className="w-5 h-5 text-gray-900" />
-						</button>
 					</div>
 				</nav>
 			</header>

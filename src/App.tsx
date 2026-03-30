@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowUp, AlertCircle, ArrowLeft, Lock } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { BrowserRouter as Router, Routes, Route, useNavigate, useParams, useLocation } from 'react-router-dom'
 import Header from './components/Header'
 import HeroSection from './components/HeroSection'
@@ -123,6 +124,15 @@ function MainContent() {
 		}
 		setError(null)
 		setIsLoading(true)
+
+		// Immediate scroll to the generator card to center the work area
+		setTimeout(() => {
+			const uploadSection = document.getElementById('upload-section')
+			if (uploadSection) {
+				uploadSection.scrollIntoView({ behavior: 'smooth', block: 'center' })
+			}
+		}, 100)
+
 		try {
 			const plan = await generateMealPlan({ items: groceryItems, diet, sourceText, days: effectivePlanDays })
 			setResult(plan)
@@ -208,45 +218,73 @@ function MainContent() {
 						{!result && (
 							<div className="flex-1">
 								<div className="max-w-5xl mx-auto px-4 py-8 md:py-12">
-									<HeroSection />
-									<div id="upload-section" className="card p-5 md:p-8 mb-6">
-										<div className="grid gap-8">
-											<UploadArea onItemsDetected={onItemsDetected} onError={onItemError} disabled={isLoading} />
-											<div className="border-t pt-8">
-												<DietSelector value={diet} onChange={setDiet} disabled={isLoading} />
-											</div>
-											<div className="border-t pt-6">
-												<div className="mb-6">
-													<label className="text-sm font-semibold text-gray-900 block mb-2">Duration</label>
-													<select
-														className="border-2 border-gray-200 rounded-lg px-3 py-2 text-sm font-medium focus:outline-none focus:border-purple-500"
-														value={planDaysSelection}
-														onChange={(e) => setPlanDaysSelection(e.target.value === 'auto' ? 'auto' : Number(e.target.value))}
-													>
-														<option value="auto">Auto ({autoPlanDays} days)</option>
-														<option value={3}>3 days</option>
-														<option value={5}>5 days</option>
-														<option value={7}>7 days</option>
-													</select>
-												</div>
-												<button
-													className={`px-6 py-3 rounded-lg font-semibold transition-all ${canGenerate && !isLoading ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-purple-600/50 text-white cursor-not-allowed'}`}
-													disabled={!canGenerate || isLoading}
-													onClick={handleGenerate}
-												>
-													{isLoading ? 'Generating...' : 'Generate Plan'}
-												</button>
-											</div>
-										</div>
+									<div className={`transition-all duration-700 ${isLoading ? 'opacity-40 blur-[1px]' : ''}`}>
+										<HeroSection />
 									</div>
-									{isLoading && <Loading />}
-									{error && <div className="p-4 text-red-700 bg-red-50 rounded-lg">{error}</div>}
+									
+									<div id="upload-section" className={`p-5 md:p-8 mb-6 overflow-hidden relative transition-all duration-500 ${isLoading ? '' : 'card border-purple-100/50'}`}>
+										<AnimatePresence mode="wait">
+											{!isLoading ? (
+												<motion.div
+													key="form"
+													initial={{ opacity: 0 }}
+													animate={{ opacity: 1 }}
+													exit={{ opacity: 0, y: -20 }}
+													transition={{ duration: 0.3 }}
+													className="grid gap-8"
+												>
+													<UploadArea onItemsDetected={onItemsDetected} onError={onItemError} disabled={isLoading} />
+													<div className="border-t pt-8">
+														<DietSelector value={diet} onChange={setDiet} disabled={isLoading} />
+													</div>
+													<div className="border-t pt-6">
+														<div className="mb-6">
+															<label className="text-sm font-semibold text-gray-900 block mb-2">Duration</label>
+															<select
+																className="border-2 border-gray-200 rounded-lg px-3 py-2 text-sm font-medium focus:outline-none focus:border-purple-500"
+																value={planDaysSelection}
+																onChange={(e) => setPlanDaysSelection(e.target.value === 'auto' ? 'auto' : Number(e.target.value))}
+															>
+																<option value="auto">Auto ({autoPlanDays} days)</option>
+																<option value={3}>3 days</option>
+																<option value={5}>5 days</option>
+																<option value={7}>7 days</option>
+															</select>
+														</div>
+														<button
+															className={`px-6 py-3 rounded-lg font-semibold transition-all ${canGenerate && !isLoading ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-purple-600/50 text-white cursor-not-allowed'}`}
+															disabled={!canGenerate || isLoading}
+															onClick={handleGenerate}
+														>
+															Generate Plan
+														</button>
+													</div>
+												</motion.div>
+											) : (
+												<motion.div
+													key="loading"
+													initial={{ opacity: 0, scale: 0.95 }}
+													animate={{ opacity: 1, scale: 1 }}
+													exit={{ opacity: 0 }}
+													transition={{ duration: 0.4 }}
+													className="py-4 md:py-8"
+												>
+													<Loading />
+												</motion.div>
+											)}
+										</AnimatePresence>
+									</div>
+									
+									{error && !isLoading && <div className="p-4 text-red-700 bg-red-50 rounded-lg">{error}</div>}
 								</div>
-								<HowItWorks />
-								<ComparisonSection />
-								<Testimonials />
-								<FinalCTA onCTAClick={handleBackToEditor} />
-								<FAQ />
+								
+								<div className={`transition-all duration-700 ${isLoading ? 'opacity-20 blur-[2px] pointer-events-none' : ''}`}>
+									<HowItWorks />
+									<ComparisonSection />
+									<Testimonials />
+									<FinalCTA onCTAClick={handleBackToEditor} />
+									<FAQ />
+								</div>
 							</div>
 						)}
 
@@ -318,7 +356,13 @@ function MainContent() {
 							</div>
 						)}
 					>
-						<RecipeWrapper onBack={() => navigate('/')} result={result} showToast={showToast} />
+						<RecipeWrapper onBack={() => {
+							if (window.history.length > 2) {
+								navigate(-1)
+							} else {
+								navigate('/')
+							}
+						}} result={result} showToast={showToast} />
 					</ErrorBoundary>
 				} />
 				<Route path="/dashboard" element={<EdibleDashboard />} />
@@ -379,6 +423,7 @@ function RecipeWrapper({ onBack, result, showToast }: {
 			mealType={(mealType as any) || 'Breakfast'}
 			dayName={`Day ${parsedDayIndex + 1}`}
 			onBack={onBack}
+			backLabel={location.state?.fromDashboard ? "Back to Dashboard" : "Back to Meal Plan"}
 			showToast={showToast}
 		/>
 	)

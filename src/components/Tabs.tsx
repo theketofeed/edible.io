@@ -41,12 +41,12 @@ export default function Tabs({ tabs, defaultTabId, className = '' }: TabsProps) 
     }
 
     return (
-        <div className={`bg-white rounded-2xl shadow-lg border border-purple-100/50 overflow-hidden ${className}`}>
+        <div className={`bg-white rounded-[2rem] shadow-[0_8px_40px_rgba(0,0,0,0.03)] border border-gray-50/50 overflow-hidden ${className}`}>
             {/* Tab Headers */}
             <div
                 role="tablist"
                 aria-label="Recipe details"
-                className="flex border-b border-gray-100 bg-gray-50/50"
+                className="flex border-b border-gray-50 bg-white"
             >
                 {tabs.map((tab, index) => {
                     const isActive = activeTabId === tab.id
@@ -60,9 +60,8 @@ export default function Tabs({ tabs, defaultTabId, className = '' }: TabsProps) 
                             tabIndex={isActive ? 0 : -1}
                             onClick={() => setActiveTabId(tab.id)}
                             onKeyDown={(e) => handleKeyDown(e, index)}
-                            className={`relative flex-1 px-3 md:px-6 py-4 text-[10px] sm:text-xs md:text-sm font-bold tracking-wide uppercase transition-all duration-300 outline-none
-                                focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-inset focus-visible:z-10
-								${isActive ? 'text-purple-600 bg-white' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100/50'}`}
+                            className={`relative flex-1 px-4 py-3.5 text-[11px] font-bold tracking-widest uppercase transition-all duration-300 outline-none
+								${isActive ? 'text-gray-900 bg-white' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
                         >
                             {tab.label}
 
@@ -70,7 +69,7 @@ export default function Tabs({ tabs, defaultTabId, className = '' }: TabsProps) 
                             {isActive && (
                                 <motion.div
                                     layoutId="activeTab"
-                                    className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 to-lavender-500 rounded-t-full"
+                                    className="absolute bottom-0 left-0 right-0 h-1 bg-[#C6A0F6] rounded-t-full shadow-[0_0_8px_rgba(198,160,246,0.6)]"
                                     initial={false}
                                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                                 />
