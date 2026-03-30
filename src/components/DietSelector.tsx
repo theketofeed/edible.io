@@ -58,39 +58,34 @@ const DietButton = memo(function DietButton({
 			onClick={handleClick}
 			disabled={disabled}
 			className={`
-				flex flex-col items-center justify-center
-				px-3 py-3 md:px-4 md:py-4
-				rounded-xl border-2 transition-all duration-200
-				${isPopular ? 'md:px-5 md:py-5' : ''}
-				${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}
-				group relative
+				flex flex-row items-center gap-2.5
+				px-4 py-2.5 md:px-5 md:py-3
+				rounded-full border transition-all duration-300
+				${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:-translate-y-0.5'}
 			`}
 			style={{
 				background: isActive ? info.col : '#FFFFFF',
-				borderColor: isActive ? info.col : '#EDE9E2',
-				color: isActive ? '#FFFFFF' : '#111827',
-				boxShadow: isActive ? `0 12px 34px rgba(0,0,0,0.06)` : undefined
+				borderColor: isActive ? 'transparent' : 'rgba(0,0,0,0.06)',
+				color: isActive ? '#FFFFFF' : '#4B5563',
+				boxShadow: isActive ? `0 8px 24px ${info.col}40` : '0 2px 8px rgba(0,0,0,0.02)'
 			}}
 		>
 			<div
 				style={{
-					width: 44,
-					height: 44,
-					borderRadius: 16,
-					background: isActive ? 'rgba(255,255,255,0.15)' : info.bg,
-					border: isActive ? 'none' : `1px solid rgba(0,0,0,0.04)`,
+					width: 28,
+					height: 28,
+					borderRadius: '50%',
+					background: isActive ? 'rgba(255,255,255,0.2)' : info.bg,
 					display: 'flex',
 					alignItems: 'center',
 					justifyContent: 'center',
-					marginBottom: 10,
 				}}
 			>
-				<Icon size={20} style={{ color: isActive ? '#FFFFFF' : info.col }} />
+				<Icon size={14} style={{ color: isActive ? '#FFFFFF' : info.col }} />
 			</div>
-			<div className="text-sm md:text-base font-semibold" style={{ textAlign: 'center' }}>{diet}</div>
-			<div className="text-xs mt-1" style={{ color: isActive ? 'rgba(255,255,255,0.9)' : '#6B7280', textAlign: 'center' }}>
-				{info.description}
-			</div>
+			<div className="text-[13px] md:text-sm font-bold tracking-wide" style={{ color: isActive ? '#FFFFFF' : '#111827' }}>
+                {diet}
+            </div>
 		</button>
 	)
 })
@@ -101,25 +96,25 @@ const DietSelector = memo(function DietSelector({ value, onChange, disabled }: P
 	}, [onChange])
 	
 	return (
-		<div className="py-8 md:py-8">
+		<div className="py-6 md:py-8">
 			{/* Section Header */}
-			<div className="mb-6">
-				<h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-2">
-					Choose your dietary preference
+			<div className="mb-5 md:mb-6">
+				<h2 className="text-lg md:text-2xl font-bold text-gray-900 mb-1.5 md:mb-2">
+					Dietary preference
 				</h2>
-				<p className="text-sm md:text-base text-gray-600">
-					We'll create meals that match your lifestyle and nutritional goals
+				<p className="text-sm text-gray-500 font-medium">
+					We'll create meals that match your lifestyle
 				</p>
 			</div>
 
 			{/* Popular Diets Row */}
-			<div className="mb-4">
+			<div className="mb-5">
 				<div className="mb-3 flex items-center gap-2">
-					<span className="inline-block px-2.5 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
+					<span className="inline-block px-2.5 py-1 bg-purple-50 text-purple-600 rounded-full text-[10px] md:text-xs font-bold tracking-widest uppercase border border-purple-100/50">
 						Most Popular
 					</span>
 				</div>
-				<div className="grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-4">
+				<div className="flex flex-wrap gap-2.5 md:gap-3">
 					{POPULAR_DIETS.map((d) => (
 						<DietButton
 							key={d}
@@ -135,7 +130,7 @@ const DietSelector = memo(function DietSelector({ value, onChange, disabled }: P
 
 			{/* Other Diets Row */}
 			<div>
-				<div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
+				<div className="flex flex-wrap gap-2.5 md:gap-3">
 					{OTHER_DIETS.map((d) => (
 						<DietButton
 							key={d}

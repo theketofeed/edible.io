@@ -59,7 +59,7 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     user?.email?.split('@')[0] ||
     'there'
 
-  const avatarUrl = user?.user_metadata?.avatar_url as string | undefined
+  const avatarUrl = user?.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(displayName || user?.id || 'guest')}`
 
   const initials = displayName.charAt(0).toUpperCase()
 
@@ -123,13 +123,7 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
 
           {/* Avatar + name */}
           <div className="flex items-center gap-4 relative z-10">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt={displayName} className="w-16 h-16 rounded-2xl object-cover border-2 border-white/20 shadow-lg" />
-            ) : (
-              <div className="w-16 h-16 rounded-2xl bg-[#C6A0F6] flex items-center justify-center text-2xl font-bold text-white shadow-lg border-2 border-white/20">
-                {initials}
-              </div>
-            )}
+            <img src={avatarUrl} alt={displayName} className="w-16 h-16 rounded-2xl object-cover border-2 border-white/20 shadow-lg bg-white" />
             <div>
               <h2 className="profile-heading text-2xl font-bold text-white leading-tight">
                 Hey, {displayName} 👋

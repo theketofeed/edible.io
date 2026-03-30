@@ -107,7 +107,15 @@ export async function getProfile() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  // First try to get profile from profiles table
+  const fallback = {
+    id: user.id,
+    name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+    email: user.email,
+    avatar_url: user.user_metadata?.avatar_url as string | undefined,
+    joined: new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+  }
+
+  // Try to get profile from profiles table
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
@@ -115,14 +123,21 @@ export async function getProfile() {
     .single()
 
   if (error && error.code === 'PGRST116') {
-    // Profile doesn't exist, return user data
-    return {
-      id: user.id,
-      name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-      email: user.email,
-    }
+    // Profile row doesn't exist yet — return auth metadata
+    return fallback
   }
 
   if (error) throw error
-  return data || { id: user.id, name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User', email: user.email }
+  if (!data) return fallback
+
+  // Map display_name (DB column) → name (app uses)
+  return {
+    id: data.id,
+    name: data.display_name || fallback.name,
+    email: user.email,
+    avatar_url: data.avatar_url || fallback.avatar_url,
+    joined: data.created_at
+      ? new Date(data.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+      : fallback.joined,
+  }
 }

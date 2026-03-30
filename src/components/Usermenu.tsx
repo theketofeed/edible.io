@@ -35,8 +35,7 @@ export default function UserMenu({ onOpenProfile }: UserMenuProps) {
     user.email?.split('@')[0] ||
     'You'
 
-  const avatarUrl = user.user_metadata?.avatar_url as string | undefined
-  const initials = displayName.charAt(0).toUpperCase()
+  const avatarUrl = user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/notionists/svg?seed=${encodeURIComponent(displayName || user.id)}`
 
   return (
     <div ref={menuRef} className="relative">
@@ -92,13 +91,7 @@ export default function UserMenu({ onOpenProfile }: UserMenuProps) {
         onClick={() => setOpen(p => !p)}
         className="flex items-center gap-2.5 pl-2 pr-3.5 py-1.5 rounded-full bg-white border border-gray-200 shadow-sm hover:shadow-md hover:border-purple-200 transition-all duration-200"
       >
-        {avatarUrl ? (
-          <img src={avatarUrl} alt={displayName} className="w-7 h-7 rounded-full object-cover ring-2 ring-purple-100" />
-        ) : (
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#C6A0F6] to-[#7c3aed] flex items-center justify-center text-xs font-bold text-white">
-            {initials}
-          </div>
-        )}
+        <img src={avatarUrl} alt={displayName} className="w-7 h-7 rounded-full object-cover ring-2 ring-purple-100 bg-purple-50" />
         <span className="text-sm font-bold text-gray-800 max-w-[160px] truncate">
           {displayName}
         </span>
@@ -117,13 +110,7 @@ export default function UserMenu({ onOpenProfile }: UserMenuProps) {
           {/* User info header */}
           <div className="px-4 py-4 bg-gradient-to-br from-[#f5f3ff] to-[#faf5ff] border-b border-purple-50">
             <div className="flex items-center gap-3">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt={displayName} className="w-10 h-10 rounded-xl object-cover" />
-              ) : (
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#C6A0F6] to-[#7c3aed] flex items-center justify-center text-sm font-bold text-white">
-                  {initials}
-                </div>
-              )}
+              <img src={avatarUrl} alt={displayName} className="w-10 h-10 rounded-xl object-cover bg-white shadow-sm border border-purple-100" />
               <div className="min-w-0">
                 <p className="text-sm font-bold text-gray-900 truncate">{displayName}</p>
                 <p className="text-xs text-gray-400 truncate">{user.email}</p>

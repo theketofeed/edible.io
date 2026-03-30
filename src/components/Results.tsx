@@ -1,5 +1,5 @@
 import { forwardRef, memo, useMemo, useEffect, useState, useCallback } from 'react'
-import { Copy, Download, RefreshCw, ChevronRight, X, Bookmark } from 'lucide-react'
+import { Copy, Download, RefreshCw, ChevronRight, X, Bookmark, Check } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { MealPlanResult, DayMeals, Meal } from '../utils/types'
 import { fetchMealImage } from '../lib/unsplashApi'
@@ -53,16 +53,16 @@ const NutritionBadges = memo(function NutritionBadges({ nutrition }: {
 }) {
 	return (
 		<div className="flex flex-wrap gap-2 mt-2">
-			<span className="bg-gray-100 text-gray-700 rounded-full px-3 py-1 text-xs font-medium">
+			<span className="bg-gray-50 text-gray-500 rounded-full px-3 py-1 text-[11px] font-bold border border-gray-100/50">
 				{nutrition.calories} kcal
 			</span>
-			<span className="bg-gray-100 text-gray-700 rounded-full px-3 py-1 text-xs font-medium">
+			<span className="bg-gray-50 text-gray-500 rounded-full px-3 py-1 text-[11px] font-bold border border-gray-100/50">
 				{nutrition.carbs} C
 			</span>
-			<span className="bg-gray-100 text-gray-700 rounded-full px-3 py-1 text-xs font-medium">
+			<span className="bg-gray-50 text-gray-500 rounded-full px-3 py-1 text-[11px] font-bold border border-gray-100/50">
 				{nutrition.protein} P
 			</span>
-			<span className="bg-gray-100 text-gray-700 rounded-full px-3 py-1 text-xs font-medium">
+			<span className="bg-gray-50 text-gray-500 rounded-full px-3 py-1 text-[11px] font-bold border border-gray-100/50">
 				{nutrition.fat} F
 			</span>
 		</div>
@@ -100,7 +100,7 @@ const MealCard = memo(function MealCard({
 
 	return (
 		<div
-			className="group bg-white rounded-2xl border border-gray-100 shadow-sm cursor-pointer flex flex-row items-center gap-3 px-3 py-3 hover:shadow-md hover:border-purple-100 hover:-translate-y-0.5 transition-all duration-200"
+			className="group bg-white rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.02)] border border-gray-50/50 cursor-pointer flex flex-row items-center gap-4 px-3.5 py-3.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all duration-300"
 			onClick={() => onNavigate(dayIndex, mealType, meal)}
 		>
 			{/* Image */}
@@ -114,7 +114,7 @@ const MealCard = memo(function MealCard({
 			{/* Content */}
 			<div className="flex-1 min-w-0">
 				{/* Title */}
-				<p className="text-sm font-bold text-gray-900 leading-snug line-clamp-1 group-hover:text-purple-700 transition-colors mb-1.5">
+				<p className="text-[15px] font-bold text-gray-900 leading-tight line-clamp-1 group-hover:text-purple-600 transition-colors mb-2">
 					{meal.title}
 				</p>
 
@@ -126,8 +126,8 @@ const MealCard = memo(function MealCard({
 				</div>
 
 				{/* Macros — all on one line */}
-				<p className="text-[11px] text-gray-400 font-medium tracking-wide">
-				<span className="font-bold text-gray-900">{cal}</span>kcal &nbsp;·&nbsp; <span className="font-bold text-gray-900">{c}</span>C &nbsp;·&nbsp; <span className="font-bold text-gray-900">{p}</span>P &nbsp;·&nbsp; <span className="font-bold text-gray-900">{f}</span>F
+				<p className="text-[11px] text-gray-400 font-bold tracking-tight uppercase">
+				<span className="text-gray-900">{cal}</span> kcal &nbsp;·&nbsp; <span className="text-gray-900">{c}</span> carbs &nbsp;·&nbsp; <span className="text-gray-900">{p}</span> protein
 				</p>
 			</div>
 
@@ -148,8 +148,8 @@ const DayCard = memo(function DayCard({
 	onNavigate: (dayIndex: number, mealType: string, meal: Meal) => void
 }) {
 	return (
-		<div className="flex flex-col space-y-3 w-full bg-gray-50/30 p-4 md:p-5 rounded-3xl border border-gray-100/50 border-b border-gray-200">
-			<h2 className="text-lg font-black text-gray-900 mb-2 tracking-tight whitespace-nowrap">
+		<div className="flex flex-col space-y-4 w-full bg-white p-5 md:p-6 rounded-[2rem] shadow-[0_4px_24px_rgba(0,0,0,0.02)] border border-gray-50/50">
+			<h2 className="text-[17px] font-bold text-gray-900 mb-1 tracking-tight whitespace-nowrap">
 				{day.day}
 			</h2>
 
@@ -169,6 +169,7 @@ const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result
 	const [showSaveModal, setShowSaveModal] = useState(false)
 	const [savePlanTitle, setSavePlanTitle] = useState(`My ${result.diet} Plan`)
 	const [isSaving, setIsSaving] = useState(false)
+	const [saved, setSaved] = useState(false)
 
 	const title = useMemo(() => `Your ${result.totalDays}-Day ${result.diet} Meal Plan`, [result.totalDays, result.diet])
 	const days = useMemo(() => result.days, [result.days])
@@ -194,6 +195,8 @@ const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result
 			await saveMealPlan(result, savePlanTitle.trim())
 			showToast('success', 'Meal plan saved successfully!')
 			setShowSaveModal(false)
+			setSaved(true)
+			setTimeout(() => setSaved(false), 2500)
 		} catch (error) {
 			console.error('Failed to save meal plan:', error)
 			showToast('error', 'Failed to save meal plan. Please try again.')
@@ -204,31 +207,56 @@ const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result
 
 	return (
 		<div className="w-full max-w-7xl mx-auto px-4 py-8 animate-fadeIn">
-			<div className="screen-only mb-8">
-				<h1 className="text-4xl font-black mb-4 text-center text-gray-900 tracking-tight">
+			<style>{`
+				@keyframes saveBookmarkPulse {
+					0% { transform: scale(1); }
+					30% { transform: scale(1.15); }
+					60% { transform: scale(0.95); }
+					100% { transform: scale(1); }
+				}
+				.save-btn-saved {
+					animation: saveBookmarkPulse 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+				}
+			`}</style>
+			<div className="screen-only mb-10">
+				<h1 className="text-3xl md:text-4xl font-bold mb-3 text-center text-gray-900 tracking-tight">
 					{title}
 				</h1>
-				<p className="text-gray-500 text-sm text-center mb-6">Grounded in {result.sourceItems.length} grocery items</p>
+				<p className="text-gray-400 text-[13px] font-bold text-center mb-8 uppercase tracking-widest leading-none">Grounded in {result.sourceItems.length} grocery items</p>
 
-				<div className="flex items-center justify-center gap-2 no-print flex-wrap">
-					<button className="btn border border-gray-300 bg-white hover:bg-gray-50 text-sm py-2 px-4 rounded-lg flex items-center shadow-sm transition-all" onClick={onCopy}>
+				<div className="flex items-center justify-center gap-3 no-print flex-wrap">
+					<button className="h-11 px-5 rounded-full bg-white text-gray-600 text-[14px] font-bold border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all" onClick={onCopy}>
 						<Copy className="w-4 h-4 mr-2" />
-						Copy Text
+						Copy
 					</button>
-					<button className="btn border border-gray-300 bg-white hover:bg-gray-50 text-sm py-2 px-4 rounded-lg flex items-center shadow-sm transition-all" onClick={onDownload}>
+					<button className="h-11 px-5 rounded-full bg-white text-gray-600 text-[14px] font-bold border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all" onClick={onDownload}>
 						<Download className="w-4 h-4 mr-2" />
 						PDF
 					</button>
-					<button className="btn bg-purple-600 text-white hover:bg-purple-700 text-sm py-2 px-4 rounded-lg flex items-center shadow-md transition-all" onClick={onRegenerate}>
+					<button className="h-11 px-6 rounded-full bg-[#C6A0F6] text-gray-900 text-[14px] font-bold shadow-[0_4px_14px_rgba(198,160,246,0.3)] hover:shadow-[0_6px_20px_rgba(198,160,246,0.4)] hover:-translate-y-0.5 transition-all" onClick={onRegenerate}>
 						<RefreshCw className="w-4 h-4 mr-2" />
 						Regenerate
 					</button>
 					<button 
-						className="btn bg-emerald-600 text-white hover:bg-emerald-700 text-sm py-2 px-4 rounded-lg flex items-center shadow-md transition-all"
+						className={`h-11 px-6 rounded-full text-[14px] font-bold flex items-center shadow-lg transition-all duration-300 hover:-translate-y-0.5 ${
+							saved 
+								? 'bg-emerald-500 text-white save-btn-saved' 
+								: 'bg-black text-white hover:bg-gray-800'
+						}`}
 						onClick={handleSavePlanClick}
+						disabled={saved}
 					>
-						<Bookmark className="w-4 h-4 mr-2" />
-						Save This Plan
+						{saved ? (
+							<>
+								<Check className="w-4 h-4 mr-2" strokeWidth={3} />
+								Saved
+							</>
+						) : (
+							<>
+								<Bookmark className="w-4 h-4 mr-2" fill="none" />
+								Save Plan
+							</>
+						)}
 					</button>
 				</div>
 			</div>

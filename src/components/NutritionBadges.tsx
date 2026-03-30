@@ -18,15 +18,15 @@ const Badge = ({ label, value, emoji, unit }: { label: string; value: string | n
 
     return (
         <div
-            className="flex-shrink-0 flex items-center gap-2 px-4 py-2 bg-purple-100 rounded-full border border-purple-200 focus-within:ring-2 focus-within:ring-purple-500"
+            className="flex-shrink-0 flex items-center gap-3 px-5 py-3 bg-[#F9F8F6] rounded-2xl border border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.02)]"
             aria-label={`${label}: ${displayValue} ${displayValue !== 'N/A' ? unit : ''}`}
         >
-            <span className="text-base" role="img" aria-hidden="true">{emoji}</span>
+            <span className="text-xl" role="img" aria-hidden="true">{emoji}</span>
             <div className="flex flex-col">
-                <span className="text-[10px] font-black uppercase tracking-widest text-purple-400 leading-none mb-0.5" aria-hidden="true">{label}</span>
-                <span className="text-sm font-black text-purple-700 leading-none">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 leading-none mb-1" aria-hidden="true">{label}</span>
+                <span className="text-base font-bold text-gray-900 leading-none">
                     {displayValue}
-                    {displayValue !== 'N/A' && <span className="text-[10px] ml-0.5 font-bold opacity-70 italic" aria-hidden="true">{unit}</span>}
+                    {displayValue !== 'N/A' && <span className="text-[11px] ml-0.5 font-bold text-gray-400" aria-hidden="true">{unit}</span>}
                 </span>
             </div>
         </div>
