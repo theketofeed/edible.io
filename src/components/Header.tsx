@@ -37,11 +37,22 @@ const Header = memo(function Header({ onAuthClick, onOpenProfile }: HeaderProps)
 					</div>
 
 					{/* Desktop Navigation Links — Centered */}
-					<div className="hidden md:flex items-center gap-10 absolute left-1/2 -translate-x-1/2">
-						<a href="#home" className="text-sm font-semibold text-gray-500 hover:text-gray-900 transition-colors">Home</a>
-						<a href="#how-it-works" className="text-sm font-semibold text-gray-500 hover:text-gray-900 transition-colors">Services</a>
-						<a href="#pricing" className="text-sm font-semibold text-gray-500 hover:text-gray-900 transition-colors">Pricing</a>
-						<a href="#faq" className="text-sm font-semibold text-gray-500 hover:text-gray-900 transition-colors">Features</a>
+					<div className="hidden md:flex items-center gap-1 bg-gray-50/50 p-1 rounded-2xl border border-gray-100/50 absolute left-1/2 -translate-x-1/2">
+						{[
+							{ name: 'Home', href: '#home', icon: House },
+							{ name: 'How it Works', href: '#how-it-works', icon: Sparkles },
+							{ name: 'Pricing', href: '#pricing', icon: CreditCard },
+							{ name: 'FAQ', href: '#faq', icon: MessageCircleQuestion },
+						].map((item) => (
+							<a
+								key={item.name}
+								href={item.href}
+								className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-gray-500 hover:text-purple-600 hover:bg-white rounded-xl transition-all duration-200 group"
+							>
+								<item.icon className="w-4 h-4 text-gray-400 group-hover:text-purple-500 transition-colors" />
+								{item.name}
+							</a>
+						))}
 					</div>
 
 					{/* Auth & Menu */}

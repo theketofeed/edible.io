@@ -1,10 +1,12 @@
 import { forwardRef, memo, useMemo, useEffect, useState, useCallback } from 'react'
-import { Copy, Download, RefreshCw, ChevronRight, X, Bookmark, Check } from 'lucide-react'
+import { Copy, Download, RefreshCw, ChevronRight, X, Bookmark, Check, Save } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import type { MealPlanResult, DayMeals, Meal } from '../utils/types'
 import { fetchMealImage } from '../lib/unsplashApi'
 import { useAuth } from '../context/AuthContext'
 import { saveMealPlan } from '../lib/db'
+import logo from '../assets/Transparent logo.png'
 
 interface Props {
 	result: MealPlanResult
@@ -141,23 +143,49 @@ const MealCard = memo(function MealCard({
 const DayCard = memo(function DayCard({
 	day,
 	index,
-	onNavigate
+	onNavigate,
+	isLast
 }: {
 	day: DayMeals;
 	index: number;
-	onNavigate: (dayIndex: number, mealType: string, meal: Meal) => void
+	onNavigate: (dayIndex: number, mealType: string, meal: Meal) => void;
+	isLast?: boolean;
 }) {
 	return (
-		<div className="flex flex-col space-y-4 w-full bg-white p-5 md:p-6 rounded-[2rem] shadow-[0_4px_24px_rgba(0,0,0,0.02)] border border-gray-50/50">
-			<h2 className="text-[17px] font-bold text-gray-900 mb-1 tracking-tight whitespace-nowrap">
-				{day.day}
-			</h2>
+		<div className="relative w-full">
+			{/* Timeline Connector Line */}
+			{!isLast && (
+				<div className="absolute left-[26px] top-20 bottom-[-40px] w-0.5 bg-gray-100 hidden md:block" />
+			)}
 
-			{/* Meal Cards - Full width, stacked vertically */}
-			<div className="space-y-2 w-full">
-				<MealCard meal={day.Breakfast} mealType="Breakfast" dayIndex={index} onNavigate={onNavigate} />
-				<MealCard meal={day.Lunch} mealType="Lunch" dayIndex={index} onNavigate={onNavigate} />
-				<MealCard meal={day.Dinner} mealType="Dinner" dayIndex={index} onNavigate={onNavigate} />
+			<div className="flex flex-col md:flex-row gap-6 items-start">
+				{/* Day Indicator - Desktop */}
+				<div className="hidden md:flex flex-col items-center pt-2">
+					<div className="w-14 h-14 rounded-2xl bg-white shadow-sm border border-gray-100 flex flex-col items-center justify-center">
+						<span className="text-[10px] font-bold text-gray-400 uppercase leading-none mb-1">Day</span>
+						<span className="text-xl font-black text-gray-900 leading-none">{index + 1}</span>
+					</div>
+				</div>
+
+				{/* Card Content */}
+				<div className="flex-1 flex flex-col space-y-5 w-full bg-white p-6 md:p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.03)] border border-gray-100/50 hover:shadow-[0_12px_45px_rgba(0,0,0,0.05)] transition-all duration-500">
+					<div className="flex items-center justify-between">
+						<h2 className="text-[20px] font-black text-gray-900 tracking-tight">
+							{day.day}
+						</h2>
+						{/* Daily Meta (Optional) */}
+						<div className="text-[11px] font-bold text-purple-400 uppercase tracking-widest hidden sm:block">
+							Structured Plan
+						</div>
+					</div>
+
+					{/* Meal Cards - Full width, stacked vertically */}
+					<div className="space-y-3 w-full">
+						<MealCard meal={day.Breakfast} mealType="Breakfast" dayIndex={index} onNavigate={onNavigate} />
+						<MealCard meal={day.Lunch} mealType="Lunch" dayIndex={index} onNavigate={onNavigate} />
+						<MealCard meal={day.Dinner} mealType="Dinner" dayIndex={index} onNavigate={onNavigate} />
+					</div>
+				</div>
 			</div>
 		</div>
 	)
@@ -217,6 +245,45 @@ const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result
 				.save-btn-saved {
 					animation: saveBookmarkPulse 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 				}
+
+				@media print {
+					.no-print { display: none !important; }
+					.print-only { display: block !important; }
+					.screen-only { display: none !important; }
+					
+					body { background: white !important; padding: 0 !important; margin: 0 !important; }
+					.print-content { width: 100% !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+					
+					/* Force single column for print */
+					.grid { display: block !important; }
+					.grid > div { 
+						margin-bottom: 2rem !important; 
+						page-break-inside: avoid !important;
+						border: 1px solid #eee !important;
+						box-shadow: none !important;
+						width: 100% !important;
+					}
+					
+					/* Typography for print */
+					h1 { color: #1a0533 !important; }
+					.text-gray-400 { color: #666 !important; }
+					
+					/* Force backgrounds to print */
+					* { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+				}
+				
+				/* Force 1-column layout for PDF export specifically */
+				.pdf-export-mode .grid-layout-vertical {
+					display: flex !important;
+					flex-direction: column !important;
+					gap: 3rem !important;
+				}
+				.pdf-export-mode .grid-layout-vertical > div {
+					width: 100% !important;
+					max-width: 100% !important;
+				}
+
+				.print-only { display: none; }
 			`}</style>
 			<div className="screen-only mb-10">
 				<h1 className="text-3xl md:text-4xl font-bold mb-3 text-center text-gray-900 tracking-tight">
@@ -224,56 +291,94 @@ const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result
 				</h1>
 				<p className="text-gray-400 text-[13px] font-bold text-center mb-8 uppercase tracking-widest leading-none">Grounded in {result.sourceItems.length} grocery items</p>
 
-				<div className="flex items-center justify-center gap-3 no-print flex-wrap">
-					<button className="h-11 px-5 rounded-full bg-white text-gray-600 text-[14px] font-bold border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all" onClick={onCopy}>
-						<Copy className="w-4 h-4 mr-2" />
-						Copy
-					</button>
-					<button className="h-11 px-5 rounded-full bg-white text-gray-600 text-[14px] font-bold border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all" onClick={onDownload}>
-						<Download className="w-4 h-4 mr-2" />
-						PDF
-					</button>
-					<button className="h-11 px-6 rounded-full bg-[#C6A0F6] text-gray-900 text-[14px] font-bold shadow-[0_4px_14px_rgba(198,160,246,0.3)] hover:shadow-[0_6px_20px_rgba(198,160,246,0.4)] hover:-translate-y-0.5 transition-all" onClick={onRegenerate}>
-						<RefreshCw className="w-4 h-4 mr-2" />
+				<div className="flex items-center justify-center gap-4 no-print flex-wrap">
+					<motion.button 
+						whileHover={{ y: -2, scale: 1.02 }}
+						whileTap={{ scale: 0.98 }}
+						transition={{ duration: 0.1 }}
+						className="h-12 px-6 rounded-2xl bg-white/40 backdrop-blur-md text-gray-700 text-[14px] font-bold border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:bg-white/60 transition-all flex items-center" 
+						onClick={onCopy}
+					>
+						<div className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center mr-3 border border-gray-100/50">
+							<Copy className="w-4 h-4 text-gray-500" />
+						</div>
+						Copy Text
+					</motion.button>
+
+					<motion.button 
+						whileHover={{ y: -2, scale: 1.02 }}
+						whileTap={{ scale: 0.98 }}
+						transition={{ duration: 0.1 }}
+						className="h-12 px-6 rounded-2xl bg-white/40 backdrop-blur-md text-gray-700 text-[14px] font-bold border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:bg-white/60 transition-all flex items-center" 
+						onClick={onDownload}
+					>
+						<div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center mr-3 border border-purple-100/50">
+							<Download className="w-4 h-4 text-purple-500" />
+						</div>
+						Export PDF
+					</motion.button>
+
+					<motion.button 
+						whileHover={{ y: -2, scale: 1.02 }}
+						whileTap={{ scale: 0.98 }}
+						transition={{ duration: 0.1 }}
+						className="h-12 px-7 rounded-2xl bg-gradient-to-br from-[#D9C4FF] to-[#C6A0F6] text-gray-900 text-[14px] font-extrabold shadow-[0_10px_25px_rgba(198,160,246,0.35)] hover:shadow-[0_15px_35px_rgba(198,160,246,0.45)] transition-all flex items-center" 
+						onClick={onRegenerate}
+					>
+						<RefreshCw className="w-4 h-4 mr-2.5 text-gray-900/70" />
 						Regenerate
-					</button>
-					<button 
-						className={`h-11 px-6 rounded-full text-[14px] font-bold flex items-center shadow-lg transition-all duration-300 hover:-translate-y-0.5 ${
+					</motion.button>
+
+					<motion.button 
+						whileHover={{ y: -2, scale: 1.02 }}
+						whileTap={{ scale: 0.98 }}
+						transition={{ duration: 0.1 }}
+						className={`h-12 px-7 rounded-2xl text-[14px] font-extrabold flex items-center shadow-[0_12px_30px_rgba(0,0,0,0.15)] transition-all duration-300 ${
 							saved 
 								? 'bg-emerald-500 text-white save-btn-saved' 
-								: 'bg-black text-white hover:bg-gray-800'
+								: 'bg-neutral-900 text-white hover:bg-black'
 						}`}
 						onClick={handleSavePlanClick}
 						disabled={saved}
 					>
 						{saved ? (
 							<>
-								<Check className="w-4 h-4 mr-2" strokeWidth={3} />
-								Saved
+								<Bookmark className="w-5 h-5 mr-2.5" fill="white" strokeWidth={3} />
+								Plan Saved
 							</>
 						) : (
 							<>
-								<Bookmark className="w-4 h-4 mr-2" fill="none" />
-								Save Plan
+								<Bookmark className="w-5 h-5 mr-2.5 text-purple-300" fill="none" strokeWidth={2.2} />
+								Save to Account
 							</>
 						)}
-					</button>
+					</motion.button>
 				</div>
 			</div>
 
 			<div ref={ref} className="w-full print-content">
-				<div className="print-only text-center mb-8">
-					<h1 className="heading text-3xl font-bold text-purple-900">
-						Edible<span style={{ color: '#C6A0F6' }}>.io</span>
-					</h1>
-					<p className="text-xl font-semibold text-gray-800">{title}</p>
-					<p className="text-sm text-gray-600">Generated from your uploaded grocery list</p>
+				<div className="print-only text-center mb-12">
+					<div className="inline-flex items-center gap-2 mb-4">
+						<img src={logo} alt="Edible.io" className="w-10 h-10 object-contain" />
+						<h1 className="text-4xl font-black text-gray-900 tracking-tight">
+							Edible<span className="text-[#C6A0F6]">.io</span>
+						</h1>
+					</div>
+					<h2 className="text-2xl font-bold text-gray-800 mb-2">{title}</h2>
+					<p className="text-sm text-gray-500 font-medium">Personalized Meal Plan • Grounded in {result.sourceItems.length} grocery items</p>
+					<div className="w-24 h-1.5 bg-[#C6A0F6]/30 mx-auto mt-6 rounded-full" />
 				</div>
 
-				{/* Days Grid */}
-				<div className="grid md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 w-full">
+				{/* Days Vertical Flow */}
+				<div className="flex flex-col gap-10 md:gap-14 w-full max-w-4xl mx-auto grid-layout-vertical">
 					{days.map((d, index) => (
-						<DayCard key={d.day} day={d} index={index} onNavigate={handleNavigate} />
+						<DayCard 
+							key={d.day} 
+							day={d} 
+							index={index} 
+							onNavigate={handleNavigate} 
+							isLast={index === days.length - 1} 
+						/>
 					))}
 				</div>
 			</div>

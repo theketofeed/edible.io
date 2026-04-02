@@ -169,18 +169,35 @@ function MainContent() {
 
 	const triggerDownload = useCallback(async () => {
 		if (!printRef.current) return
+		
+		// Add helper class to force 1-column layout for the PDF capture
+		const el = printRef.current
+		el.classList.add('pdf-export-mode')
+		
 		const opt = {
 			margin: 0.5,
 			filename: 'meal-plan.pdf',
 			image: { type: 'jpeg', quality: 0.98 },
-			html2canvas: { scale: 2 },
+			html2canvas: { 
+				scale: 2,
+				useCORS: true,
+				logging: false,
+				letterRendering: true
+			},
 			jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
 		}
+
 		try {
-			await html2pdf().set(opt).from(printRef.current).save()
+			// Give a tiny moment for the layout to re-flow
+			await new Promise(resolve => setTimeout(resolve, 100))
+			await html2pdf().set(opt).from(el).save()
 			showToast('success', 'Downloaded PDF')
-		} catch {
+		} catch (err) {
+			console.error('PDF Generation Error:', err)
 			showToast('error', 'Failed to generate PDF')
+		} finally {
+			// Remove the helper class
+			el.classList.remove('pdf-export-mode')
 		}
 	}, [showToast])
 
