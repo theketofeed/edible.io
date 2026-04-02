@@ -10,7 +10,7 @@ interface ProfileModalProps {
 }
 
 export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   const overlayRef = useRef<HTMLDivElement>(null)
   const [plans, setPlans] = useState<MealPlan[]>([])
   const [loading, setLoading] = useState(true)
@@ -48,7 +48,7 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   }
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
+    await signOut()
     onClose()
   }
 

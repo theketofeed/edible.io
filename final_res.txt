@@ -9,7 +9,7 @@ PASS [7]: "16 oz milk" -> "milk"
 PASS [8]: "12 pack water" -> "water"
 PASS [9]: "3 count lemons" -> "lemons"
 node : FAIL [10]: "organic 2x chicken 
-breast 500g @ $5.99/kg" -> 
+breast 500g @ $5.99/kg" ->
 Normalized: "organic  chicken 
 breast", IsFood: true, Expected: 
 "organic chicken breast"

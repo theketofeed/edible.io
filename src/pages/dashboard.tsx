@@ -158,14 +158,14 @@ function MealImage({ name, type, size = 42 }: { name: string; type: string; size
 }
 
 const WEEK = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-const DATES: number[] = (() => {
+const getDates = () => {
   const today = new Date()
   const dow = today.getDay() // 0=Sun
   const monday = new Date(today)
   monday.setDate(today.getDate() - ((dow + 6) % 7))
   return Array.from({ length: 7 }, (_, i) => { const d = new Date(monday); d.setDate(monday.getDate() + i); return d.getDate() })
-})()
-const TODAY = (() => { const d = new Date().getDay(); return (d + 6) % 7 })()
+}
+const getToday = () => { const d = new Date().getDay(); return (d + 6) % 7 }
 
 const MBG: Record<string, string> = {
   Breakfast: "#FEF3C7",
@@ -283,8 +283,9 @@ interface OverviewProps { plans: Plan[]; onNav: (id: NavId) => void; userData: U
 function Overview({ plans, onNav, userData, onSelectPlan, selectedPlanId }: OverviewProps & { onSelectPlan: (id: string) => void; selectedPlanId: string | null }) {
   const totalDays = plans.reduce((a, p) => a + p.days.length, 0)
   const totalMeals = totalDays * 3
+  const todayIdx = getToday()
   const planner = buildPlannerFromPlans(plans, selectedPlanId)
-  const todayMeals = planner[TODAY] || []
+  const todayMeals = planner[todayIdx] || []
   const consumed = todayMeals.reduce((a, m) => a + m.cal, 0)
   const target = 1800
   const macros = calcMacros(todayMeals)
@@ -479,7 +480,9 @@ interface MealPlannerProps { plans: Plan[] }
 
 function MealPlanner({ plans, selectedPlanId }: MealPlannerProps & { selectedPlanId: string | null }) {
   const navigate = useNavigate()
-  const [day, setDay] = useState(TODAY)
+  const todayIdx = getToday()
+  const currentDates = getDates()
+  const [day, setDay] = useState(todayIdx)
   const planner = buildPlannerFromPlans(plans, selectedPlanId)
   const meals = planner[day] || []
   const consumed = meals.reduce((a, m) => a + m.cal, 0)
@@ -508,7 +511,7 @@ function MealPlanner({ plans, selectedPlanId }: MealPlannerProps & { selectedPla
         border: `1px solid rgba(198,160,246,0.25)`, marginBottom: 18, display: "flex", gap: 8
       }}>
         {WEEK.map((d, i) => {
-          const sel = i === day, isToday = i === TODAY, has = (planner[i] || []).length > 0
+          const sel = i === day, isToday = i === todayIdx, has = (planner[i] || []).length > 0
           return (
             <button key={d} onClick={() => setDay(i)} style={{
               flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
@@ -523,7 +526,7 @@ function MealPlanner({ plans, selectedPlanId }: MealPlannerProps & { selectedPla
               <span style={{
                 fontWeight: 700, fontSize: 15,
                 color: sel ? "white" : isToday ? C.accent : C.txt
-              }}>{DATES[i]}</span>
+              }}>{currentDates[i]}</span>
               <div style={{
                 width: 18, height: 6, borderRadius: 999, marginTop: 6,
                 background: has ? (sel ? "rgba(255,255,255,0.65)" : "rgba(198,160,246,0.55)") : "transparent",
@@ -537,7 +540,7 @@ function MealPlanner({ plans, selectedPlanId }: MealPlannerProps & { selectedPla
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <p style={{ fontWeight: 700, fontSize: 14, color: C.txt }}>
-              {WEEK[day]}, March {DATES[day]}{day === TODAY ? " · Today" : ""}
+              {WEEK[day]}, {new Date().toLocaleDateString('en-US', { month: 'long' })} {currentDates[day]}{day === todayIdx ? " · Today" : ""}
             </p>
             <button style={{
               display: "flex", alignItems: "center", gap: 5, background: C.accent,
@@ -1092,6 +1095,7 @@ function Generate() {
 interface ProfileProps { user: UserData; plans: Plan[] }
 
 function Profile({ user, plans }: ProfileProps) {
+  const { signOut } = useAuth()
   const totalDays = plans.reduce((a, p) => a + p.days.length, 0)
   const diets = Array.from(new Set(plans.map(p => p.diet)))
   return (
@@ -1174,11 +1178,14 @@ function Profile({ user, plans }: ProfileProps) {
       <div style={{ background: "#FFF5F5", borderRadius: 16, border: "1px solid #FECACA", padding: "18px 20px" }}>
         <p style={{ fontWeight: 700, fontSize: 13, color: C.red, marginBottom: 2 }}>Sign Out</p>
         <p style={{ fontSize: 12, color: "#f87171", marginBottom: 12 }}>You'll be returned to the Edible home page.</p>
-        <button style={{
-          background: "#FEE2E2", border: "1px solid #FECACA", color: C.red,
-          padding: "8px 18px", borderRadius: 9, fontWeight: 600, fontSize: 13, cursor: "pointer",
-          fontFamily: "'Plus Jakarta Sans',sans-serif"
-        }}>Sign Out</button>
+        <button 
+          onClick={signOut}
+          style={{
+            background: "#FEE2E2", border: "1px solid #FECACA", color: C.red,
+            padding: "8px 18px", borderRadius: 9, fontWeight: 600, fontSize: 13, cursor: "pointer",
+            fontFamily: "'Plus Jakarta Sans',sans-serif"
+          }}
+        >Sign Out</button>
       </div>
     </div>
   )
@@ -1187,7 +1194,7 @@ function Profile({ user, plans }: ProfileProps) {
 // ─── Root Dashboard ───────────────────────────────────────────────────────────
 export default function EdibleDashboard() {
   const navigate = useNavigate()
-  const { user, isLoading: authLoading } = useAuth()
+  const { user, isLoading: authLoading, signOut } = useAuth()
   const [view, setView] = useState<NavId>("overview")
   const [search, setSearch] = useState("")
   const [showDrop, setShowDrop] = useState(false)
@@ -1312,7 +1319,7 @@ export default function EdibleDashboard() {
     : []
 
   const go = (id: NavId) => {
-    if (id === "logout") { navigate("/"); return }
+    if (id === "logout") { signOut(); return }
     setView(id); setSearch(""); setShowDrop(false)
   }
 

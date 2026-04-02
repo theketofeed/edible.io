@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { Camera, X, RotateCw } from 'lucide-react'
+import { Camera, X, RotateCw, AlertCircle } from 'lucide-react'
 
 interface Props {
 	onCapture: (file: File) => void
@@ -126,107 +126,205 @@ export default function CameraCapture({ onCapture, onClose }: Props) {
 	const isMobile = typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
 
 	return (
-		<div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
-			<div className="w-full max-w-md mx-auto">
-				{/* Card */}
-				<div className="bg-white rounded-lg shadow-xl overflow-hidden">
-					{/* Header */}
-					<div className="flex items-center justify-between p-4 border-b">
-						<div className="flex items-center gap-2">
-							<Camera className="w-5 h-5 text-blue-600" />
-							<h2 className="text-lg font-semibold">Capture Receipt</h2>
-						</div>
-						<button
-							onClick={onClose}
-							className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-							aria-label="Close camera"
-						>
-							<X className="w-5 h-5 text-gray-600" />
-						</button>
-					</div>
+		<div className="fixed inset-0 bg-black z-50 flex flex-col overflow-hidden">
+			<style>{`
+				@keyframes slideUp {
+					from {
+						opacity: 0;
+						transform: translateY(20px);
+					}
+					to {
+						opacity: 1;
+						transform: translateY(0);
+					}
+				}
 
-					{/* Camera View */}
-					<div className="relative bg-black aspect-video overflow-hidden">
-						{error ? (
-							<div className="absolute inset-0 flex items-center justify-center bg-black">
-								<div className="text-center p-4">
-									<p className="text-red-500 font-semibold mb-2">Camera Error</p>
-									<p className="text-gray-300 text-sm mb-4">{error}</p>
-									<button
-										onClick={startCamera}
-										className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-									>
-										Retry
-									</button>
+				@keyframes scanLineMove {
+					0% {
+						top: -10%;
+						opacity: 0;
+					}
+					5% {
+						opacity: 1;
+					}
+					90% {
+						opacity: 1;
+					}
+					100% {
+						top: 110%;
+						opacity: 0;
+					}
+				}
+
+				@keyframes pulseGlow {
+					0%, 100% {
+						box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+					}
+					50% {
+						box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+					}
+				}
+
+				.camera-frame-guide {
+					animation: pulseGlow 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+				}
+
+				.scan-line {
+					animation: scanLineMove 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+				}
+
+				.corner-bracket {
+					width: 24px;
+					height: 24px;
+					border: 2px solid rgba(255, 255, 255, 0.8);
+					position: absolute;
+					z-index: 10;
+				}
+
+				.corner-tl {
+					top: 24px;
+					left: 24px;
+					border-right: none;
+					border-bottom: none;
+					border-radius: 12px 0 0 0;
+				}
+
+				.corner-tr {
+					top: 24px;
+					right: 24px;
+					border-left: none;
+					border-bottom: none;
+					border-radius: 0 12px 0 0;
+				}
+
+				.corner-bl {
+					bottom: 24px;
+					left: 24px;
+					border-right: none;
+					border-top: none;
+					border-radius: 0 0 0 12px;
+				}
+
+				.corner-br {
+					bottom: 24px;
+					right: 24px;
+					border-left: none;
+					border-top: none;
+					border-radius: 0 0 12px 0;
+				}
+			`}</style>
+
+			{/* Header */}
+			<div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 backdrop-blur-md border-b border-white/10">
+				<h2 className="text-white font-semibold text-lg sm:text-xl">
+					Scan your grocery receipt/list
+				</h2>
+				<button
+					onClick={onClose}
+					className="p-2 rounded-full hover:bg-white/10 transition-colors duration-200"
+					aria-label="Close camera"
+				>
+					<X className="w-6 h-6 text-white" strokeWidth={1.5} />
+				</button>
+			</div>
+
+			{/* Camera View - Full-screen on mobile */}
+			<div className="flex-1 relative bg-black overflow-hidden">
+				{error ? (
+					<div className="absolute inset-0 flex flex-col items-center justify-center bg-black">
+						<div className="text-center p-6 max-w-xs animate-fadeInScale">
+							<AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+							<p className="text-white font-semibold mb-2 text-lg">Camera Not Available</p>
+							<p className="text-gray-400 text-sm mb-6">{error}</p>
+							<button
+								onClick={startCamera}
+								className="w-full px-4 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-semibold transition-all duration-200 backdrop-blur-sm border border-white/20"
+							>
+								Try Again
+							</button>
+						</div>
+					</div>
+				) : (
+					<>
+						<video
+							ref={videoRef}
+							autoPlay
+							playsInline
+							className="w-full h-full object-cover"
+						/>
+
+						{/* Premium Frame Guide Overlay */}
+						<div className="absolute inset-0 pointer-events-none camera-frame-guide">
+							{/* Corner Brackets */}
+							<div className="corner-bracket corner-tl" />
+							<div className="corner-bracket corner-tr" />
+							<div className="corner-bracket corner-bl" />
+							<div className="corner-bracket corner-br" />
+
+							{/* Scanning Line */}
+							<div className="scan-line absolute w-full h-1">
+								<div className="h-full w-full bg-gradient-to-b from-transparent via-white to-transparent opacity-80" />
+								<div className="absolute top-1 left-0 w-full h-8 bg-gradient-to-b from-white/30 via-white/10 to-transparent" />
+							</div>
+
+							{/* Center Guide Text */}
+							<div className="absolute inset-0 flex items-center justify-center">
+								<div className="text-center px-4 py-2 rounded-full backdrop-blur-md border border-white/20 bg-black/40">
+									<p className="text-white/90 text-sm font-medium">
+										Position receipt in frame
+									</p>
 								</div>
 							</div>
-						) : (
-							<>
-								<video
-									ref={videoRef}
-									autoPlay
-									playsInline
-									className="w-full h-full object-cover"
-								/>
 
-								{/* Camera Frame Guide Overlay */}
-								<div className="absolute inset-0 border-2 border-yellow-400 pointer-events-none">
-									{/* Corner indicators */}
-									<div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-yellow-400" />
-									<div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-yellow-400" />
-									<div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-yellow-400" />
-									<div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-yellow-400" />
-
-									{/* Center text hint */}
-									<div className="absolute inset-0 flex items-center justify-center">
-										<p className="text-white text-xs font-medium bg-black/50 px-3 py-1 rounded">
-											Align receipt with frame
-										</p>
-									</div>
-								</div>
-							</>
-						)}
-					</div>
-
-					{/* Controls */}
-					<div className="p-4 bg-gray-50 border-t">
-						<div className="flex gap-3 justify-center mb-3">
-							{isMobile && (
-								<button
-									onClick={switchCamera}
-									disabled={!isCameraActive || !!error}
-									className="p-3 rounded-lg bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-									title="Switch camera"
-									aria-label="Switch camera"
-								>
-									<RotateCw className="w-5 h-5 text-gray-700" />
-								</button>
-							)}
-
-							<button
-								onClick={capturePhoto}
-								disabled={!isCameraActive || !!error}
-								className="flex-1 px-4 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold flex items-center justify-center gap-2 transition-colors"
-								aria-label="Capture photo"
-							>
-								<Camera className="w-5 h-5" />
-								Capture
-							</button>
-
-							<button
-								onClick={onClose}
-								className="flex-1 px-4 py-3 rounded-lg bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold transition-colors"
-								aria-label="Cancel"
-							>
-								Cancel
-							</button>
+							{/* Safe Zone Indicator */}
+							<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-64 border border-white/5 rounded-2xl pointer-events-none" />
 						</div>
+					</>
+				)}
+			</div>
 
-						{/* Tip */}
-						<p className="text-xs text-gray-600 text-center">
-							📸 Position the receipt clearly in the frame for best results
-						</p>
-					</div>
+			{/* Controls - Sticky at bottom */}
+			<div className="px-4 sm:px-6 py-4 backdrop-blur-md bg-black/40 border-t border-white/10">
+				<div className="flex gap-3 justify-center mb-3 animate-slideUp" style={{ animationDelay: '100ms' }}>
+					{isMobile && (
+						<button
+							onClick={switchCamera}
+							disabled={!isCameraActive || !!error}
+							className="p-3 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 backdrop-blur-sm border border-white/20 hover:border-white/40"
+							title="Switch camera"
+							aria-label="Switch camera"
+						>
+							<RotateCw className="w-5 h-5 text-white" strokeWidth={1.5} />
+						</button>
+					)}
+
+					<button
+						onClick={capturePhoto}
+						disabled={!isCameraActive || !!error}
+						className="flex-1 sm:flex-initial px-8 py-3 rounded-full bg-white/20 hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold flex items-center justify-center gap-2 transition-all duration-200 backdrop-blur-sm border border-white/40 hover:border-white/60 hover:shadow-lg hover:shadow-white/10 sm:max-w-xs"
+						aria-label="Capture photo"
+					>
+						<Camera className="w-5 h-5" strokeWidth={1.5} />
+						<span className="hidden sm:inline">Capture</span>
+					</button>
+
+					<button
+						onClick={onClose}
+						disabled={!isCameraActive || !!error}
+						className="flex-1 sm:flex-initial px-8 py-3 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold transition-all duration-200 backdrop-blur-sm border border-white/20 hover:border-white/40 sm:max-w-xs"
+						aria-label="Cancel"
+					>
+						<span className="hidden sm:inline">Cancel</span>
+						<span className="sm:hidden">Close</span>
+					</button>
+				</div>
+
+				{/* Tips for better photos */}
+				<div className="space-y-1.5">
+					<p className="text-white/80 text-xs font-medium text-center">📸 Tips for best results:</p>
+					<p className="text-white/60 text-xs text-center leading-relaxed">
+						Use natural lighting • Keep text crisp and clear • Avoid glare or shadows
+					</p>
 				</div>
 			</div>
 

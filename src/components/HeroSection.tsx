@@ -53,7 +53,7 @@ const HeroSection = memo(function HeroSection() {
 				</div>
 
 				{/* Headline */}
-				<h1 className="heading text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-gray-900 mb-6 leading-[1.1]">
+				<h1 className="heading text-4xl sm:text-5xl md:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 mb-6 leading-[1.1]">
 					Turn grocery
 					<br className="sm:hidden" />
 					<span className="italic px-2 sm:px-3 py-0.5 sm:py-1 rounded-md bg-[#E9D5FF] inline-block mx-1 whitespace-nowrap">
@@ -61,7 +61,7 @@ const HeroSection = memo(function HeroSection() {
 						<span className="animate-pulse">|</span>
 					</span>
 					<br className="hidden sm:block" />
-					into meal plans
+					into meal plans instantly
 				</h1>
 
 				{/* Subcopy */}

@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { extractGroceryItems } from '../utils/grocery'
 import { runOcrSpace } from '../lib/ocrSpaceOcr'
+import { validateReceiptOrList } from '../services/documentValidator'
 import CameraCapture from './CameraCapture'
 
 interface Props {
@@ -100,6 +101,20 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 			const { items, rawText, confidence } = await ocrPromise
 
 			console.log('[UploadArea] OCR completed. Items found:', items.length)
+
+			// Validate if document is a receipt or shopping list
+			const validation = validateReceiptOrList(rawText)
+			console.log('[UploadArea] Document validation:', validation)
+
+			if (!validation.isValid) {
+				// Document is not a valid receipt or shopping list
+				setDetectedCount(0)
+				setUploadState('error')
+				setErrorMessage(validation.reason || 'This doesn\'t appear to be a valid grocery receipt or shopping list. Please try again.')
+				onError(validation.reason || 'Invalid document type')
+				return
+			}
+
 			setOcrConfidence(confidence)
 
 			if (items.length) {
@@ -115,9 +130,20 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 		} catch (e) {
 			console.error('[UploadArea] OCR error:', e)
 			const errMsg = e instanceof Error ? e.message : 'Something went wrong while reading your receipt.'
-			setErrorMessage(errMsg)
+			
+			// Make OCR errors more user-friendly
+			let friendlyMessage = errMsg
+			if (errMsg.includes('E500') || errMsg.includes('Resource Exhaustion')) {
+				friendlyMessage = 'The OCR service encountered an issue. Make sure you\'re uploading a clear receipt or list with visible text, not a blank image.'
+			} else if (errMsg.includes('timeout') || errMsg.includes('Timeout')) {
+				friendlyMessage = 'The service took too long to process. Please try uploading a clearer image with less content.'
+			} else if (errMsg.includes('No image')) {
+				friendlyMessage = 'No text could be detected in this image. Make sure it\'s a receipt or shopping list with clear, readable text.'
+			}
+			
+			setErrorMessage(friendlyMessage)
 			setUploadState('error')
-			onError(errMsg)
+			onError(friendlyMessage)
 		} finally {
 			clearInterval(progressInterval)
 		}
@@ -224,19 +250,19 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 						<button
 							type="button"
 							onClick={() => inputRef.current?.click()}
-							className="btn btn-primary text-sm"
+							className="px-6 py-3 rounded-full bg-lavender text-black font-semibold shadow-lg shadow-lavender/40 hover:shadow-lavender/50 hover:scale-105 transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
 							disabled={disabled}
 						>
-							<FileUp className="w-4 h-4 mr-2" />
+							<FileUp className="w-4 h-4" strokeWidth={2} />
 							Choose File
 						</button>
 						<button
 							type="button"
 							onClick={() => setShowCamera(true)}
-							className="btn btn-outline text-sm border border-gray-300 hover:bg-gray-50"
+							className="px-6 py-3 rounded-full bg-white border-2 border-lavender/40 text-black font-semibold hover:bg-lavender/5 hover:border-lavender/60 transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
 							disabled={disabled}
 						>
-							<Camera className="w-4 h-4 mr-2" />
+							<Camera className="w-4 h-4" strokeWidth={2} />
 							Take Photo
 						</button>
 					</div>
@@ -314,7 +340,7 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 								<img
 									src={filePreview}
 									alt="Receipt preview"
-									className="rounded-lg border border-gray-200 max-h-48 object-contain shadow-sm"
+									className="rounded-2xl border-2 border-lavender/20 max-h-48 object-contain shadow-xl shadow-lavender/20"
 								/>
 							</div>
 						)}
@@ -322,7 +348,7 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 						<button
 							type="button"
 							onClick={() => inputRef.current?.click()}
-							className="w-full text-sm text-lavender hover:text-purple-600 font-medium transition-colors py-2"
+							className="w-full px-4 py-3 rounded-full text-lavender hover:text-purple-600 font-semibold transition-all duration-200 hover:bg-lavender/5 active:scale-95"
 						>
 							Replace receipt
 						</button>
@@ -355,16 +381,16 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 							<button
 								type="button"
 								onClick={retryUpload}
-								className="flex-1 btn btn-primary text-sm"
+								className="flex-1 px-4 py-3 rounded-full bg-lavender text-black font-semibold shadow-lg shadow-lavender/40 hover:shadow-lavender/50 hover:scale-105 transition-all duration-200 active:scale-95"
 							>
 								Retry Upload
 							</button>
 							<button
 								type="button"
 								onClick={() => inputRef.current?.click()}
-								className="flex-1 border border-gray-300 rounded-lg px-4 py-2 text-sm font-medium text-black/70 hover:bg-gray-50 transition-colors"
+								className="flex-1 px-4 py-3 rounded-full border-2 border-lavender/40 text-black font-semibold hover:bg-lavender/5 hover:border-lavender/60 transition-all duration-200 active:scale-95"
 							>
-								Choose Different File
+								Choose Different
 							</button>
 						</div>
 					</div>
@@ -389,29 +415,31 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 			)}
 
 			{/* Manual Text Input Section */}
-			<div className="grid gap-3 pt-4 border-t border-gray-200">
+			<div className="grid gap-3 pt-4 border-t border-gray-200/50">
 				<label className="text-sm font-semibold text-black/80 flex items-center gap-2">
-					<FileText className="w-4 h-4" />
+					<FileText className="w-4 h-4 text-lavender" strokeWidth={2} />
 					Or paste your grocery list:
 				</label>
 				<textarea
-					className="input min-h-[120px]"
+					className="input rounded-xl border-2 border-gray-200/50 focus:border-lavender/50 focus:ring-0 min-h-[120px] resize-none"
 					placeholder="e.g., chicken breast, quinoa, spinach, eggs, yogurt, berries, tofu, broccoli…"
 					value={manualText}
 					onChange={(e) => setManualText(e.target.value)}
 					disabled={disabled}
 				/>
-				<div className="flex items-center gap-3">
+				<div className="flex items-center gap-3 flex-wrap">
 					<button
 						type="button"
-						className="btn btn-primary"
+						className="px-6 py-2.5 rounded-full bg-lavender text-black font-semibold shadow-lg shadow-lavender/40 hover:shadow-lavender/50 hover:scale-105 transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed text-sm"
 						onClick={useManual}
 						disabled={disabled || !manualText.trim()}
 					>
 						Use this text
 					</button>
 					{typeof detectedCount === 'number' && (
-						<span className="text-xs text-black/60">Current list: {detectedCount} items</span>
+						<span className="text-xs text-black/60 px-3 py-1 rounded-full bg-black/5">
+							{detectedCount} items ready
+						</span>
 					)}
 				</div>
 			</div>
