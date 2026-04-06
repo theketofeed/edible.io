@@ -18,7 +18,9 @@ import FAQ from './components/FAQ'
 import Footer from './components/Footer'
 import AuthModal from './components/AuthModal'
 import ProfileModal from './components/Profilemodal'
+import PricingModal from './components/PricingModal'
 import { useAuth } from './context/AuthContext'
+import { usePlan } from './hooks/usePlan'
 import { generateMealPlan } from './lib/mealPlanGenerator'
 import type { DietType, MealPlanResult } from './utils/types'
 import { useReactToPrint } from 'react-to-print'
@@ -27,13 +29,17 @@ import ToastContainer, { ToastKind, ToastMessage } from './components/Toast'
 import ReceiptConfirmation from './components/ReceiptConfirmation'
 import { parseReceiptWithGemini, ParsedItem } from './services/receiptParser'
 import EdibleDashboard from './pages/dashboard'
+import PaymentSuccess from './pages/PaymentSuccess'
 
 function MainContent() {
 	const navigate = useNavigate()
 	const location = useLocation()
 	const { user } = useAuth()
+	const { checkGenerationLimit } = usePlan()
 	const [authOpen, setAuthOpen] = useState(false)
 	const [profileOpen, setProfileOpen] = useState(false)
+	const [pricingOpen, setPricingOpen] = useState(false)
+	const [pricingTrigger, setPricingTrigger] = useState<string>('')
 
 	// Auto-close modal when login succeeds
 	useEffect(() => {
@@ -117,6 +123,14 @@ function MainContent() {
 	}, [showToast])
 
 	const handleGenerate = useCallback(async () => {
+		// Check generation limit
+		const { allowed, remaining } = checkGenerationLimit()
+		if (!allowed) {
+			setPricingTrigger('generation_limit')
+			setPricingOpen(true)
+			return
+		}
+
 		if (!groceryItems.length) {
 			setError('No grocery items found.')
 			showToast('error', 'No grocery items found.')
@@ -216,6 +230,7 @@ function MainContent() {
 
 			<AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
 			<ProfileModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
+			<PricingModal isOpen={pricingOpen} onClose={() => setPricingOpen(false)} trigger={pricingTrigger} />
 
 			<ReceiptConfirmation
 				isOpen={showConfirmation}
@@ -311,8 +326,14 @@ function MainContent() {
 									result={result}
 									onCopy={handleCopy}
 									onDownload={triggerDownload}
-									onRegenerate={handleRegenerate}									setAuthOpen={setAuthOpen}
-									showToast={showToast}									ref={printRef}
+									onRegenerate={handleRegenerate}
+									setAuthOpen={setAuthOpen}
+									showToast={showToast}
+									onUpgradeRequired={(trigger) => {
+										setPricingTrigger(trigger)
+										setPricingOpen(true)
+									}}
+									ref={printRef}
 								/>
 								{!user && (
 								<div className="mt-4 flex items-center gap-4 px-6 py-4 bg-white border border-gray-200 rounded-2xl hover:shadow-md hover:border-gray-300 transition-all duration-200">
@@ -383,6 +404,7 @@ function MainContent() {
 					</ErrorBoundary>
 				} />
 				<Route path="/dashboard" element={<EdibleDashboard />} />
+				<Route path="/payment-success" element={<PaymentSuccess />} />
 			</Routes>
 
 			<Footer />

@@ -1,9 +1,20 @@
-import { memo } from 'react'
+import { memo, useEffect } from 'react'
 import { ScanAnimation } from './ScanAnimation'
 
 const Loading = memo(function Loading() {
+	useEffect(() => {
+		// Scroll the loading animation into center view after a brief delay to let DOM settle
+		const timer = setTimeout(() => {
+			const loadingElement = document.getElementById('loading-animation')
+			if (loadingElement) {
+				loadingElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+			}
+		}, 150)
+		return () => clearTimeout(timer)
+	}, [])
+
 	return (
-		<div className="flex flex-col items-center justify-center py-12 px-4 transition-all duration-500">
+		<div id="loading-animation" className="flex flex-col items-center justify-center py-16 md:py-20 px-4 transition-all duration-500 min-h-[60vh] md:min-h-[70vh]">
 			<div className="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-xl border border-purple-50 max-w-md w-full text-center relative overflow-hidden">
 				<div className="w-48 h-48 mx-auto mb-6 flex items-center justify-center relative -mt-4 md:-mt-8">
 					<div className="absolute inset-0 bg-purple-100/20 rounded-full blur-3xl animate-pulse"></div>

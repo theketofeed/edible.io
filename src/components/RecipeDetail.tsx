@@ -1,13 +1,15 @@
 import { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Clock, ChefHat, Timer, ArrowLeft, CheckCircle2, Circle, Share2, Zap, Download, Heart, Lightbulb } from 'lucide-react'
+import { Clock, ChefHat, Timer, ArrowLeft, CheckCircle2, Circle, Share2, Zap, Download, Heart, Lightbulb, Crown } from 'lucide-react'
 import type { Meal } from '../utils/types'
 import Tabs, { Tab } from './Tabs'
 import NutritionBadges from './NutritionBadges'
 import type { ToastKind } from './Toast'
 import { fetchMealImage } from '../lib/unsplashApi'
 import CookingMode from './CookingMode'
+import PricingModal from './PricingModal'
 import { useAuth } from '../context/AuthContext'
+import { usePlan } from '../hooks/usePlan'
 
 interface RecipeDetailProps {
     meal?: Meal
@@ -169,12 +171,14 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
     }
 
     const { user } = useAuth()
+    const { canSeeChefTips } = usePlan()
     const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set())
     const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set())
     const [recipeImage, setRecipeImage] = useState<string | null>(null)
     const [isImageLoading, setIsImageLoading] = useState(true)
     const [isCookingModeOpen, setIsCookingModeOpen] = useState(false)
     const [isSaved, setIsSaved] = useState(false)
+    const [pricingOpen, setPricingOpen] = useState(false)
 
     // Fetch Unsplash Image
     useEffect(() => {
@@ -376,7 +380,7 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
 
     const tipsContent = useMemo(() => {
         if (!safeMeal.tips || safeMeal.tips.length === 0) return null
-
+        
         return (
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -394,7 +398,7 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
                     Chef Tips
                 </h2>
 
-                <div className="grid gap-4 relative z-10">
+                <div className={`grid gap-4 relative z-10 ${!canSeeChefTips ? 'blur-[2px]' : ''}`}>
                     {safeMeal.tips.map((tip, idx) => (
                         <div key={idx} className="flex gap-5 items-start bg-purple-50/20 backdrop-blur-sm p-6 rounded-2xl border border-purple-100/30 hover:bg-white hover:border-purple-200 hover:shadow-[0_4px_20px_rgba(198,160,246,0.06)] transition-all duration-300">
                             <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm flex-shrink-0 mt-0.5 border border-purple-100/20">
@@ -406,9 +410,25 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
                         </div>
                     ))}
                 </div>
+                
+                {!canSeeChefTips && (
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent rounded-[2.5rem] flex flex-col items-center justify-center z-20 pointer-events-none">
+                        <div className="bg-white/98 backdrop-blur-md rounded-2xl p-8 text-center shadow-2xl pointer-events-auto cursor-pointer hover:shadow-xl transition-shadow" onClick={() => setPricingOpen(true)}>
+                            <Crown className="w-10 h-10 text-purple-600 mx-auto mb-3" />
+                            <h3 className="text-lg font-black text-gray-900 mb-2">Pro Feature</h3>
+                            <p className="text-gray-600 text-sm mb-5 max-w-xs">Professional chef tips to elevate your cooking technique</p>
+                            <button
+                                onClick={() => setPricingOpen(true)}
+                                className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold text-sm transition-all duration-300 hover:shadow-[0_4px_12px_rgba(147,51,234,0.3)]"
+                            >
+                                Unlock Pro
+                            </button>
+                        </div>
+                    </div>
+                )}
             </motion.div>
         )
-    }, [safeMeal.tips])
+    }, [safeMeal.tips, canSeeChefTips])
 
     return (
         <motion.div
@@ -612,6 +632,13 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
                     />
                 )}
             </AnimatePresence>
+
+            {/* Pricing Modal */}
+            <PricingModal 
+                isOpen={pricingOpen}
+                onClose={() => setPricingOpen(false)}
+                trigger="chef_tips"
+            />
         </motion.div>
     )
 }

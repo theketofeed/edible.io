@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import type { MealPlanResult, DayMeals, Meal } from '../utils/types'
 import { fetchMealImage } from '../lib/unsplashApi'
 import { useAuth } from '../context/AuthContext'
+import { usePlan } from '../hooks/usePlan'
 import { saveMealPlan } from '../lib/db'
 import logo from '../assets/Transparent logo.png'
 
@@ -15,6 +16,7 @@ interface Props {
 	onRegenerate: () => void
 	setAuthOpen: (open: boolean) => void
 	showToast: (type: 'success' | 'error' | 'info', message: string) => void
+	onUpgradeRequired?: (trigger: string) => void
 }
 
 // Helper to get high-quality placeholder images from Unsplash
@@ -191,9 +193,10 @@ const DayCard = memo(function DayCard({
 	)
 })
 
-const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result, onCopy, onDownload, onRegenerate, setAuthOpen, showToast }, ref) {
+const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result, onCopy, onDownload, onRegenerate, setAuthOpen, showToast, onUpgradeRequired }, ref) {
 	const navigate = useNavigate()
 	const { user } = useAuth()
+	const { canExportPDF } = usePlan()
 	const [showSaveModal, setShowSaveModal] = useState(false)
 	const [savePlanTitle, setSavePlanTitle] = useState(`My ${result.diet} Plan`)
 	const [isSaving, setIsSaving] = useState(false)
@@ -309,50 +312,66 @@ const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result
 						whileHover={{ y: -2, scale: 1.02 }}
 						whileTap={{ scale: 0.98 }}
 						transition={{ duration: 0.1 }}
-						className="h-12 px-6 rounded-2xl bg-white/40 backdrop-blur-md text-gray-700 text-[14px] font-bold border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:bg-white/60 transition-all flex items-center" 
-						onClick={onDownload}
-					>
-						<div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center mr-3 border border-purple-100/50">
-							<Download className="w-4 h-4 text-purple-500" />
-						</div>
-						Export PDF
-					</motion.button>
+					className="h-12 px-6 rounded-2xl bg-white/40 backdrop-blur-md text-gray-700 text-[14px] font-bold border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:bg-white/60 transition-all flex items-center"
+					onClick={() => {
+						if (!canExportPDF) {
+							onUpgradeRequired?.('pdf_export')
+							return
+						}
+						onDownload()
+					}}
+				>
+					<div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center mr-3 border border-purple-100/50">
+						<Download className="w-4 h-4 text-purple-500" />
+					</div>
+					Export PDF
+				</motion.button>
 
-					<motion.button 
-						whileHover={{ y: -2, scale: 1.02 }}
-						whileTap={{ scale: 0.98 }}
-						transition={{ duration: 0.1 }}
-						className="h-12 px-7 rounded-2xl bg-gradient-to-br from-[#D9C4FF] to-[#C6A0F6] text-gray-900 text-[14px] font-extrabold shadow-[0_10px_25px_rgba(198,160,246,0.35)] hover:shadow-[0_15px_35px_rgba(198,160,246,0.45)] transition-all flex items-center" 
-						onClick={onRegenerate}
-					>
-						<RefreshCw className="w-4 h-4 mr-2.5 text-gray-900/70" />
-						Regenerate
-					</motion.button>
+				<motion.button 
+					whileHover={{ y: -2, scale: 1.02 }}
+					whileTap={{ scale: 0.98 }}
+					transition={{ duration: 0.1 }}
+					className="h-12 px-7 rounded-2xl bg-gradient-to-br from-[#D9C4FF] to-[#C6A0F6] text-gray-900 text-[14px] font-extrabold shadow-[0_10px_25px_rgba(198,160,246,0.35)] hover:shadow-[0_15px_35px_rgba(198,160,246,0.45)] transition-all flex items-center" 
+					onClick={onRegenerate}
+				>
+					<RefreshCw className="w-4 h-4 mr-2.5 text-gray-900/70" />
+					Regenerate
+				</motion.button>
 
-					<motion.button 
-						whileHover={{ y: -2, scale: 1.02 }}
-						whileTap={{ scale: 0.98 }}
-						transition={{ duration: 0.1 }}
-						className={`h-12 px-7 rounded-2xl text-[14px] font-extrabold flex items-center shadow-[0_12px_30px_rgba(0,0,0,0.15)] transition-all duration-300 ${
-							saved 
-								? 'bg-emerald-500 text-white save-btn-saved' 
-								: 'bg-neutral-900 text-white hover:bg-black'
-						}`}
-						onClick={handleSavePlanClick}
-						disabled={saved}
-					>
-						{saved ? (
-							<>
-								<Bookmark className="w-5 h-5 mr-2.5" fill="white" strokeWidth={3} />
-								Plan Saved
-							</>
-						) : (
-							<>
-								<Bookmark className="w-5 h-5 mr-2.5 text-purple-300" fill="none" strokeWidth={2.2} />
-								Save to Account
-							</>
-						)}
-					</motion.button>
+				<motion.button 
+					whileHover={!saved ? { y: -2, scale: 1.02 } : undefined}
+					whileTap={!saved ? { scale: 0.98 } : undefined}
+					transition={{ duration: 0.1 }}
+					className={`h-12 px-7 rounded-2xl text-[14px] font-bold flex items-center transition-all ${
+						saved 
+							? 'bg-black text-white shadow-[0_8px_32px_rgba(0,0,0,0.2)]' 
+							: 'bg-black/70 hover:bg-black text-white shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.16)] border border-black/50'
+					} ${saved ? 'save-btn-saved' : ''}`}
+					onClick={() => {
+						if (!user) {
+							onUpgradeRequired?.('save_plan')
+							return
+						}
+						setShowSaveModal(true)
+					}}
+				>
+					{saved ? (
+						<>
+							<Check className="w-5 h-5 mr-2.5" />
+							Saved!
+						</>
+					) : user ? (
+						<>
+							<Bookmark className="w-5 h-5 mr-2.5" fill="currentColor" />
+							Save to Account
+						</>
+					) : (
+						<>
+							<Bookmark className="w-5 h-5 mr-2.5" fill="none" strokeWidth={2.2} />
+							Save to Account
+						</>
+					)}
+				</motion.button>
 				</div>
 			</div>
 
