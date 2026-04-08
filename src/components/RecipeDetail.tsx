@@ -320,6 +320,7 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
                     {instructionSteps.length > 0 ? (
                         instructionSteps.map((step, index) => (
                             <label
+                                key={index}
                                 className={`flex items-start gap-5 p-6 md:p-8 rounded-[2rem] border transition-all duration-300 group cursor-pointer min-h-[44px]
 									${completedSteps.has(index) ? 'bg-gray-50 border-gray-100 shadow-inner' : 'bg-white border-gray-50 hover:border-purple-200 hover:shadow-[0_8px_30px_rgba(0,0,0,0.03)]'}`}
                             >

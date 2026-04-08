@@ -24,8 +24,8 @@ const Header = memo(function Header({ onAuthClick, onOpenProfile }: HeaderProps)
 			{/* Page Background - Light shade of lavender */}
 			<div className="fixed inset-0 -z-10 w-full h-screen bg-purple-50"></div>
 
-			{/* Full-width Sticky Header */}
-			<header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-lg border-b border-gray-100/60 shadow-[0_4px_24px_rgba(0,0,0,0.02)] transition-all">
+			{/* Floating Card Header */}
+			<header className="sticky top-0 z-50 mx-4 mt-3 rounded-2xl bg-white/95 backdrop-blur-lg shadow-lg transition-all">
 				<nav className="flex items-center justify-between px-5 md:px-8 py-3.5 max-w-7xl mx-auto">
 
 					{/* Logo Section */}

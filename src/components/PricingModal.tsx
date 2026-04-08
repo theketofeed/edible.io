@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { X, Check, Zap, Crown, Sparkles } from 'lucide-react'
+import { X, Check, Zap, Crown } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { createCheckout } from '../lib/checkout'
 import type { ProductType } from '../lib/checkout'
@@ -7,7 +7,7 @@ import type { ProductType } from '../lib/checkout'
 interface Props {
   isOpen: boolean
   onClose: () => void
-  trigger?: string // what caused the modal to open e.g. "pdf_export"
+  trigger?: string
 }
 
 export default function PricingModal({ isOpen, onClose, trigger }: Props) {
@@ -18,9 +18,7 @@ export default function PricingModal({ isOpen, onClose, trigger }: Props) {
   const handleUpgrade = useCallback(async (productType: ProductType) => {
     if (!user) return
     setLoading(productType)
-
     const result = await createCheckout(productType, user.id, user.email!)
-
     if (result.success && result.url) {
       window.location.href = result.url
     } else {
@@ -33,142 +31,161 @@ export default function PricingModal({ isOpen, onClose, trigger }: Props) {
 
   const proFeatures = [
     'Unlimited meal plan generations',
-    'Unlimited saved plans',
-    'Unlimited saved recipes',
+    'Unlimited saved plans & recipes',
     'PDF export & print',
     'Chef tips on every recipe',
     'Full dashboard access',
-    'Priority support'
+    'Priority support',
   ]
 
+  const triggerMessage = {
+    generation_limit: "You've used your 3 free plans this month.",
+    pdf_export: "PDF export is a Pro feature.",
+    chef_tips: "Chef tips are a Pro feature.",
+  }[trigger || ''] || "Unlock everything Edible has to offer."
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden">
-        
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)' }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div
+        className="relative w-full max-w-xl bg-white rounded-3xl overflow-hidden"
+        style={{ boxShadow: '0 32px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.04)' }}
+      >
+        {/* Close button — always visible */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-black/8 hover:bg-black/12 transition-colors"
+          style={{ background: 'rgba(0,0,0,0.06)' }}
+        >
+          <X className="w-4 h-4 text-gray-600" />
+        </button>
+
         {/* Header */}
-        <div className="relative bg-gradient-to-br from-purple-600 to-purple-800 p-8 text-white text-center">
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
-          <Sparkles className="w-8 h-8 mx-auto mb-3 text-yellow-300" />
-          <h2 className="text-2xl font-bold mb-2">Upgrade to Edible Pro</h2>
-          <p className="text-purple-200 text-sm">
-            {trigger === 'generation_limit' && "You've used your 3 free plans this month."}
-            {trigger === 'pdf_export' && "PDF export is a Pro feature."}
-            {trigger === 'chef_tips' && "Chef tips are a Pro feature."}
-            {!trigger && "Unlock everything Edible has to offer."}
-          </p>
+        <div className="px-8 pt-8 pb-6 text-center"
+          style={{ background: 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)' }}>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-bold uppercase tracking-wide mb-4">
+            <Zap className="w-3 h-3" />
+            Upgrade to Pro
+          </div>
+          <p className="text-gray-500 text-sm">{triggerMessage}</p>
         </div>
 
-        <div className="p-8">
-          {/* Billing toggle */}
-          <div className="flex items-center justify-center gap-3 mb-8">
+        {/* Billing toggle */}
+        <div className="flex items-center justify-center gap-1 px-8 pt-6 pb-2">
+          <div className="flex items-center p-1 bg-gray-100 rounded-full gap-1">
             <button
               onClick={() => setBillingCycle('monthly')}
-              className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
-                billingCycle === 'monthly' 
-                  ? 'bg-purple-600 text-white' 
-                  : 'bg-gray-100 text-gray-600'
+              className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
+                billingCycle === 'monthly'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500'
               }`}
             >
               Monthly
             </button>
             <button
               onClick={() => setBillingCycle('annual')}
-              className={`px-4 py-2 rounded-full text-sm font-semibold transition-all flex items-center gap-2 ${
-                billingCycle === 'annual' 
-                  ? 'bg-purple-600 text-white' 
-                  : 'bg-gray-100 text-gray-600'
+              className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all flex items-center gap-2 ${
+                billingCycle === 'annual'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500'
               }`}
             >
               Annual
-              <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-                billingCycle === 'annual' ? 'bg-yellow-300 text-yellow-900' : 'bg-green-100 text-green-700'
-              }`}>
-                Save 33%
+              <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-bold">
+                -33%
               </span>
             </button>
           </div>
+        </div>
 
-          {/* Plans grid */}
-          <div className="grid md:grid-cols-2 gap-4 mb-6">
-            
-            {/* Pro Plan */}
-            <div className="border-2 border-purple-200 rounded-2xl p-6 relative">
-              <div className="flex items-center gap-2 mb-1">
-                <Zap className="w-5 h-5 text-purple-600" />
-                <h3 className="font-bold text-gray-900">Pro</h3>
-              </div>
-              <div className="mb-4">
-                <span className="text-3xl font-black text-gray-900">
-                  {billingCycle === 'monthly' ? '$4.99' : '$3.33'}
-                </span>
-                <span className="text-gray-500 text-sm">/month</span>
-                {billingCycle === 'annual' && (
-                  <p className="text-xs text-gray-400 mt-1">Billed as $40/year</p>
-                )}
-              </div>
-              <ul className="space-y-2 mb-6">
-                {proFeatures.map((feature, i) => (
-                  <li key={i} className="flex items-center gap-2 text-sm text-gray-700">
-                    <Check className="w-4 h-4 text-purple-600 flex-shrink-0" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              <button
-                onClick={() => handleUpgrade(billingCycle === 'monthly' ? 'pro_monthly' : 'pro_annual')}
-                disabled={!!loading}
-                className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-all disabled:opacity-60"
-              >
-                {loading === 'pro_monthly' || loading === 'pro_annual'
-                  ? 'Redirecting...'
-                  : `Get Pro ${billingCycle === 'annual' ? '— $40/year' : '— $4.99/mo'}`
-                }
-              </button>
-            </div>
+        {/* Plans */}
+        <div className="grid grid-cols-2 gap-3 px-6 pb-6 pt-4">
 
-            {/* Founding Member */}
-            <div className="border-2 border-yellow-400 rounded-2xl p-6 relative bg-gradient-to-br from-yellow-50 to-orange-50">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <span className="bg-yellow-400 text-yellow-900 text-xs font-black px-3 py-1 rounded-full uppercase tracking-wide">
-                  Limited — 100 spots
-                </span>
+          {/* Pro Plan */}
+          <div className="rounded-2xl border-2 border-gray-100 p-5 flex flex-col hover:border-purple-200 transition-colors">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-7 h-7 rounded-lg bg-purple-100 flex items-center justify-center">
+                <Zap className="w-3.5 h-3.5 text-purple-600" />
               </div>
-              <div className="flex items-center gap-2 mb-1 mt-2">
-                <Crown className="w-5 h-5 text-yellow-600" />
-                <h3 className="font-bold text-gray-900">Founding Member</h3>
-              </div>
-              <div className="mb-4">
-                <span className="text-3xl font-black text-gray-900">$79</span>
-                <span className="text-gray-500 text-sm"> once</span>
-                <p className="text-xs text-green-600 font-semibold mt-1">Pay once, Pro forever ✨</p>
-              </div>
-              <ul className="space-y-2 mb-6">
-                {['Everything in Pro', 'Never pay again', 'Early adopter badge', 'Help shape the product', 'Lifetime updates'].map((feature, i) => (
-                  <li key={i} className="flex items-center gap-2 text-sm text-gray-700">
-                    <Check className="w-4 h-4 text-yellow-600 flex-shrink-0" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              <button
-                onClick={() => handleUpgrade('founding')}
-                disabled={!!loading}
-                className="w-full py-3 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-bold rounded-xl transition-all disabled:opacity-60"
-              >
-                {loading === 'founding' ? 'Redirecting...' : 'Claim Founding Spot — $79'}
-              </button>
+              <span className="font-bold text-gray-900 text-sm">Pro</span>
             </div>
+            <div className="mb-1">
+              <span className="text-3xl font-black text-gray-900">
+                {billingCycle === 'monthly' ? '$4.99' : '$3.33'}
+              </span>
+              <span className="text-gray-400 text-xs ml-1">/mo</span>
+            </div>
+            {billingCycle === 'annual' && (
+              <p className="text-xs text-gray-400 mb-4">Billed as $40/year</p>
+            )}
+            <ul className="space-y-2 mb-5 flex-1 mt-3">
+              {proFeatures.map((f, i) => (
+                <li key={i} className="flex items-start gap-2 text-xs text-gray-600">
+                  <Check className="w-3.5 h-3.5 text-purple-500 mt-0.5 flex-shrink-0" />
+                  {f}
+                </li>
+              ))}
+            </ul>
+            <button
+              onClick={() => handleUpgrade(billingCycle === 'monthly' ? 'pro_monthly' : 'pro_annual')}
+              disabled={!!loading}
+              className="w-full py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold rounded-xl transition-all disabled:opacity-60 active:scale-[0.98]"
+            >
+              {loading === 'pro_monthly' || loading === 'pro_annual'
+                ? 'Redirecting...'
+                : billingCycle === 'annual' ? 'Get Pro — $40/yr' : 'Get Pro — $4.99/mo'}
+            </button>
           </div>
 
-          <p className="text-center text-xs text-gray-400">
-            Secure payment via Dodo Payments · Cancel anytime · No hidden fees
-          </p>
+          {/* Founding Member */}
+          <div className="rounded-2xl p-5 flex flex-col relative overflow-hidden"
+            style={{ background: 'linear-gradient(135deg, #1a0533 0%, #2d0a5e 100%)' }}>
+            {/* Glow */}
+            <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-20"
+              style={{ background: '#C6A0F6', filter: 'blur(30px)', transform: 'translate(30%, -30%)' }} />
+
+            <div className="absolute -top-px left-0 right-0 flex justify-center">
+              <span className="bg-yellow-400 text-yellow-900 text-[10px] font-black px-3 py-0.5 rounded-b-lg uppercase tracking-wide">
+                100 spots only
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 mb-3 mt-3">
+              <div className="w-7 h-7 rounded-lg bg-yellow-400/20 flex items-center justify-center">
+                <Crown className="w-3.5 h-3.5 text-yellow-400" />
+              </div>
+              <span className="font-bold text-white text-sm">Founding</span>
+            </div>
+            <div className="mb-1">
+              <span className="text-3xl font-black text-white">$75</span>
+              <span className="text-white/40 text-xs ml-1">once</span>
+            </div>
+            <p className="text-yellow-400 text-xs font-semibold mb-4">Pay once, Pro forever ✨</p>
+            <ul className="space-y-2 mb-5 flex-1">
+              {['Everything in Pro', 'Never pay again', 'Early adopter badge', 'Shape the product', 'Lifetime updates'].map((f, i) => (
+                <li key={i} className="flex items-start gap-2 text-xs text-white/70">
+                  <Check className="w-3.5 h-3.5 text-yellow-400 mt-0.5 flex-shrink-0" />
+                  {f}
+                </li>
+              ))}
+            </ul>
+            <button
+              onClick={() => handleUpgrade('founding')}
+              disabled={!!loading}
+              className="w-full py-2.5 bg-yellow-400 hover:bg-yellow-300 text-yellow-900 text-sm font-black rounded-xl transition-all disabled:opacity-60 active:scale-[0.98]"
+            >
+              {loading === 'founding' ? 'Redirecting...' : 'Claim Spot — $75'}
+            </button>
+          </div>
         </div>
+
+        <p className="text-center text-xs text-gray-400 pb-5">
+          Secure payment via Dodo Payments · Cancel anytime
+        </p>
       </div>
     </div>
   )
