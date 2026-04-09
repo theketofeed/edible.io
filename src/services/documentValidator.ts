@@ -86,14 +86,20 @@ export function validateReceiptOrList(text: string): ValidationResult {
 
 	const lowerText = text.toLowerCase()
 
-	// Check for invalid document types first
-	for (const pattern of INVALID_PATTERNS) {
-		if (pattern.test(lowerText)) {
+	// Check for invalid document types (SSN, Passport, etc - extremely sensitive stuff)
+	const SENSITIVE_PATTERNS = [
+		/\b\d{3}-\d{2}-\d{4}\b/, // SSN
+		/passport/i,
+		/driver['\s]s\s+license/i,
+	]
+	
+	for (const pattern of SENSITIVE_PATTERNS) {
+		if (pattern.test(text)) {
 			return {
 				isValid: false,
 				type: 'unknown',
 				confidence: 0,
-				reason: 'This appears to be a financial or personal document, not a receipt or shopping list. Please upload a grocery receipt or shopping list instead.',
+				reason: 'This document appears to contain sensitive personal information. Please upload a grocery receipt instead.',
 			}
 		}
 	}
@@ -125,19 +131,35 @@ export function validateReceiptOrList(text: string): ValidationResult {
 	// Count lines that look like grocery items (simple heuristic)
 	const lines = text.split('\n').filter(line => line.trim().length > 0)
 	const itemLikeLines = lines.filter(line => {
-		// Items typically are 2-50 characters, don't contain excessive symbols
 		const cleaned = line.trim()
 		return cleaned.length > 2 && cleaned.length < 100 && !cleaned.match(/^[\d\s\$\.\,\-]+$/)
 	})
 
 	// Shopping lists usually have 3+ items listed
 	if (itemLikeLines.length >= 3) {
-		shoppingListScore += Math.min(itemLikeLines.length - 3, 3) // Bonus points for multiple items
+		shoppingListScore += Math.min(itemLikeLines.length - 3, 3)
+	}
+
+	// If it has strong grocery indicators, we IGNORE general "financial" indicators
+	const isStronglyGrocery = (receiptScore + shoppingListScore > 3) || itemLikeLines.length >= 4
+
+	if (!isStronglyGrocery) {
+		// Only check for general invalid patterns if it doesn't look like a grocery list/receipt
+		for (const pattern of INVALID_PATTERNS) {
+			if (pattern.test(lowerText)) {
+				return {
+					isValid: false,
+					type: 'unknown',
+					confidence: 0,
+					reason: 'This doesn\'t look like a grocery receipt or shopping list. Please ensure you upload a clear image of your food items.',
+				}
+			}
+		}
 	}
 
 	// Determine document type
 	const totalScore = receiptScore + shoppingListScore
-	if (totalScore < 2) {
+	if (totalScore < 1) { // Lowered threshold since LLM can handle it
 		return {
 			isValid: false,
 			type: 'unknown',

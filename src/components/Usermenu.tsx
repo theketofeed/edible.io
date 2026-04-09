@@ -3,6 +3,7 @@ import { LogOut, User, ChevronDown, LayoutDashboard, Sparkles } from 'lucide-rea
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import PlanBadge from './PlanBadge'
 
 interface UserMenuProps {
   onOpenProfile: () => void
@@ -29,7 +30,6 @@ export default function UserMenu({ onOpenProfile }: UserMenuProps) {
 
   if (!user) return null
 
-  // Full name — no splitting
   const displayName =
     user.user_metadata?.full_name ||
     user.email?.split('@')[0] ||
@@ -113,7 +113,8 @@ export default function UserMenu({ onOpenProfile }: UserMenuProps) {
               <img src={avatarUrl} alt={displayName} className="w-10 h-10 rounded-xl object-cover bg-white shadow-sm border border-purple-100" />
               <div className="min-w-0">
                 <p className="text-sm font-bold text-gray-900 truncate">{displayName}</p>
-                <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                <p className="text-xs text-gray-400 truncate mb-1">{user.email}</p>
+                <PlanBadge size="sm" />
               </div>
             </div>
           </div>

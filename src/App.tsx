@@ -35,7 +35,7 @@ function MainContent() {
 	const navigate = useNavigate()
 	const location = useLocation()
 	const { user } = useAuth()
-	const { checkGenerationLimit } = usePlan()
+	const { checkGenerationLimit, incrementGenerationCount } = usePlan()
 	const [authOpen, setAuthOpen] = useState(false)
 	const [profileOpen, setProfileOpen] = useState(false)
 	const [pricingOpen, setPricingOpen] = useState(false)
@@ -139,7 +139,7 @@ function MainContent() {
 		setError(null)
 		setIsLoading(true)
 
-		// Immediate scroll to the generator card to center the work area
+		// Scroll to generator
 		setTimeout(() => {
 			const uploadSection = document.getElementById('upload-section')
 			if (uploadSection) {
@@ -150,14 +150,24 @@ function MainContent() {
 		try {
 			const plan = await generateMealPlan({ items: groceryItems, diet, sourceText, days: effectivePlanDays })
 			setResult(plan)
-			showToast('success', 'Your meal plan is ready!')
+
+			// Increment generation count for free users AFTER successful generation
+			await incrementGenerationCount()
+
+			// Show remaining generations if on free plan
+			const { remaining: newRemaining } = checkGenerationLimit()
+			if (newRemaining <= 1 && newRemaining > 0) {
+				showToast('info', `Your meal plan is ready! You have ${newRemaining} free generation left this month.`)
+			} else {
+				showToast('success', 'Your meal plan is ready!')
+			}
 		} catch (e: any) {
 			setError(e?.message || 'Failed to generate meal plan.')
 			showToast('error', e?.message || 'Failed to generate meal plan.')
 		} finally {
 			setIsLoading(false)
 		}
-	}, [diet, groceryItems, showToast, sourceText, effectivePlanDays])
+	}, [diet, groceryItems, showToast, sourceText, effectivePlanDays, checkGenerationLimit, incrementGenerationCount])
 
 	const handleRegenerate = useCallback(() => {
 		if (canGenerate) void handleGenerate()

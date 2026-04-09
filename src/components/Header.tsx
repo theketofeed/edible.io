@@ -24,8 +24,8 @@ const Header = memo(function Header({ onAuthClick, onOpenProfile }: HeaderProps)
 			{/* Page Background - Light shade of lavender */}
 			<div className="fixed inset-0 -z-10 w-full h-screen bg-purple-50"></div>
 
-			{/* Floating Card Header */}
-			<header className="sticky top-0 z-50 mx-4 mt-3 rounded-2xl bg-white/95 backdrop-blur-lg shadow-lg transition-all">
+			{/* Floating Pill Header */}
+			<header className="sticky top-0 z-50 mx-4 mt-4 rounded-full bg-white/70 backdrop-blur-md border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)] transition-all">
 				<nav className="flex items-center justify-between px-5 md:px-8 py-3.5 max-w-7xl mx-auto">
 
 					{/* Logo Section */}
@@ -36,8 +36,8 @@ const Header = memo(function Header({ onAuthClick, onOpenProfile }: HeaderProps)
 						</span>
 					</div>
 
-					{/* Desktop Navigation Links — Centered */}
-					<div className="hidden md:flex items-center gap-1 bg-gray-50/50 p-1 rounded-2xl border border-gray-100/50 absolute left-1/2 -translate-x-1/2">
+					{/* Desktop Navigation Links — Centered Pill */}
+					<div className="hidden md:flex items-center gap-1 bg-gray-100/30 p-1 rounded-full border border-gray-200/20 absolute left-1/2 -translate-x-1/2 shadow-sm">
 						{[
 							{ name: 'Home', href: '#home', icon: House },
 							{ name: 'How it Works', href: '#how-it-works', icon: Sparkles },
@@ -47,9 +47,9 @@ const Header = memo(function Header({ onAuthClick, onOpenProfile }: HeaderProps)
 							<a
 								key={item.name}
 								href={item.href}
-								className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-gray-500 hover:text-purple-600 hover:bg-white rounded-xl transition-all duration-200 group"
+								className="flex items-center gap-2 px-5 py-2 text-[13px] font-bold text-gray-500 hover:text-purple-600 hover:bg-white rounded-full transition-all duration-300 group shadow-none hover:shadow-sm"
 							>
-								<item.icon className="w-4 h-4 text-gray-400 group-hover:text-purple-500 transition-colors" />
+								<item.icon className="w-3.5 h-3.5 text-gray-400 group-hover:text-purple-500 transition-colors" />
 								{item.name}
 							</a>
 						))}

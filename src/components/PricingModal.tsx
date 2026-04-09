@@ -34,7 +34,6 @@ export default function PricingModal({ isOpen, onClose, trigger }: Props) {
     'Unlimited saved plans & recipes',
     'PDF export & print',
     'Chef tips on every recipe',
-    'Full dashboard access',
     'Priority support',
   ]
 
@@ -46,15 +45,17 @@ export default function PricingModal({ isOpen, onClose, trigger }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)' }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-6 md:p-12 overflow-y-auto"
+      style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div
-        className="relative w-full max-w-xl bg-white rounded-3xl overflow-hidden"
-        style={{ boxShadow: '0 32px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.04)' }}
+        className="relative w-full max-w-xl bg-white rounded-[32px] overflow-hidden my-auto"
+        style={{ 
+          boxShadow: '0 32px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.04)',
+        }}
       >
-        {/* Close button — always visible */}
+        {/* Close button */}
         <button
           onClick={onClose}
           className="absolute top-4 right-4 z-10 w-9 h-9 flex items-center justify-center rounded-full bg-black/8 hover:bg-black/12 transition-colors"
@@ -63,9 +64,11 @@ export default function PricingModal({ isOpen, onClose, trigger }: Props) {
           <X className="w-4 h-4 text-gray-600" />
         </button>
 
-        {/* Header */}
-        <div className="px-8 pt-8 pb-6 text-center"
-          style={{ background: 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)' }}>
+        {/* Header — with top + bottom padding */}
+        <div
+          className="px-8 pt-10 pb-8 text-center"
+          style={{ background: 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)' }}
+        >
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-bold uppercase tracking-wide mb-4">
             <Zap className="w-3 h-3" />
             Upgrade to Pro
@@ -102,8 +105,8 @@ export default function PricingModal({ isOpen, onClose, trigger }: Props) {
           </div>
         </div>
 
-        {/* Plans */}
-        <div className="grid grid-cols-2 gap-3 px-6 pb-6 pt-4">
+        {/* Plans — with bottom padding */}
+        <div className="grid grid-cols-2 gap-3 px-6 pb-8 pt-4">
 
           {/* Pro Plan */}
           <div className="rounded-2xl border-2 border-gray-100 p-5 flex flex-col hover:border-purple-200 transition-colors">
@@ -142,11 +145,15 @@ export default function PricingModal({ isOpen, onClose, trigger }: Props) {
           </div>
 
           {/* Founding Member */}
-          <div className="rounded-2xl p-5 flex flex-col relative overflow-hidden"
-            style={{ background: 'linear-gradient(135deg, #1a0533 0%, #2d0a5e 100%)' }}>
+          <div
+            className="rounded-2xl p-5 flex flex-col relative overflow-hidden"
+            style={{ background: 'linear-gradient(135deg, #1a0533 0%, #2d0a5e 100%)' }}
+          >
             {/* Glow */}
-            <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-20"
-              style={{ background: '#C6A0F6', filter: 'blur(30px)', transform: 'translate(30%, -30%)' }} />
+            <div
+              className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-20"
+              style={{ background: '#C6A0F6', filter: 'blur(30px)', transform: 'translate(30%, -30%)' }}
+            />
 
             <div className="absolute -top-px left-0 right-0 flex justify-center">
               <span className="bg-yellow-400 text-yellow-900 text-[10px] font-black px-3 py-0.5 rounded-b-lg uppercase tracking-wide">
@@ -160,30 +167,41 @@ export default function PricingModal({ isOpen, onClose, trigger }: Props) {
               </div>
               <span className="font-bold text-white text-sm">Founding</span>
             </div>
-            <div className="mb-1">
-              <span className="text-3xl font-black text-white">$75</span>
-              <span className="text-white/40 text-xs ml-1">once</span>
+
+            {/* Discounted price */}
+            <div className="mb-1 flex items-baseline gap-2">
+              <span className="text-3xl font-black text-white">$59</span>
+              <span className="text-white/40 text-xs line-through">$75</span>
             </div>
-            <p className="text-yellow-400 text-xs font-semibold mb-4">Pay once, Pro forever ✨</p>
+            <p className="text-yellow-400 text-xs font-semibold mb-1">Pay once, Pro forever ✨</p>
+            <p className="text-white/40 text-[10px] mb-3">Early adopter discount — limited time</p>
+
             <ul className="space-y-2 mb-5 flex-1">
-              {['Everything in Pro', 'Never pay again', 'Early adopter badge', 'Shape the product', 'Lifetime updates'].map((f, i) => (
+              {[
+                'Everything in Pro',
+                'Never pay again',
+                'Early adopter badge',
+                'Priority feature requests',
+                'Founding member community',
+              ].map((f, i) => (
                 <li key={i} className="flex items-start gap-2 text-xs text-white/70">
                   <Check className="w-3.5 h-3.5 text-yellow-400 mt-0.5 flex-shrink-0" />
                   {f}
                 </li>
               ))}
             </ul>
+
             <button
               onClick={() => handleUpgrade('founding')}
               disabled={!!loading}
               className="w-full py-2.5 bg-yellow-400 hover:bg-yellow-300 text-yellow-900 text-sm font-black rounded-xl transition-all disabled:opacity-60 active:scale-[0.98]"
             >
-              {loading === 'founding' ? 'Redirecting...' : 'Claim Spot — $75'}
+              {loading === 'founding' ? 'Redirecting...' : 'Claim Spot — $59'}
             </button>
           </div>
         </div>
 
-        <p className="text-center text-xs text-gray-400 pb-5">
+        <p className="text-center text-xs text-gray-400 pb-6">
           Secure payment via Dodo Payments · Cancel anytime
         </p>
       </div>

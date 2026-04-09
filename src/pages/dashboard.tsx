@@ -14,6 +14,7 @@ import { useAuth } from "../context/AuthContext"
 import { getUserMealPlans, getProfile, deleteMealPlan } from "../lib/db"
 import { fetchMealImage } from "../lib/unsplashApi"
 import type { MealPlanResult, Meal } from "../utils/types"
+import PlanBadge from "../components/PlanBadge"
 
 const C = {
   white: "#FFFFFF",
@@ -268,7 +269,10 @@ function Sidebar({ active, onNav, userData }: SidebarProps) {
           }}>
             <UserAvatar userData={userData} size={30} fontSize={12} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ color: C.txt, fontSize: 11.5, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{userData.name}</p>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <p style={{ color: C.txt, fontSize: 11.5, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{userData.name}</p>
+                <PlanBadge size="sm" showIcon={false} />
+              </div>
               <p style={{ color: C.faint, fontSize: 10, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{userData.email}</p>
             </div>
           </div>
@@ -1116,7 +1120,10 @@ function Profile({ user, plans }: ProfileProps) {
           </div>
         </div>
         <div>
-          <p style={{ fontWeight: 700, fontSize: 18, color: C.txt, marginBottom: 3, letterSpacing: "-0.01em" }}>{user.name}</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 3 }}>
+            <p style={{ fontWeight: 700, fontSize: 18, color: C.txt, letterSpacing: "-0.01em" }}>{user.name}</p>
+            <PlanBadge size="sm" showIcon={false} />
+          </div>
           <p style={{ color: C.muted, fontSize: 13 }}>{user.email}</p>
           <p style={{ color: C.faint, fontSize: 11, marginTop: 3 }}>Member since {user.joined}</p>
         </div>

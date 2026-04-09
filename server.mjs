@@ -12,7 +12,8 @@ const PORT = process.env.PORT || 3001
 
 // Initialize Dodo client
 const dodo = new DodoPayments({ 
-  bearerToken: process.env.DODO_API_KEY 
+  bearerToken: process.env.DODO_API_KEY,
+  environment: process.env.DODO_ENV || 'test_mode',
 })
 
 // Initialize Supabase admin client (uses service key, server only)
@@ -103,13 +104,6 @@ app.post('/api/checkout', async (req, res) => {
 
 		// Create checkout session with Dodo
 		const checkout = await dodo.payments.create({
-			billing: {
-				city: 'Lagos',
-				country: 'NG',
-				state: 'Lagos',
-				street: '-',
-				zipcode: '100001'
-			},
 			customer: {
 				email: userEmail,
 				name: userEmail.split('@')[0]

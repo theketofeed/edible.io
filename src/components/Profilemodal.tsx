@@ -3,6 +3,7 @@ import { X, UtensilsCrossed, Trash2, Calendar, ChevronRight, LogOut, Loader } fr
 import { useAuth } from '../context/AuthContext'
 import { getUserMealPlans, deleteMealPlan, type MealPlan } from '../lib/db'
 import { supabase } from '../lib/supabase'
+import PlanBadge from './PlanBadge'
 
 interface ProfileModalProps {
   isOpen: boolean
@@ -10,7 +11,7 @@ interface ProfileModalProps {
 }
 
 export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
-  const { user, signOut } = useAuth()
+  const { user } = useAuth()
   const overlayRef = useRef<HTMLDivElement>(null)
   const [plans, setPlans] = useState<MealPlan[]>([])
   const [loading, setLoading] = useState(true)
@@ -48,7 +49,7 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   }
 
   const handleSignOut = async () => {
-    await signOut()
+    await supabase.auth.signOut()
     onClose()
   }
 
@@ -128,7 +129,10 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
               <h2 className="profile-heading text-2xl font-bold text-white leading-tight">
                 Hey, {displayName} 👋
               </h2>
-              <p className="text-sm text-purple-200 mt-0.5">{user?.email}</p>
+              <div className="mt-1.5">
+                <PlanBadge size="sm" showIcon={false} className="border border-white/10" />
+              </div>
+              <p className="text-sm text-purple-200 mt-1">{user?.email}</p>
             </div>
           </div>
 
