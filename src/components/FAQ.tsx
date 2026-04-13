@@ -25,7 +25,7 @@ const FAQ_ITEMS: FAQItem[] = [
 	},
 	{
 		question: 'Is this really free?',
-		answer: 'Yes! Edible is completely free. Generate unlimited meal plans, save recipes, and export PDFs. No credit card required, no ads, no hidden fees.',
+		answer: 'Edible offers 4 free meal plan generations every month. Upgrade to Pro for unlimited generations, PDF exports, and exclusive chef tips.',
 		icon: <Banknote className="w-5 h-5 text-purple-500" />
 	},
 	{

@@ -16,6 +16,12 @@ const dodo = new DodoPayments({
   environment: process.env.DODO_ENV || 'test_mode',
 })
 
+// Quick check on startup
+console.log(`[Init] Dodo Environment: ${process.env.DODO_ENV || 'test_mode'}`)
+if (!process.env.DODO_API_KEY) {
+  console.warn('[Init] ⚠️ DODO_API_KEY is missing from environment variables!')
+}
+
 // Initialize Supabase admin client (uses service key, server only)
 const supabaseAdmin = createClient(
   process.env.VITE_SUPABASE_URL,
@@ -83,6 +89,7 @@ app.post('/api/claude', async (req, res) => {
 app.post('/api/checkout', async (req, res) => {
 	try {
 		const { productType, userId, userEmail } = req.body
+		console.log(`[Checkout] Request for ${productType} from user ${userId} (${userEmail})`)
 
 		if (!productType || !userId || !userEmail) {
 			return res.status(400).json({ error: 'Missing required fields' })
@@ -97,13 +104,14 @@ app.post('/api/checkout', async (req, res) => {
 
 		const productId = productMap[productType]
 		if (!productId) {
+			console.error(`[Checkout] Invalid product type: ${productType}`)
 			return res.status(400).json({ error: 'Invalid product type' })
 		}
 
-		const isRecurring = productType !== 'founding'
+		console.log(`[Checkout] Using Product ID: ${productId}`)
 
-		// Create checkout session with Dodo
-		const checkout = await dodo.payments.create({
+		// Create checkout session with Dodo (v2+ SDK uses checkoutSessions)
+		const session = await dodo.checkoutSessions.create({
 			customer: {
 				email: userEmail,
 				name: userEmail.split('@')[0]
@@ -112,7 +120,6 @@ app.post('/api/checkout', async (req, res) => {
 				product_id: productId,
 				quantity: 1
 			}],
-			payment_link: true,
 			return_url: `${process.env.FRONTEND_URL}/payment-success`,
 			metadata: {
 				user_id: userId,
@@ -120,12 +127,20 @@ app.post('/api/checkout', async (req, res) => {
 			}
 		})
 
-		console.log('[Checkout] Created session for user:', userId)
-		res.json({ checkout_url: checkout.payment_link })
+		if (!session || !session.checkout_url) {
+			console.error('[Checkout] Dodo API responded but no checkout_url was found:', session)
+			throw new Error('Dodo Payments failed to generate a checkout URL')
+		}
+
+		console.log('[Checkout] ✅ Created session successfully:', session.checkout_url.substring(0, 50) + '...')
+		res.json({ checkout_url: session.checkout_url })
 
 	} catch (err) {
-		console.error('[Checkout] Error:', err)
-		res.status(500).json({ error: err.message })
+		console.error('[Checkout] ❌ Dodo API Error:', err)
+		res.status(500).json({ 
+			error: err.message,
+			details: err.response?.data || 'Check server logs for full trace'
+		})
 	}
 })
 

@@ -19,6 +19,7 @@ import Footer from './components/Footer'
 import AuthModal from './components/AuthModal'
 import ProfileModal from './components/Profilemodal'
 import PricingModal from './components/PricingModal'
+import PricingSection from './components/PricingSection'
 import { useAuth } from './context/AuthContext'
 import { usePlan } from './hooks/usePlan'
 import { generateMealPlan } from './lib/mealPlanGenerator'
@@ -156,8 +157,8 @@ function MainContent() {
 
 			// Show remaining generations if on free plan
 			const { remaining: newRemaining } = checkGenerationLimit()
-			if (newRemaining <= 1 && newRemaining > 0) {
-				showToast('info', `Your meal plan is ready! You have ${newRemaining} free generation left this month.`)
+			if (newRemaining <= 2 && newRemaining > 0) {
+				showToast('info', `Meal plan ready! ${newRemaining} free generation${newRemaining === 1 ? '' : 's'} left this month.`)
 			} else {
 				showToast('success', 'Your meal plan is ready!')
 			}
@@ -324,6 +325,7 @@ function MainContent() {
 									<HowItWorks />
 									<ComparisonSection />
 									<Testimonials />
+									<PricingSection onAuthRequired={() => setAuthOpen(true)} />
 									<FinalCTA onCTAClick={handleBackToEditor} />
 									<FAQ />
 								</div>
@@ -380,29 +382,7 @@ function MainContent() {
 				<Route path="/recipe/:dayIndex/:mealType" element={
 					<ErrorBoundary
 						onError={(error, info) => console.error('[RecipeView] Critical Error:', error, info)}
-						fallback={(error, reset) => (
-							<div className="flex-1 flex flex-col items-center justify-center py-20 px-4 text-center">
-								<div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6">
-									<AlertCircle className="w-10 h-10 text-red-600" />
-								</div>
-								<h2 className="text-3xl font-black text-gray-900 mb-4">Oops! This recipe couldn't be loaded.</h2>
-								<p className="text-gray-500 mb-8 max-w-md">
-									We encountered an unexpected error while preparing your recipe details. Don't worry, your meal plan is still safe.
-								</p>
-								<div className="flex gap-4">
-									<button
-										onClick={() => {
-											reset()
-											navigate('/')
-										}}
-										className="px-6 py-3 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-all flex items-center gap-2"
-									>
-										<ArrowLeft className="w-5 h-5" />
-										Back to Meal Plan
-									</button>
-								</div>
-							</div>
-						)}
+						fallback={(error, reset) => <RecipeErrorFallback reset={reset} />}
 					>
 						<RecipeWrapper onBack={() => {
 							if (window.history.length > 2) {
@@ -418,6 +398,36 @@ function MainContent() {
 			</Routes>
 
 			<Footer />
+		</div>
+	)
+}
+
+function RecipeErrorFallback({ reset }: { reset: () => void }) {
+	const navigate = useNavigate()
+	const location = useLocation()
+	const fromDashboard = location.state?.fromDashboard
+
+	return (
+		<div className="flex-1 flex flex-col items-center justify-center py-20 px-4 text-center">
+			<div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6">
+				<AlertCircle className="w-10 h-10 text-red-600" />
+			</div>
+			<h2 className="text-3xl font-black text-gray-900 mb-4">Oops! This recipe couldn't be loaded.</h2>
+			<p className="text-gray-500 mb-8 max-w-md">
+				We encountered an unexpected error while preparing your recipe details. Don't worry, your meal plan is still safe.
+			</p>
+			<div className="flex gap-4">
+				<button
+					onClick={() => {
+						reset()
+						navigate(fromDashboard ? '/dashboard' : '/')
+					}}
+					className="px-6 py-3 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-all flex items-center gap-2"
+				>
+					<ArrowLeft className="w-5 h-5" />
+					{fromDashboard ? 'Back to Dashboard' : 'Back to Meal Plan'}
+				</button>
+			</div>
 		</div>
 	)
 }

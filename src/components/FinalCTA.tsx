@@ -59,7 +59,7 @@ const FinalCTA = memo(function FinalCTA({ onCTAClick }: Props) {
 						<div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">
 							<Zap size={16} strokeWidth={2.5} fill="currentColor" className="text-purple-600" />
 						</div>
-						100% Free Forever
+						4 Free Monthly Plans
 					</div>
 					<div className="flex items-center gap-2">
 						<div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">

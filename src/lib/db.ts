@@ -19,6 +19,15 @@ export interface MealPlan {
   created_at: string
 }
 
+export interface SavedRecipe {
+  id: string
+  user_id: string
+  recipe_title: string
+  meal_type: string
+  recipe_data: any
+  created_at: string
+}
+
 // ─── Receipts ─────────────────────────────────────────────────────────────────
 
 export async function saveReceipt(rawOcrText: string, parsedItems: string[]) {
@@ -140,4 +149,52 @@ export async function getProfile() {
       ? new Date(data.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
       : fallback.joined,
   }
+}
+
+// ─── Saved Recipes ────────────────────────────────────────────────────────────
+
+export async function saveSavedRecipe(recipeTitle: string, mealType: string, recipeData: any) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const { data, error } = await supabase
+    .from('saved_recipes')
+    .insert({
+      user_id: user.id,
+      recipe_title: recipeTitle,
+      meal_type: mealType,
+      recipe_data: recipeData,
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data as SavedRecipe
+}
+
+export async function getUserSavedRecipes() {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const { data, error } = await supabase
+    .from('saved_recipes')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data as SavedRecipe[]
+}
+
+export async function deleteSavedRecipe(recipeTitle: string) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const { error } = await supabase
+    .from('saved_recipes')
+    .delete()
+    .eq('user_id', user.id)
+    .eq('recipe_title', recipeTitle)
+
+  if (error) throw error
 }
