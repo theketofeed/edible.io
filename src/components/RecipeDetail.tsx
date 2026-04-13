@@ -10,6 +10,7 @@ import CookingMode from './CookingMode'
 import PricingModal from './PricingModal'
 import { useAuth } from '../context/AuthContext'
 import { usePlan } from '../hooks/usePlan'
+import { saveSavedRecipe, deleteSavedRecipe, getUserSavedRecipes } from '../lib/db'
 
 interface RecipeDetailProps {
     meal?: Meal
@@ -79,79 +80,143 @@ const RecipeDetailSkeleton = ({ onBack, backLabel }: { onBack: () => void, backL
 )
 
 export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabel, showToast }: RecipeDetailProps) {
-    if (!meal) return <RecipeDetailSkeleton onBack={onBack} backLabel={backLabel} />
+    const { user } = useAuth()
+    const { canSeeChefTips, checkRecipeLimit } = usePlan()
+    
+    const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set())
+    const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set())
+    const [recipeImage, setRecipeImage] = useState<string | null>(null)
+    const [isImageLoading, setIsImageLoading] = useState(true)
+    const [isCookingModeOpen, setIsCookingModeOpen] = useState(false)
+    const [isSaved, setIsSaved] = useState(false)
+    const [pricingOpen, setPricingOpen] = useState(false)
 
     // Defensive checks for required properties
-    const safeMeal = useMemo(() => ({
-        ...meal,
-        title: meal.title || 'Untitled Recipe',
-        ingredients: Array.isArray(meal.ingredients) ? meal.ingredients : [],
-        instructions: Array.isArray(meal.instructions) ? meal.instructions : [meal.instructions || 'No instructions provided.'],
-        nutrition: meal.nutrition,
-        prepTime: meal.prepTime || 0,
-        cookTime: meal.cookTime || 0,
-        totalTime: meal.totalTime || (meal.prepTime || 0) + (meal.cookTime || 0)
-    }), [meal])
+    const safeMeal = useMemo(() => {
+        if (!meal) return null
+        return {
+            ...meal,
+            title: meal.title || 'Untitled Recipe',
+            ingredients: Array.isArray(meal.ingredients) ? meal.ingredients : [],
+            instructions: Array.isArray(meal.instructions) ? meal.instructions : [meal.instructions || 'No instructions provided.'],
+            nutrition: meal.nutrition,
+            prepTime: meal.prepTime || 0,
+            cookTime: meal.cookTime || 0,
+            totalTime: meal.totalTime || (meal.prepTime || 0) + (meal.cookTime || 0)
+        }
+    }, [meal])
 
     // Storage key unique to this specific recipe in this meal plan
     const storageKey = useMemo(() => {
+        if (!safeMeal) return ''
         return `edible-recipe-${dayName}-${mealType}-${safeMeal.title.replace(/\s+/g, '-').toLowerCase()}`
-    }, [dayName, mealType, safeMeal.title])
-
-    // Storage key for saved recipes
-    const savedRecipeKey = useMemo(() => {
-        return `edible-saved-recipes`
-    }, [])
+    }, [dayName, mealType, safeMeal])
 
     // Check if recipe is saved on mount
     useEffect(() => {
+        if (!user || !safeMeal) return
+        getUserSavedRecipes().then(recipes => {
+            const isSavedInDb = recipes.some(r => r.recipe_title === safeMeal.title)
+            setIsSaved(isSavedInDb)
+        }).catch(err => {
+            if (err.name === 'AbortError' || err.message?.includes('Lock')) {
+                console.warn('Saved status check aborted due to auth lock contention')
+                return
+            }
+            console.error('Failed to check saved status:', err)
+        })
+    }, [user, safeMeal])
+
+    // Fetch Unsplash Image
+    useEffect(() => {
+        if (!safeMeal) return
+        let isMounted = true
+        const loadImage = async () => {
+            setIsImageLoading(true)
+            const imageUrl = await fetchMealImage(safeMeal.title)
+            if (isMounted) {
+                setRecipeImage(imageUrl)
+                setIsImageLoading(false)
+            }
+        }
+        loadImage()
+        return () => { isMounted = false }
+    }, [safeMeal])
+
+    // Load initial state from localStorage
+    useEffect(() => {
+        if (!storageKey) return
         try {
-            const saved = localStorage.getItem(savedRecipeKey)
+            const saved = localStorage.getItem(storageKey)
             if (saved) {
-                const savedRecipes = new Set(JSON.parse(saved))
-                const recipeId = `${dayName}-${mealType}-${safeMeal.title}`
-                setIsSaved(savedRecipes.has(recipeId))
+                const { ingredients, steps } = JSON.parse(saved)
+                if (Array.isArray(ingredients)) setCheckedIngredients(new Set(ingredients))
+                if (Array.isArray(steps)) setCompletedSteps(new Set(steps))
             }
         } catch (e) {
-            console.error('Failed to load saved recipes:', e)
+            console.error('Failed to load recipe progress:', e)
         }
-    }, [savedRecipeKey, dayName, mealType, safeMeal.title])
+    }, [storageKey])
+
+    // Persist state to localStorage whenever it changes
+    useEffect(() => {
+        if (!storageKey) return
+        try {
+            const data = {
+                ingredients: Array.from(checkedIngredients),
+                steps: Array.from(completedSteps)
+            }
+            localStorage.setItem(storageKey, JSON.stringify(data))
+        } catch (e) {
+            console.error('Failed to save recipe progress:', e)
+        }
+    }, [checkedIngredients, completedSteps, storageKey])
 
     // Handle heart/save button click
-    const handleSaveRecipe = () => {
-        if (!user) {
-            showToast?.('info', 'Sign in to save recipes')
+    const handleSaveRecipe = async () => {
+        if (!user || !safeMeal) {
+            showToast?.('info', user ? 'Loading recipe...' : 'Sign in to save recipes')
             return
         }
 
         try {
-            const saved = localStorage.getItem(savedRecipeKey)
-            const savedRecipes = new Set(saved ? JSON.parse(saved) : [])
-            const recipeId = `${dayName}-${mealType}-${safeMeal.title}`
-
-            if (savedRecipes.has(recipeId)) {
-                savedRecipes.delete(recipeId)
+            if (isSaved) {
+                await deleteSavedRecipe(safeMeal.title)
                 setIsSaved(false)
                 showToast?.('success', 'Recipe removed from saved')
             } else {
-                savedRecipes.add(recipeId)
+                const { allowed } = await checkRecipeLimit()
+                if (!allowed) {
+                    setPricingOpen(true)
+                    return
+                }
+                await saveSavedRecipe(safeMeal.title, mealType, safeMeal)
                 setIsSaved(true)
                 showToast?.('success', 'Recipe saved!')
             }
-
-            localStorage.setItem(savedRecipeKey, JSON.stringify(Array.from(savedRecipes)))
-        } catch (e) {
-            console.error('Failed to save recipe:', e)
-            showToast?.('error', 'Failed to save recipe')
+        } catch (e: any) {
+            if (e.code === '23505' || e.message?.includes('duplicate key')) {
+                // Already saved in DB, just update local state
+                setIsSaved(true)
+                showToast?.('success', 'Recipe saved!')
+                return
+            }
+            if (e.name === 'AbortError' || e.message?.includes('Lock')) {
+                showToast?.('error', 'Authentication sync error. Please try again.')
+                return
+            }
+            console.error('Failed to update saved recipe:', e)
+            showToast?.('error', 'Failed to update saved recipe')
         }
     }
 
     // Parse instructions into distinct steps
     const instructionSteps = useMemo(() => {
-        return safeMeal.instructions
-    }, [safeMeal.instructions])
+        return safeMeal?.instructions || []
+    }, [safeMeal])
 
     const handleShare = async () => {
+        if (!safeMeal) return
         const ingredients = safeMeal.ingredients.map(i => `- ${i}`).join('\n')
         const steps = safeMeal.instructions.map((s, i) => `${i + 1}. ${s}`).join('\n\n')
         const nutra = safeMeal.nutrition as any
@@ -169,58 +234,6 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
             showToast?.('error', 'Failed to copy recipe.')
         }
     }
-
-    const { user } = useAuth()
-    const { canSeeChefTips } = usePlan()
-    const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set())
-    const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set())
-    const [recipeImage, setRecipeImage] = useState<string | null>(null)
-    const [isImageLoading, setIsImageLoading] = useState(true)
-    const [isCookingModeOpen, setIsCookingModeOpen] = useState(false)
-    const [isSaved, setIsSaved] = useState(false)
-    const [pricingOpen, setPricingOpen] = useState(false)
-
-    // Fetch Unsplash Image
-    useEffect(() => {
-        let isMounted = true
-        const loadImage = async () => {
-            setIsImageLoading(true)
-            const imageUrl = await fetchMealImage(safeMeal.title)
-            if (isMounted) {
-                setRecipeImage(imageUrl)
-                setIsImageLoading(false)
-            }
-        }
-        loadImage()
-        return () => { isMounted = false }
-    }, [safeMeal.title])
-
-    // Load initial state from localStorage
-    useEffect(() => {
-        try {
-            const saved = localStorage.getItem(storageKey)
-            if (saved) {
-                const { ingredients, steps } = JSON.parse(saved)
-                if (Array.isArray(ingredients)) setCheckedIngredients(new Set(ingredients))
-                if (Array.isArray(steps)) setCompletedSteps(new Set(steps))
-            }
-        } catch (e) {
-            console.error('Failed to load recipe progress:', e)
-        }
-    }, [storageKey])
-
-    // Persist state to localStorage whenever it changes
-    useEffect(() => {
-        try {
-            const data = {
-                ingredients: Array.from(checkedIngredients),
-                steps: Array.from(completedSteps)
-            }
-            localStorage.setItem(storageKey, JSON.stringify(data))
-        } catch (e) {
-            console.error('Failed to save recipe progress:', e)
-        }
-    }, [checkedIngredients, completedSteps, storageKey])
 
     const toggleIngredient = (index: number) => {
         const newChecked = new Set(checkedIngredients)
@@ -254,6 +267,9 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
                 return 'bg-gray-100 text-gray-800 border-gray-200'
         }
     }
+
+    if (!meal || !safeMeal) return <RecipeDetailSkeleton onBack={onBack} backLabel={backLabel} />
+
 
     const tabs: Tab[] = [
         {

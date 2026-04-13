@@ -11,9 +11,9 @@ import {
 } from "lucide-react"
 import logo from "../assets/Transparent logo.png"
 import { useAuth } from "../context/AuthContext"
-import { getUserMealPlans, getProfile, deleteMealPlan } from "../lib/db"
+import { getUserMealPlans, getProfile, deleteMealPlan, getUserSavedRecipes } from "../lib/db"
 import { fetchMealImage } from "../lib/unsplashApi"
-import type { MealPlanResult, Meal } from "../utils/types"
+import type { MealPlanResult, Meal, SavedRecipe } from "../utils/types"
 import PlanBadge from "../components/PlanBadge"
 
 const C = {
@@ -906,13 +906,16 @@ function SavedRecipes({ recipes }: SavedRecipesProps) {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
         <h1 style={{ fontSize: 24, fontWeight: 800, color: C.txt }}>Saved Recipes</h1>
         <span style={{
           fontSize: 12, color: C.muted, background: C.white,
           border: `1px solid ${C.cardBdr}`, padding: "4px 12px", borderRadius: 999
         }}>{visible.length} recipes</span>
       </div>
+      <p style={{ color: C.muted, fontSize: 13, marginBottom: 22 }}>
+        Your personalized library of hearted recipes, synced across all your devices.
+      </p>
       <div style={{ display: "flex", gap: 7, marginBottom: 22 }}>
         {types.map(t => {
           const on = filter === t
@@ -1201,7 +1204,7 @@ function Profile({ user, plans }: ProfileProps) {
 // ─── Root Dashboard ───────────────────────────────────────────────────────────
 export default function EdibleDashboard() {
   const navigate = useNavigate()
-  const { user, isLoading: authLoading, signOut } = useAuth()
+  const { user, isLoading: authLoading, isInitialized, signOut } = useAuth()
   const [view, setView] = useState<NavId>("overview")
   const [search, setSearch] = useState("")
   const [showDrop, setShowDrop] = useState(false)
@@ -1210,6 +1213,8 @@ export default function EdibleDashboard() {
   const [userData, setUserData] = useState<UserData>(DEFAULT_USER_DATA)
   const [isLoadingUser, setIsLoadingUser] = useState(true)
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
+  const [savedRecipes, setSavedRecipes] = useState<SavedRecipe[]>([])
+  const [isLoadingSaved, setIsLoadingSaved] = useState(true)
 
   const handleDeletePlan = (id: string) => {
     setPlans(prev => prev.filter(p => p.id !== id))
@@ -1300,12 +1305,29 @@ export default function EdibleDashboard() {
     fetchPlans()
   }, [user, authLoading])
 
-  // Redirect if not authenticated
+  // Fetch saved recipes from Supabase on mount
   useEffect(() => {
-    if (!authLoading && !user) {
+    const fetchSaved = async () => {
+      if (!user || authLoading) return
+      try {
+        setIsLoadingSaved(true)
+        const recipes = await getUserSavedRecipes()
+        setSavedRecipes(recipes)
+      } catch (error) {
+        console.error('Failed to load saved recipes:', error)
+      } finally {
+        setIsLoadingSaved(false)
+      }
+    }
+    fetchSaved()
+  }, [user, authLoading])
+
+  // Redirect if not authenticated (only after initialization)
+  useEffect(() => {
+    if (isInitialized && !user) {
       navigate('/')
     }
-  }, [user, authLoading, navigate])
+  }, [user, isInitialized, navigate])
 
   const query = search.trim().toLowerCase()
   const showSearch = query.length > 1
@@ -1483,7 +1505,18 @@ export default function EdibleDashboard() {
                       onDeletePlan={handleDeletePlan}
                     />
                   )}
-                  {view === "recipes" && <SavedRecipes recipes={extractRecipesFromPlans(plans)} />}
+                  {view === "recipes" && (
+                    <SavedRecipes 
+                      recipes={savedRecipes.map(sr => ({
+                        id: sr.id,
+                        title: sr.recipe_title,
+                        type: sr.meal_type,
+                        time: sr.recipe_data?.totalTime || 0,
+                        cal: sr.recipe_data?.nutrition?.calories || 0,
+                        rawMeal: sr.recipe_data
+                      }))} 
+                    />
+                  )}
                   {view === "generate" && <Generate />}
                   {view === "profile" && <Profile user={userData} plans={plans} />}
                 </>

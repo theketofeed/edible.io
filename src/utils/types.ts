@@ -77,3 +77,12 @@ export interface ParsedReceiptResult {
 	items: ParsedReceiptItem[]
 	rawText: string
 }
+
+export interface SavedRecipe {
+	id: string
+	user_id: string
+	recipe_title: string
+	meal_type: string
+	recipe_data: any
+	created_at: string
+}

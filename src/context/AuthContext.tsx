@@ -15,6 +15,8 @@ interface AuthContextType {
   isLoading: boolean
   profile: UserProfile | null
   refreshProfile: () => Promise<void>
+  signOut: () => Promise<void>
+  isInitialized: boolean
 }
 
 const defaultProfile: UserProfile = {
@@ -29,7 +31,9 @@ const AuthContext = createContext<AuthContextType>({
   session: null, 
   isLoading: true,
   profile: null,
-  refreshProfile: async () => {}
+  refreshProfile: async () => {},
+  signOut: async () => {},
+  isInitialized: false
 })
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -43,7 +47,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       .from('profiles')
       .select('plan, generations_this_month, generations_reset_at, plan_expires_at')
       .eq('id', userId)
-      .single()
+      .maybeSingle()
 
     if (!error && data) {
       setProfile(data as UserProfile)
@@ -56,29 +60,58 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (user) await fetchProfile(user.id)
   }
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      if (session?.user) fetchProfile(session.user.id)
-      setIsLoading(false)
-    })
+  const signOut = async () => {
+    await supabase.auth.signOut()
+    setUser(null)
+    setSession(null)
+    setProfile(null)
+  }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+  const [isInitialized, setIsInitialized] = useState(false)
+
+  useEffect(() => {
+    // Single initialization point
+    let mounted = true
+
+    const initAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!mounted) return
+
+      if (session?.user) {
+        await fetchProfile(session.user.id)
+      }
+
       setSession(session)
       setUser(session?.user ?? null)
+      setIsInitialized(true)
+      setIsLoading(false)
+    }
+
+    initAuth()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!mounted) return
+      
       if (session?.user) {
-        fetchProfile(session.user.id)
+        await fetchProfile(session.user.id)
       } else {
         setProfile(null)
       }
+
+      setSession(session)
+      setUser(session?.user ?? null)
+      setIsInitialized(true)
+      setIsLoading(false)
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, session, isLoading, profile, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, isLoading, profile, refreshProfile, signOut, isInitialized }}>
       {children}
     </AuthContext.Provider>
   )
