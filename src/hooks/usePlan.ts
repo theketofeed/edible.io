@@ -2,10 +2,20 @@ import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const FREE_GENERATION_LIMIT = 4       // Updated from 3 → 4
+const FREE_GENERATION_LIMIT = 4
 const FREE_SAVED_PLANS_LIMIT = 3
 const FREE_SAVED_RECIPES_LIMIT = 10
 const GUEST_LIMIT_KEY = 'edible_guest_generations'
+
+// ─── Per-user recipe count cache (keyed by userId) ───────────────────────────
+// Lives outside the hook so it survives re-renders but not page refreshes
+const recipeCountCache: Record<string, { count: number; timestamp: number }> = {}
+const RECIPE_CACHE_TTL = 30_000 // 30 seconds
+
+// Call this after saving/deleting a recipe to invalidate cache
+export function invalidateRecipeCache(userId: string) {
+  delete recipeCountCache[userId]
+}
 
 // ─── usePlan Hook ─────────────────────────────────────────────────────────────
 export function usePlan() {
@@ -34,9 +44,6 @@ export function usePlan() {
   }
 
   // ── Check generation limit ──────────────────────────────────────────────────
-  // The generations_this_month column in Supabase is the source of truth for
-  // logged-in users. It counts ALL generations including historical ones within
-  // the current 30-day window. Users who already used 4+ this month are gated.
   const checkGenerationLimit = (): { allowed: boolean; remaining: number } => {
     if (isPro) return { allowed: true, remaining: Infinity }
 
@@ -101,23 +108,40 @@ export function usePlan() {
     }
   }
 
-  // ── Check recipe limit ──────────────────────────────────────────────────────
+  // ── Check recipe limit (with cache) ────────────────────────────────────────
   const checkRecipeLimit = async (): Promise<{ allowed: boolean; count: number }> => {
     if (isPro) return { allowed: true, count: 0 }
-    if (!isLoggedIn) return { allowed: false, count: 0 } // Must be logged in to sync
+    if (!isLoggedIn || !user) return { allowed: false, count: 0 }
+
+    const userId = user.id
+    const now = Date.now()
+    const cached = recipeCountCache[userId]
+
+    // Return cached value if still fresh
+    if (cached && (now - cached.timestamp) < RECIPE_CACHE_TTL) {
+      return {
+        allowed: cached.count < FREE_SAVED_RECIPES_LIMIT,
+        count: cached.count
+      }
+    }
 
     try {
       const { count, error } = await supabase
         .from('saved_recipes')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', user!.id)
+        .eq('user_id', userId)
 
       if (error) throw error
       const used = count || 0
+
+      // Update cache
+      recipeCountCache[userId] = { count: used, timestamp: now }
+
       return { allowed: used < FREE_SAVED_RECIPES_LIMIT, count: used }
     } catch (err) {
       console.error('[usePlan] Failed to check recipe limit:', err)
-      return { allowed: false, count: 0 }
+      // On error, allow save (fail open) rather than blocking the user
+      return { allowed: true, count: 0 }
     }
   }
 

@@ -1204,7 +1204,7 @@ function Profile({ user, plans }: ProfileProps) {
 // ─── Root Dashboard ───────────────────────────────────────────────────────────
 export default function EdibleDashboard() {
   const navigate = useNavigate()
-  const { user, isLoading: authLoading, isInitialized, signOut } = useAuth()
+  const { user, isLoading: authLoading, isInitialized, isLoading, signOut } = useAuth()
   const [view, setView] = useState<NavId>("overview")
   const [search, setSearch] = useState("")
   const [showDrop, setShowDrop] = useState(false)
@@ -1324,10 +1324,12 @@ export default function EdibleDashboard() {
 
   // Redirect if not authenticated (only after initialization)
   useEffect(() => {
-    if (isInitialized && !user) {
+    // Add a small grace period — auth state can flicker on first load
+    // isLoading check prevents redirect during the initial auth resolution
+    if (isInitialized && !isLoading && !user) {
       navigate('/')
     }
-  }, [user, isInitialized, navigate])
+  }, [user, isInitialized, isLoading, navigate])
 
   const query = search.trim().toLowerCase()
   const showSearch = query.length > 1

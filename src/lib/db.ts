@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { invalidateRecipeCache } from '../hooks/usePlan'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -124,22 +125,19 @@ export async function getProfile() {
     joined: new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
   }
 
-  // Try to get profile from profiles table
+  // FIX: Use maybeSingle() instead of single() — single() throws 406 when no row found
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()  // ← was .single(), which throws 406 on missing row
 
-  if (error && error.code === 'PGRST116') {
-    // Profile row doesn't exist yet — return auth metadata
+  if (error) {
+    console.warn('[getProfile] Error fetching profile, using fallback:', error.message)
     return fallback
   }
-
-  if (error) throw error
   if (!data) return fallback
 
-  // Map display_name (DB column) → name (app uses)
   return {
     id: data.id,
     name: data.display_name || fallback.name,
@@ -157,6 +155,8 @@ export async function saveSavedRecipe(recipeTitle: string, mealType: string, rec
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
+  // We explicitly handle the duplicate key error (409 / 23505) in case
+  // the user clicks multiple times rapidly or the RLS policies cause conflict
   const { data, error } = await supabase
     .from('saved_recipes')
     .insert({
@@ -166,9 +166,30 @@ export async function saveSavedRecipe(recipeTitle: string, mealType: string, rec
       recipe_data: recipeData,
     })
     .select()
-    .single()
+    .maybeSingle()
 
-  if (error) throw error
+  if (error) {
+    // If it's a conflict, just return the existing record rather than crashing
+    if (error.code === '23505' || error.message?.includes('duplicate') || error.message?.includes('409') || error.code === '409') {
+      const { data: existing, error: fetchError } = await supabase
+        .from('saved_recipes')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('recipe_title', recipeTitle)
+        .maybeSingle()
+
+      if (fetchError) throw fetchError
+      if (existing) {
+        invalidateRecipeCache(user.id)
+        return existing as SavedRecipe
+      }
+    }
+    throw error
+  }
+
+  // Invalidate cache to ensure UI reflects the new count
+  invalidateRecipeCache(user.id)
+
   return data as SavedRecipe
 }
 
@@ -183,7 +204,7 @@ export async function getUserSavedRecipes() {
     .order('created_at', { ascending: false })
 
   if (error) throw error
-  return data as SavedRecipe[]
+  return (data || []) as SavedRecipe[]
 }
 
 export async function deleteSavedRecipe(recipeTitle: string) {
@@ -197,4 +218,7 @@ export async function deleteSavedRecipe(recipeTitle: string) {
     .eq('recipe_title', recipeTitle)
 
   if (error) throw error
+
+  // Invalidate cache to ensure UI reflects the new count
+  invalidateRecipeCache(user.id)
 }

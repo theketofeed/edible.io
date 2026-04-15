@@ -109,7 +109,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             style={{ animation: 'fadeIn 0.15s ease' }}
         >
             <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap');
         @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(24px) } to { opacity: 1; transform: translateY(0) } }
         @keyframes float1 { 0%,100% { transform: translateY(0px) rotate(0deg) } 50% { transform: translateY(-12px) rotate(5deg) } }

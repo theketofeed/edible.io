@@ -11,6 +11,7 @@ import PricingModal from './PricingModal'
 import { useAuth } from '../context/AuthContext'
 import { usePlan } from '../hooks/usePlan'
 import { saveSavedRecipe, deleteSavedRecipe, getUserSavedRecipes } from '../lib/db'
+import { supabase } from '../lib/supabase'
 
 interface RecipeDetailProps {
     meal?: Meal
@@ -90,6 +91,7 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
     const [isCookingModeOpen, setIsCookingModeOpen] = useState(false)
     const [isSaved, setIsSaved] = useState(false)
     const [pricingOpen, setPricingOpen] = useState(false)
+    const [pricingTrigger, setPricingTrigger] = useState('')
 
     // Defensive checks for required properties
     const safeMeal = useMemo(() => {
@@ -115,17 +117,21 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
     // Check if recipe is saved on mount
     useEffect(() => {
         if (!user || !safeMeal) return
-        getUserSavedRecipes().then(recipes => {
-            const isSavedInDb = recipes.some(r => r.recipe_title === safeMeal.title)
-            setIsSaved(isSavedInDb)
-        }).catch(err => {
-            if (err.name === 'AbortError' || err.message?.includes('Lock')) {
-                console.warn('Saved status check aborted due to auth lock contention')
-                return
-            }
-            console.error('Failed to check saved status:', err)
-        })
-    }, [user, safeMeal])
+        let cancelled = false
+
+        // Fetch saved status — use a simple select instead of full list
+        supabase
+            .from('saved_recipes')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .eq('recipe_title', safeMeal.title)
+            .then(({ count, error }) => {
+                if (cancelled || error) return
+                setIsSaved((count ?? 0) > 0)
+            })
+
+        return () => { cancelled = true }
+    }, [user?.id, safeMeal?.title]) // Only re-run if user or recipe changes
 
     // Fetch Unsplash Image
     useEffect(() => {
@@ -179,33 +185,36 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
             return
         }
 
+        const wasAlreadySaved = isSaved
+
+        // Flip instantly — optimistic update
+        setIsSaved(!wasAlreadySaved)
+
         try {
-            if (isSaved) {
+            if (wasAlreadySaved) {
                 await deleteSavedRecipe(safeMeal.title)
-                setIsSaved(false)
                 showToast?.('success', 'Recipe removed from saved')
             } else {
+                // Check limit BEFORE insert (non-blocking — cache handles speed)
                 const { allowed } = await checkRecipeLimit()
                 if (!allowed) {
+                    setIsSaved(false) // revert — limit reached
+                    setPricingTrigger('recipe_limit')
                     setPricingOpen(true)
                     return
                 }
+                // upsert in db.ts means no 409 even if already exists
                 await saveSavedRecipe(safeMeal.title, mealType, safeMeal)
-                setIsSaved(true)
                 showToast?.('success', 'Recipe saved!')
             }
         } catch (e: any) {
-            if (e.code === '23505' || e.message?.includes('duplicate key')) {
-                // Already saved in DB, just update local state
-                setIsSaved(true)
-                showToast?.('success', 'Recipe saved!')
-                return
-            }
+            // Revert optimistic update on real error
+            setIsSaved(wasAlreadySaved)
             if (e.name === 'AbortError' || e.message?.includes('Lock')) {
-                showToast?.('error', 'Authentication sync error. Please try again.')
+                showToast?.('error', 'Please try again.')
                 return
             }
-            console.error('Failed to update saved recipe:', e)
+            console.error('[RecipeDetail] Save error:', e)
             showToast?.('error', 'Failed to update saved recipe')
         }
     }
@@ -430,12 +439,12 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
                 
                 {!canSeeChefTips && (
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent rounded-[2.5rem] flex flex-col items-center justify-center z-20 pointer-events-none">
-                        <div className="bg-white/98 backdrop-blur-md rounded-2xl p-8 text-center shadow-2xl pointer-events-auto cursor-pointer hover:shadow-xl transition-shadow" onClick={() => setPricingOpen(true)}>
+                        <div className="bg-white/98 backdrop-blur-md rounded-2xl p-8 text-center shadow-2xl pointer-events-auto cursor-pointer hover:shadow-xl transition-shadow" onClick={() => { setPricingTrigger('chef_tips'); setPricingOpen(true) }}>
                             <Crown className="w-10 h-10 text-purple-600 mx-auto mb-3" />
                             <h3 className="text-lg font-black text-gray-900 mb-2">Pro Feature</h3>
                             <p className="text-gray-600 text-sm mb-5 max-w-xs">Professional chef tips to elevate your cooking technique</p>
                             <button
-                                onClick={() => setPricingOpen(true)}
+                                onClick={() => { setPricingTrigger('chef_tips'); setPricingOpen(true) }}
                                 className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold text-sm transition-all duration-300 hover:shadow-[0_4px_12px_rgba(147,51,234,0.3)]"
                             >
                                 Unlock Pro
@@ -445,7 +454,7 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
                 )}
             </motion.div>
         )
-    }, [safeMeal.tips, canSeeChefTips])
+    }, [safeMeal.tips, canSeeChefTips, setPricingOpen, setPricingTrigger])
 
     return (
         <motion.div
@@ -654,7 +663,7 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
             <PricingModal 
                 isOpen={pricingOpen}
                 onClose={() => setPricingOpen(false)}
-                trigger="chef_tips"
+                trigger={pricingTrigger}
             />
         </motion.div>
     )

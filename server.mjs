@@ -3,6 +3,8 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import { createClient } from '@supabase/supabase-js'
 import DodoPayments from 'dodopayments'
+import { Webhook } from 'standardwebhooks'
+import crypto from 'crypto'
 
 // Load environment variables
 dotenv.config({ path: '.env.local' })
@@ -22,6 +24,20 @@ if (!process.env.DODO_API_KEY) {
   console.warn('[Init] ⚠️ DODO_API_KEY is missing from environment variables!')
 }
 
+// Test webhook secret format
+const webhookSecret = process.env.DODO_WEBHOOK_SECRET
+if (webhookSecret) {
+  try {
+    const secretBase64 = webhookSecret.split('_')[1]
+    const decoded = Buffer.from(secretBase64, 'base64')
+    console.log(`[Init] Webhook secret prefix: ${webhookSecret.substring(0, 10)}...`)
+    console.log(`[Init] Webhook secret base64 length: ${secretBase64.length}`)
+    console.log(`[Init] Webhook secret decoded length: ${decoded.length} bytes`)
+  } catch (e) {
+    console.error('[Init] ❌ Webhook secret decode error:', e.message)
+  }
+}
+
 // Initialize Supabase admin client (uses service key, server only)
 const supabaseAdmin = createClient(
   process.env.VITE_SUPABASE_URL,
@@ -30,7 +46,46 @@ const supabaseAdmin = createClient(
 
 // Middleware
 app.use(cors())
+
+// Custom raw body parser for webhooks (must be BEFORE express.json)
+const rawBodyParser = express.raw({ type: 'application/json' })
+app.use('/api/webhooks', rawBodyParser)
+
 app.use(express.json())
+
+// Debug endpoint to test webhook signature
+app.post('/api/debug/webhook-test', rawBodyParser, async (req, res) => {
+  const payload = req.body
+  const headers = {
+    'webhook-id': req.headers['webhook-id'],
+    'webhook-signature': req.headers['webhook-signature'],
+    'webhook-timestamp': req.headers['webhook-timestamp']
+  }
+  
+  const webhookSecret = process.env.DODO_WEBHOOK_SECRET
+  const wh = new Webhook(webhookSecret)
+  
+  try {
+    const event = wh.verify(payload, headers)
+    res.json({ success: true, event })
+  } catch (err) {
+    const signedContent = `${headers['webhook-id']}.${headers['webhook-timestamp']}.${payload}`
+    const secretBytes = Buffer.from(webhookSecret.split('_')[1], 'base64')
+    const expectedSig = crypto.createHmac('sha256', secretBytes).update(signedContent).digest('base64')
+    
+    res.json({ 
+      success: false, 
+      error: err.message,
+      debug: {
+        webhookSecretPrefix: webhookSecret.substring(0, 10),
+        secretBase64: webhookSecret.split('_')[1],
+        signedContent: signedContent.substring(0, 500),
+        expectedSignature: `v1,${expectedSig}`,
+        receivedSignature: headers['webhook-signature']
+      }
+    })
+  }
+})
 
 // Claude API endpoint
 app.post('/api/claude', async (req, res) => {
@@ -145,103 +200,138 @@ app.post('/api/checkout', async (req, res) => {
 })
 
 // ─── Webhook Handler ───────────────────────────────────────────────────────
-app.post('/api/webhooks/dodo', express.raw({ type: 'application/json' }), async (req, res) => {
-	try {
-		const payload = req.body.toString()
-		const headers = req.headers
+app.post('/api/webhooks/dodo', async (req, res) => {
+  try {
+    const payload = req.body // Already raw Buffer from middleware
+    
+    const webhookSecret = process.env.DODO_WEBHOOK_SECRET
+    if (!webhookSecret) {
+      console.error('[Webhook] DODO_WEBHOOK_SECRET not set')
+      return res.status(500).json({ error: 'Webhook secret not configured' })
+    }
 
-		// Verify the webhook is genuinely from Dodo
-		const webhookSecret = process.env.DODO_WEBHOOK_SECRET
-		const signature = headers['webhook-signature']
-		const timestamp = headers['webhook-timestamp']
-		const webhookId = headers['webhook-id']
+    const headers = {
+      'webhook-id': req.headers['webhook-id'],
+      'webhook-signature': req.headers['webhook-signature'],
+      'webhook-timestamp': req.headers['webhook-timestamp']
+    }
+    
 
-		if (!signature || !timestamp || !webhookId) {
-			console.error('[Webhook] Missing headers')
-			return res.status(401).json({ error: 'Missing webhook headers' })
-		}
 
-		// Construct signed content for verification
-		const signedContent = `${webhookId}.${timestamp}.${payload}`
-		const crypto = await import('crypto')
-		const secretBytes = Buffer.from(webhookSecret.split('_')[1] || webhookSecret, 'base64')
-		const expectedSignature = crypto.default
-			.createHmac('sha256', secretBytes)
-			.update(signedContent)
-			.digest('base64')
+    let event;
+    try {
+      const wh = new Webhook(webhookSecret)
+      event = wh.verify(payload, headers)
+    } catch (err) {
+      console.error('[Webhook] ❌ Invalid signature:', err.message)
+      return res.status(401).json({ error: 'Invalid signature' })
+    }
 
-		const signatures = signature.split(' ')
-		const isValid = signatures.some(sig => sig.startsWith('v1,') && sig.slice(3) === expectedSignature)
+    console.log('[Webhook] ✅ Valid event received:', event.type)
 
-		if (!isValid) {
-			console.error('[Webhook] Invalid signature')
-			return res.status(401).json({ error: 'Invalid signature' })
-		}
+    // ── Handle payment success ──
+    if (event.type === 'payment.succeeded') {
+      const metadata = event.data?.metadata || {}
+      const userId = metadata.user_id
+      const productType = metadata.product_type
 
-		const event = JSON.parse(payload)
-		console.log('[Webhook] Received event:', event.type)
+      console.log('[Webhook] payment.succeeded for user:', userId, 'product:', productType)
 
-		// ── Handle payment success ──
-		if (event.type === 'payment.succeeded') {
-			const metadata = event.data.metadata || {}
-			const userId = metadata.user_id
-			const productType = metadata.product_type
+      if (!userId) {
+        console.error('[Webhook] No user_id in metadata. Full event.data:', JSON.stringify(event.data))
+        return res.status(200).json({ received: true })
+      }
 
-			if (!userId) {
-				console.error('[Webhook] No user_id in metadata')
-				return res.status(200).json({ received: true })
-			}
+      const plan = productType === 'founding' ? 'founding' : 'pro'
+      
+      let planExpiresAt = null
+      if (productType === 'pro_monthly') {
+        planExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      } else if (productType === 'pro_annual') {
+        planExpiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+      }
 
-			const plan = productType === 'founding' ? 'founding' : 'pro'
-			
-			// Calculate expiry for subscriptions
-			let planExpiresAt = null
-			if (productType === 'pro_monthly') {
-				planExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-			} else if (productType === 'pro_annual') {
-				planExpiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
-			}
-			// founding = null (never expires)
+      const { error } = await supabaseAdmin
+        .from('profiles')
+        .update({
+          plan,
+          plan_expires_at: planExpiresAt,
+          dodo_customer_id: event.data.customer?.customer_id || null,
+          dodo_subscription_id: event.data.subscription_id || null
+        })
+        .eq('id', userId)
 
-			const { error } = await supabaseAdmin
-				.from('profiles')
-				.update({
-					plan,
-					plan_expires_at: planExpiresAt,
-					dodo_customer_id: event.data.customer?.customer_id || null,
-					dodo_subscription_id: event.data.subscription_id || null
-				})
-				.eq('id', userId)
+      if (error) {
+        console.error('[Webhook] ❌ Supabase update failed:', error)
+        return res.status(200).json({ error: 'Database update failed' })
+      }
 
-			if (error) {
-				console.error('[Webhook] Supabase update failed:', error)
-				return res.status(500).json({ error: 'Database update failed' })
-			}
+      console.log(`[Webhook] ✅ User ${userId} upgraded to ${plan}`)
+    }
 
-			console.log(`[Webhook] ✅ User ${userId} upgraded to ${plan}`)
-		}
+    // ── Handle subscription events (active = payment went through) ──
+    if (event.type === 'subscription.active' || event.type === 'subscription.updated') {
+      const metadata = event.data?.metadata || {}
+      const userId = metadata.user_id
+      const productType = metadata.product_type
 
-		// ── Handle subscription cancellation ──
-		if (event.type === 'subscription.cancelled' || event.type === 'subscription.expired') {
-			const metadata = event.data.metadata || {}
-			const userId = metadata.user_id
+      console.log('[Webhook] subscription.active for user:', userId)
 
-			if (userId) {
-				await supabaseAdmin
-					.from('profiles')
-					.update({ plan: 'free', plan_expires_at: null })
-					.eq('id', userId)
+      if (userId) {
+        const plan = productType === 'founding' ? 'founding' : 'pro'
+        let planExpiresAt = null
+        if (productType === 'pro_monthly') {
+          planExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        } else if (productType === 'pro_annual') {
+          planExpiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+        }
 
-				console.log(`[Webhook] User ${userId} downgraded to free`)
-			}
-		}
+        const { error } = await supabaseAdmin
+          .from('profiles')
+          .update({ plan, plan_expires_at: planExpiresAt })
+          .eq('id', userId)
 
-		res.status(200).json({ received: true })
+        if (error) {
+          console.error('[Webhook] ❌ Supabase update failed for subscription.active:', error)
+        } else {
+          console.log(`[Webhook] ✅ User ${userId} plan set to ${plan} via subscription.active`)
+        }
+      }
+    }
 
-	} catch (err) {
-		console.error('[Webhook] Error:', err)
-		res.status(500).json({ error: err.message })
-	}
+    // ── Handle subscription renewal ──
+    if (event.type === 'subscription.renewed') {
+      const metadata = event.data?.metadata || {}
+      const userId = metadata.user_id
+      if (userId) {
+        const planExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        await supabaseAdmin
+          .from('profiles')
+          .update({ plan_expires_at: planExpiresAt })
+          .eq('id', userId)
+        console.log(`[Webhook] ✅ Subscription renewed for user ${userId}`)
+      }
+    }
+
+    // ── Handle cancellation/expiry ──
+    if (event.type === 'subscription.cancelled' || event.type === 'subscription.expired') {
+      const metadata = event.data?.metadata || {}
+      const userId = metadata.user_id
+      if (userId) {
+        await supabaseAdmin
+          .from('profiles')
+          .update({ plan: 'free', plan_expires_at: null })
+          .eq('id', userId)
+        console.log(`[Webhook] User ${userId} downgraded to free`)
+      }
+    }
+
+    res.status(200).json({ received: true })
+
+  } catch (err) {
+    console.error('[Webhook] Unhandled error:', err)
+    res.status(200).json({ error: err.message })
+  }
 })
 
 // Health check

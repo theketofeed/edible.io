@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 
@@ -36,70 +36,93 @@ const AuthContext = createContext<AuthContextType>({
   isInitialized: false
 })
 
+// Module-level profile cache to avoid refetching across re-renders
+const profileCache: Record<string, UserProfile> = {}
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isInitialized, setIsInitialized] = useState(false)
   const [profile, setProfile] = useState<UserProfile | null>(null)
+  const fetchingRef = useRef(false)
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string): Promise<UserProfile> => {
+    // Return cached immediately
+    if (profileCache[userId]) {
+      setProfile(profileCache[userId])
+      return profileCache[userId]
+    }
+
     const { data, error } = await supabase
       .from('profiles')
       .select('plan, generations_this_month, generations_reset_at, plan_expires_at')
       .eq('id', userId)
       .maybeSingle()
 
-    if (!error && data) {
-      setProfile(data as UserProfile)
-    } else {
-      setProfile(defaultProfile)
-    }
+    const result = (!error && data) ? data as UserProfile : defaultProfile
+    profileCache[userId] = result
+    setProfile(result)
+    return result
   }
 
   const refreshProfile = async () => {
-    if (user) await fetchProfile(user.id)
+    if (!user) return
+    // Invalidate cache then refetch
+    delete profileCache[user.id]
+    await fetchProfile(user.id)
   }
 
   const signOut = async () => {
+    if (user) delete profileCache[user.id]
     await supabase.auth.signOut()
     setUser(null)
     setSession(null)
     setProfile(null)
   }
 
-  const [isInitialized, setIsInitialized] = useState(false)
-
   useEffect(() => {
-    // Single initialization point
     let mounted = true
 
     const initAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!mounted) return
+      if (fetchingRef.current) return
+      fetchingRef.current = true
 
-      if (session?.user) {
-        await fetchProfile(session.user.id)
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!mounted) return
+
+        // Set user/session immediately so UI can start rendering
+        setSession(session)
+        setUser(session?.user ?? null)
+
+        // Fetch profile in parallel — don't block initialization
+        if (session?.user) {
+          fetchProfile(session.user.id) // non-blocking
+        }
+      } finally {
+        if (mounted) {
+          setIsInitialized(true)
+          setIsLoading(false)
+          fetchingRef.current = false
+        }
       }
-
-      setSession(session)
-      setUser(session?.user ?? null)
-      setIsInitialized(true)
-      setIsLoading(false)
     }
 
     initAuth()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return
       
+      setSession(session)
+      setUser(session?.user ?? null)
+
       if (session?.user) {
-        await fetchProfile(session.user.id)
+        fetchProfile(session.user.id) // non-blocking
       } else {
         setProfile(null)
       }
 
-      setSession(session)
-      setUser(session?.user ?? null)
       setIsInitialized(true)
       setIsLoading(false)
     })
