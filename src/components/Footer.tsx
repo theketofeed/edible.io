@@ -10,7 +10,7 @@ const Footer = memo(function Footer() {
 			<div className="max-w-5xl mx-auto px-4">
 
 				{/* Top Row */}
-				<div className="py-16 flex flex-col md:flex-row md:items-start md:justify-between gap-12">
+				<div className="py-10 md:py-16 flex flex-col md:flex-row md:items-start md:justify-between gap-8 md:gap-12">
 
 					{/* Brand Block */}
 					<div className="max-w-xs">
@@ -57,8 +57,8 @@ const Footer = memo(function Footer() {
 						</div>
 					</div>
 
-					{/* Link Columns */}
-					<div className="flex gap-12 md:gap-16">
+					{/* Link Columns - stacked on mobile */}
+					<div className="flex flex-wrap gap-6 md:gap-16">
 						{/* Product */}
 						<div>
 							<h4 className="text-white font-semibold text-sm mb-4">Product</h4>
@@ -88,8 +88,8 @@ const Footer = memo(function Footer() {
 				</div>
 
 				{/* Bottom Strip */}
-				<div className="border-t border-gray-800 py-6">
-					<div className="flex flex-col md:flex-row items-center justify-between gap-3">
+				<div className="border-t border-gray-800 py-5 md:py-6">
+					<div className="flex flex-col md:flex-row items-center justify-between gap-2 md:gap-3">
 						<p className="text-gray-500 text-xs">© {currentYear} Edible.io. All rights reserved.</p>
 						<p className="text-gray-500 text-xs">Made with ❤️ for home cooks everywhere.</p>
 					</div>

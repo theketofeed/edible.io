@@ -301,7 +301,7 @@ function Overview({ plans, onNav, userData, onSelectPlan, selectedPlanId }: Over
   const activePlan = plans.find(p => p.id === selectedPlanId)
   return (
     <div>
-      <div style={{
+      <div className="dash-overview-card" style={{
         background: C.white,
         borderRadius: 24, padding: "26px 26px 34px", marginBottom: 0, position: "relative", overflow: "hidden",
         boxShadow: "0 8px 32px rgba(198,160,246,0.08)",
@@ -328,17 +328,17 @@ function Overview({ plans, onNav, userData, onSelectPlan, selectedPlanId }: Over
               <p style={{ color: C.faint, fontSize: 12.5, fontWeight: 500 }}>{monthDay}</p>
             </div>
           </div>
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: C.txt, marginBottom: 20, letterSpacing: "-0.02em" }}>
+          <h1 className="dash-overview-title" style={{ fontSize: 28, fontWeight: 700, color: C.txt, marginBottom: 20, letterSpacing: "-0.02em" }}>
             Hello, {userData.name}{" "}
             <span style={{ fontSize: 18, display: "inline-block", verticalAlign: "middle", transform: "translateY(-1px)" }}>👋</span>
           </h1>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
+          <div className="dash-stats-grid">
             {[
               { label: "Saved Plans", value: plans.length, Icon: ClipboardList },
               { label: "Days Planned", value: totalDays, Icon: CalendarDays },
               { label: "Meals Saved", value: totalMeals, Icon: UtensilsCrossed },
             ].map((s, i) => (
-              <div key={i} style={{
+              <div key={i} className="dash-stat-card" style={{
                 background: "#F9F8F6",
                 borderRadius: 18,
                 padding: "16px 20px",
@@ -348,18 +348,18 @@ function Overview({ plans, onNav, userData, onSelectPlan, selectedPlanId }: Over
                 <div style={{ marginBottom: 6 }}>
                   <s.Icon size={20} style={{ color: C.txt }} />
                 </div>
-                <p style={{ fontWeight: 700, fontSize: 28, color: C.txt, lineHeight: 1, marginBottom: 3, letterSpacing: "-1px" }}>{s.value}</p>
-                <p style={{ color: C.faint, fontSize: 11, fontWeight: 500 }}>{s.label}</p>
+                <p className="dash-stat-value" style={{ fontWeight: 700, fontSize: 28, color: C.txt, lineHeight: 1, marginBottom: 3, letterSpacing: "-1px" }}>{s.value}</p>
+                <p className="dash-stat-label" style={{ color: C.faint, fontSize: 11, fontWeight: 500 }}>{s.label}</p>
               </div>
             ))}
           </div>
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 24 }}>
+      <div className="dash-two-col" style={{ marginTop: 24 }}>
         <div style={{ background: C.white, borderRadius: 20, padding: "20px", boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
             <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: 8 }}>
-              <p style={{ fontWeight: 700, fontSize: 14, color: C.txt }}>Today's Meals</p>
+              <p className="dash-section-title" style={{ fontWeight: 700, fontSize: 14, color: C.txt }}>Today's Meals</p>
               {activePlan && (
                 <span style={{ fontSize: 10, fontWeight: 700, color: "white", background: C.accent, padding: "1px 8px", borderRadius: 4, textTransform: "uppercase" }}>
                   Plan: {activePlan.title}
@@ -374,7 +374,7 @@ function Overview({ plans, onNav, userData, onSelectPlan, selectedPlanId }: Over
           {todayMeals.length > 0 ? todayMeals.map((m, i) => {
             const MealIcon = MICON[m.type] || Sunrise
             return (
-              <div key={i} style={{
+              <div key={i} className="dash-meal-item" style={{
                 display: "flex", gap: 10, alignItems: "center", padding: "10px 0",
                 borderBottom: i < todayMeals.length - 1 ? `1px solid rgba(0,0,0,0.03)` : "none"
               }}>
@@ -540,7 +540,7 @@ function MealPlanner({ plans, selectedPlanId }: MealPlannerProps & { selectedPla
           )
         })}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 250px", gap: 14 }}>
+      <div className="dash-planner-grid">
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <p style={{ fontWeight: 700, fontSize: 14, color: C.txt }}>
@@ -914,7 +914,7 @@ function SavedRecipes({ recipes }: SavedRecipesProps) {
         }}>{visible.length} recipes</span>
       </div>
       <p style={{ color: C.muted, fontSize: 13, marginBottom: 22 }}>
-        Your personalized library of hearted recipes, synced across all your devices.
+        Your personalized library of hearted recipes
       </p>
       <div style={{ display: "flex", gap: 7, marginBottom: 22 }}>
         {types.map(t => {
@@ -1044,7 +1044,7 @@ function Generate() {
     <div>
       <h1 style={{ fontSize: 24, fontWeight: 800, color: C.txt, marginBottom: 6 }}>Generate a Meal Plan</h1>
       <p style={{ color: C.muted, fontSize: 13, marginBottom: 28 }}>Tell us what you've got. We'll handle the rest.</p>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 24 }}>
+      <div className="dash-generate-grid" style={{ marginBottom: 24 }}>
         {[
           { Icon: Camera, label: "Upload a Receipt", desc: "Take a photo of your grocery receipt" },
           { Icon: PencilLine, label: "Type or Paste", desc: "Enter your grocery items directly" },
@@ -1131,7 +1131,7 @@ function Profile({ user, plans }: ProfileProps) {
           <p style={{ color: C.faint, fontSize: 11, marginTop: 3 }}>Member since {user.joined}</p>
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 12 }}>
+      <div className="dash-stats-grid" style={{ marginBottom: 12 }}>
         {[
           { label: "Saved Plans", value: plans.length, Icon: ClipboardList },
           { label: "Days Planned", value: totalDays, Icon: CalendarDays },
@@ -1371,6 +1371,11 @@ export default function EdibleDashboard() {
         .desktop-sidebar { display: flex; }
         .mobile-bottom-nav { display: none; }
         .dashboard-main { padding: 16px 28px 32px 28px; flex: 1; overflow-y: auto; }
+        .dash-header-search { flex: 1; max-width: 320px; min-width: 0; }
+        .dash-stats-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+        .dash-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .dash-planner-grid { display: grid; grid-template-columns: 1fr 250px; gap: 14px; }
+        .dash-generate-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
         @media (max-width: 768px) {
           .desktop-sidebar { display: none !important; }
           .mobile-bottom-nav { 
@@ -1380,7 +1385,34 @@ export default function EdibleDashboard() {
             justify-content: space-around; padding: 10px 8px 20px 8px;
             box-shadow: 0 -8px 30px rgba(0,0,0,0.03);
           }
-          .dashboard-main { padding: 16px 16px 90px 16px !important; }
+          .dashboard-main { padding: 14px 14px 88px 14px !important; }
+          .dash-header-search { display: none; }
+          .dash-stats-grid { grid-template-columns: repeat(3,1fr); gap: 8px; }
+          .dash-two-col { grid-template-columns: 1fr !important; }
+          .dash-planner-grid { grid-template-columns: 1fr !important; }
+          .dash-generate-grid { grid-template-columns: 1fr !important; }
+          .dash-header { padding: 0 12px !important; gap: 8px !important; }
+          .dash-overview-card { padding: 18px 16px 24px !important; }
+          .dash-stat-card { padding: 12px 14px !important; }
+          .dash-stat-value { font-size: 22px !important; }
+          .dash-meal-item { padding: 8px 0 !important; }
+          .dash-plan-card { padding: 14px !important; }
+          .dash-recipe-card { padding: 12px !important; flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
+          .dash-recipe-img { width: 100% !important; height: 100px !important; border-radius: 12px !important; }
+          .dash-search-input { font-size: 12px !important; padding: 6px 10px !important; }
+          .dash-home-btn { font-size: 11px !important; padding: 5px 10px !important; }
+        }
+        @media (max-width: 480px) {
+          .dash-stats-grid { grid-template-columns: repeat(3,1fr); gap: 6px; }
+          .dash-stat-value { font-size: 20px !important; }
+          .dash-overview-title { font-size: 22px !important; }
+          .dash-section-title { font-size: 18px !important; }
+          .dash-card-title { font-size: 13px !important; }
+          .dash-card-subtitle { font-size: 11px !important; }
+        }
+        @media (max-width: 380px) {
+          .dash-stats-grid { grid-template-columns: repeat(3,1fr); gap: 4px; }
+          .dash-stat-label { font-size: 9px !important; }
         }
       `}</style>
       <div style={{
@@ -1389,14 +1421,14 @@ export default function EdibleDashboard() {
       }}>
         <Sidebar active={view} onNav={go} userData={userData} />
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          <header style={{
+          <header className="dash-header" style={{
             height: 56, background: "rgba(245,243,239,0.92)", backdropFilter: "blur(10px)",
             borderBottom: "1px solid #EDE9E2", display: "flex", alignItems: "center",
             padding: "0 24px", gap: 12, flexShrink: 0
           }}>
             {/* Back to home */}
             <button
-              className="dashboard-home-btn"
+              className="dash-home-btn dashboard-home-btn"
               onClick={() => navigate("/")}
               style={{
                 fontSize: 12, fontWeight: 600, color: C.muted, background: "transparent", border: `1px solid ${C.cardBdr}`,
@@ -1406,8 +1438,8 @@ export default function EdibleDashboard() {
             >
               ← Home
             </button>
-            <div style={{ position: "relative", flex: 1, maxWidth: 320 }}>
-              <div style={{
+            <div className="dash-header-search" style={{ position: "relative" }}>
+              <div className="dash-search-input" style={{
                 display: "flex", alignItems: "center", gap: 8, background: C.white,
                 borderRadius: 10, padding: "7px 12px",
                 border: `1px solid ${showDrop && search ? C.accent : C.cardBdr}`
@@ -1528,26 +1560,29 @@ export default function EdibleDashboard() {
           
           <div className="mobile-bottom-nav">
             {[
-              { id: "overview" as NavId, icon: LayoutDashboard },
-              { id: "planner" as NavId, icon: Calendar },
-              { id: "plans" as NavId, icon: BookmarkCheck },
-              { id: "recipes" as NavId, icon: Heart },
-              { id: "generate" as NavId, icon: Sparkles }
+              { id: "overview" as NavId, icon: LayoutDashboard, label: "Overview" },
+              { id: "planner" as NavId, icon: Calendar, label: "Planner" },
+              { id: "plans" as NavId, icon: BookmarkCheck, label: "Plans" },
+              { id: "recipes" as NavId, icon: Heart, label: "Recipes" },
+              { id: "generate" as NavId, icon: Sparkles, label: "Generate" }
             ].map(item => {
               const on = view === item.id
               return (
                 <button key={item.id} onClick={() => go(item.id)}
                   style={{
-                    display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-                    background: "none", border: "none", color: on ? C.accent : C.muted,
-                    transition: "color .15s ease", cursor: "pointer"
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                    background: "none", border: "none", color: on ? C.accentDark : C.faint,
+                    transition: "color .15s ease", cursor: "pointer", width: 60
                   }}>
                   <div style={{
-                    padding: "8px 18px", borderRadius: 16, background: on ? "rgba(198,160,246,0.15)" : "transparent",
+                    padding: "6px 14px", borderRadius: 16, background: on ? "rgba(198,160,246,0.15)" : "transparent",
                     transition: "all .2s cubic-bezier(0.2, 0.8, 0.2, 1)"
                   }}>
-                    <item.icon size={22} style={{ color: on ? C.accentDark : C.faint, transition: "color .2s" }} />
+                    <item.icon size={20} style={{ transition: "color .2s" }} />
                   </div>
+                  <span style={{ fontSize: 10, fontWeight: on ? 700 : 600, color: on ? C.accentDark : C.muted }}>
+                    {item.label}
+                  </span>
                 </button>
               )
             })}

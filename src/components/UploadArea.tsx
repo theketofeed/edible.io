@@ -211,7 +211,7 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 	}
 
 	return (
-		<div className="grid gap-6">
+		<div className="grid gap-5 sm:gap-6">
 			<div
 				onDragOver={(e) => {
 					e.preventDefault()
@@ -231,26 +231,26 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 			>
 				{/* Idle/Hover/DragOver State */}
 				{(uploadState === 'idle' || uploadState === 'hover' || uploadState === 'dragOver') && !selectedFile && (
-					<div className="flex flex-col items-center gap-4 py-4">
+					<div className="flex flex-col items-center gap-4 py-4 sm:py-6">
 						<div className="relative">
-							<FileText className="w-16 h-16 text-lavender" strokeWidth={1.5} />
-							<div className="absolute -bottom-1 -right-1 bg-lavender rounded-full p-1.5">
-								<Upload className="w-4 h-4 text-white" strokeWidth={2.5} />
+							<FileText className="w-12 h-12 sm:w-16 sm:h-16 text-lavender" strokeWidth={1.5} />
+							<div className="absolute -bottom-1 -right-1 bg-lavender rounded-full p-1 sm:p-1.5">
+								<Upload className="w-3 h-3 sm:w-4 sm:h-4 text-white" strokeWidth={2.5} />
 							</div>
 						</div>
-						<div className="text-center space-y-2">
-							<h3 className="text-lg font-semibold text-black">
+						<div className="text-center space-y-2 px-2">
+							<h3 className="text-base sm:text-lg font-semibold text-black">
 								{uploadState === 'dragOver' ? 'Drop here to upload' : 'Upload your grocery receipt or shopping list'}
 							</h3>
-							<p className="text-sm text-black/60">
+							<p className="text-xs sm:text-sm text-black/60">
 								We support receipts from major stores • JPG, PNG, PDF
 							</p>
 						</div>
-					<div className="flex flex-col sm:flex-row gap-3 justify-center">
+					<div className="flex flex-col sm:flex-row gap-3 w-full px-2 sm:px-0 sm:justify-center">
 						<button
 							type="button"
 							onClick={() => inputRef.current?.click()}
-							className="px-6 py-3 rounded-full bg-lavender text-black font-semibold shadow-lg shadow-lavender/40 hover:shadow-lavender/50 hover:scale-105 transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+							className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-lavender text-black font-semibold shadow-lg shadow-lavender/40 hover:shadow-lavender/50 hover:scale-105 transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
 							disabled={disabled}
 						>
 							<FileUp className="w-4 h-4" strokeWidth={2} />
@@ -259,7 +259,7 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 						<button
 							type="button"
 							onClick={() => setShowCamera(true)}
-							className="px-6 py-3 rounded-full bg-white border-2 border-lavender/40 text-black font-semibold hover:bg-lavender/5 hover:border-lavender/60 transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+							className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-white border-2 border-lavender/40 text-black font-semibold hover:bg-lavender/5 hover:border-lavender/60 transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
 							disabled={disabled}
 						>
 							<Camera className="w-4 h-4" strokeWidth={2} />
@@ -415,29 +415,29 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 			)}
 
 			{/* Manual Text Input Section */}
-			<div className="grid gap-3 pt-4 border-t border-gray-200/50">
+			<div className="grid gap-3 pt-4 sm:pt-6 border-t border-gray-200/50">
 				<label className="text-sm font-semibold text-black/80 flex items-center gap-2">
 					<FileText className="w-4 h-4 text-lavender" strokeWidth={2} />
 					Or paste your grocery list:
 				</label>
 				<textarea
-					className="input rounded-xl border-2 border-gray-200/50 focus:border-lavender/50 focus:ring-0 min-h-[120px] resize-none"
+					className="input rounded-xl border-2 border-gray-200/50 focus:border-lavender/50 focus:ring-0 min-h-[100px] sm:min-h-[120px] resize-none text-sm sm:text-base"
 					placeholder="e.g., chicken breast, quinoa, spinach, eggs, yogurt, berries, tofu, broccoli…"
 					value={manualText}
 					onChange={(e) => setManualText(e.target.value)}
 					disabled={disabled}
 				/>
-				<div className="flex items-center gap-3 flex-wrap">
+				<div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
 					<button
 						type="button"
-						className="px-6 py-2.5 rounded-full bg-lavender text-black font-semibold shadow-lg shadow-lavender/40 hover:shadow-lavender/50 hover:scale-105 transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed text-sm"
+						className="px-5 sm:px-6 py-2.5 sm:py-2.5 rounded-full bg-lavender text-black font-semibold shadow-lg shadow-lavender/40 hover:shadow-lavender/50 hover:scale-105 transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed text-sm"
 						onClick={useManual}
 						disabled={disabled || !manualText.trim()}
 					>
 						Use this text
 					</button>
 					{typeof detectedCount === 'number' && (
-						<span className="text-xs text-black/60 px-3 py-1 rounded-full bg-black/5">
+						<span className="text-xs text-black/60 px-3 py-1 rounded-full bg-black/5 text-center sm:text-left">
 							{detectedCount} items ready
 						</span>
 					)}

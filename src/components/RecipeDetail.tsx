@@ -493,31 +493,31 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
                         </button>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1.5 sm:gap-3">
                         <button
                             onClick={() => window.print()}
-                            className="hidden sm:flex items-center gap-2 h-10 px-4 bg-white text-gray-600 rounded-full font-bold shadow-[0_2px_8px_rgba(0,0,0,0.02)] border border-gray-100 hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all"
+                            className="flex items-center gap-2 h-10 px-3 sm:px-4 bg-white text-gray-600 rounded-full font-bold shadow-[0_2px_8px_rgba(0,0,0,0.02)] border border-gray-100 hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all"
                         >
                             <Download className="w-4 h-4" />
-                            <span className="text-[13px]">PDF</span>
+                            <span className="hidden sm:inline text-[13px]">PDF</span>
                         </button>
 
                         <button
                             onClick={handleSaveRecipe}
                             aria-label={isSaved ? 'Remove from saved recipes' : 'Save this recipe'}
-                            className="flex items-center gap-2 h-10 px-4 bg-rose-50 text-rose-600 rounded-full font-bold border border-rose-100/50 hover:bg-rose-100 hover:-translate-y-0.5 transition-all"
+                            className="flex items-center gap-2 h-10 px-3 sm:px-4 bg-rose-50 text-rose-600 rounded-full font-bold border border-rose-100/50 hover:bg-rose-100 hover:-translate-y-0.5 transition-all"
                         >
                             <Heart className={`w-4 h-4 ${isSaved ? 'fill-rose-600' : ''}`} aria-hidden="true" />
-                            <span className="text-[13px]">{isSaved ? 'Saved' : 'Save'}</span>
+                            <span className="hidden sm:inline text-[13px]">{isSaved ? 'Saved' : 'Save'}</span>
                         </button>
 
                         <button
                             onClick={handleShare}
                             aria-label="Share this recipe"
-                            className="flex items-center gap-2 h-10 px-4 bg-gray-50 text-gray-600 rounded-full font-bold border border-gray-100/50 hover:bg-gray-100 hover:-translate-y-0.5 transition-all"
+                            className="flex items-center gap-2 h-10 px-3 sm:px-4 bg-gray-50 text-gray-600 rounded-full font-bold border border-gray-100/50 hover:bg-gray-100 hover:-translate-y-0.5 transition-all"
                         >
                             <Share2 className="w-4 h-4" aria-hidden="true" />
-                            <span className="text-[13px]">Share</span>
+                            <span className="hidden sm:inline text-[13px]">Share</span>
                         </button>
                     </div>
                 </div>

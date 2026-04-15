@@ -32,12 +32,12 @@ const STEPS: Step[] = [
 
 const HowItWorks = memo(function HowItWorks() {
 	return (
-		<section id="how-it-works" className="py-12 md:py-16 bg-gradient-to-b from-purple-50 via-purple-50/50 to-white">
-			<div className="max-w-6xl mx-auto px-6 md:px-8">
+		<section id="how-it-works" className="py-10 md:py-16 bg-gradient-to-b from-purple-50 via-purple-50/50 to-white">
+			<div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8">
 				{/* Section Header */}
-				<div className="text-center mb-16">
+				<div className="text-center mb-10 md:mb-16">
 					{/* Badge - matching HeroSection style */}
-					<div className="relative inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/40 backdrop-blur-2xl border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.8)] mb-5 before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-b before:from-white/50 before:to-white/0 before:opacity-60 before:pointer-events-none">
+					<div className="relative inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/40 backdrop-blur-2xl border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.8)] mb-4 sm:mb-5 before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-b before:from-white/50 before:to-white/0 before:opacity-60 before:pointer-events-none">
 						<span className="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-[0_0_0_3px_rgba(168,85,247,0.15)]" />
 						<span className="text-[11px] sm:text-[12px] font-medium text-gray-900">
 							How it works
@@ -45,18 +45,18 @@ const HowItWorks = memo(function HowItWorks() {
 					</div>
 
 					{/* Main Heading - smaller and bolder */}
-					<h2 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-6">
+					<h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-4 sm:mb-6">
 						How <span className="text-purple-600">Edible</span> Works
 					</h2>
 
 					{/* Subtitle - reduced size */}
-					<p className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+					<p className="text-sm sm:text-base md:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
 						Transform your groceries into meal plans in 3 simple steps
 					</p>
 				</div>
 
 				{/* Steps Grid */}
-				<div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10">
+				<div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 lg:gap-10">
 					{STEPS.map((step, index) => (
 						<div
 							key={step.number}
@@ -66,7 +66,7 @@ const HowItWorks = memo(function HowItWorks() {
 							}}
 						>
 							{/* Card */}
-							<div className="h-full bg-white rounded-3xl border border-gray-100 p-8 flex flex-col items-center justify-between relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-purple-500/10 hover:-translate-y-2 group-hover:border-purple-100">
+							<div className="h-full bg-white rounded-2xl md:rounded-3xl border border-gray-100 p-5 sm:p-8 flex flex-col items-center justify-between relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-purple-500/10 hover:-translate-y-2 group-hover:border-purple-100">
 
 								{/* Ripple Background Effect */}
 								<div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-64 pointer-events-none flex items-center justify-center opacity-40 group-hover:opacity-100 transition-opacity duration-700">
@@ -77,10 +77,10 @@ const HowItWorks = memo(function HowItWorks() {
 								</div>
 
 								{/* Floating Icon Container */}
-								<div className="relative z-10 w-20 h-20 rounded-full bg-gradient-to-br from-white to-gray-50 shadow-[0_8px_30px_rgba(0,0,0,0.04)] ring-1 ring-black/5 flex items-center justify-center mb-12 mt-4 group-hover:scale-110 transition-transform duration-500 ease-out">
+								<div className="relative z-10 w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-white to-gray-50 shadow-[0_8px_30px_rgba(0,0,0,0.04)] ring-1 ring-black/5 flex items-center justify-center mb-8 sm:mb-12 mt-2 group-hover:scale-110 transition-transform duration-500 ease-out">
 									<div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-500/5 to-purple-400/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 									{React.cloneElement(step.icon as React.ReactElement, {
-										className: 'w-8 h-8 text-gray-700 group-hover:text-purple-600 transition-colors duration-300',
+										className: 'w-6 h-6 sm:w-8 sm:h-8 text-gray-700 group-hover:text-purple-600 transition-colors duration-300',
 										strokeWidth: 1.5
 									})}
 
@@ -91,10 +91,10 @@ const HowItWorks = memo(function HowItWorks() {
 
 								{/* Content - Bottom Aligned */}
 								<div className="relative z-10 w-full text-left mt-auto">
-									<div className="text-purple-400 font-bold text-sm mb-3 tracking-wide uppercase opacity-90">
+									<div className="text-purple-400 font-bold text-xs sm:text-sm mb-2 sm:mb-3 tracking-wide uppercase opacity-90">
 										Step {step.number}
 									</div>
-									<h3 className="text-xl font-extrabold text-gray-900 mb-3 group-hover:text-purple-900 transition-colors duration-300">
+									<h3 className="text-lg sm:text-xl font-extrabold text-gray-900 mb-2 sm:mb-3 group-hover:text-purple-900 transition-colors duration-300">
 										{step.title}
 									</h3>
 									<p className="text-gray-500 leading-relaxed text-sm font-medium">

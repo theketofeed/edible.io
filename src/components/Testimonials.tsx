@@ -1,4 +1,5 @@
 import { memo } from 'react'
+import { Heart } from 'lucide-react'
 
 interface Testimonial {
 	quote: string
@@ -41,17 +42,21 @@ const TESTIMONIALS: Testimonial[] = [
 
 const Testimonials = memo(function Testimonials() {
 	return (
-		<section className="py-20 bg-gray-50 overflow-hidden">
-			<div className="max-w-7xl mx-auto px-4 mb-14 text-center">
-				<h2 className="text-3xl md:text-5xl font-extrabold text-gray-900 mb-4 tracking-tight">
+		<section className="py-12 md:py-20 bg-gray-50 overflow-hidden">
+			<div className="max-w-7xl mx-auto px-4 mb-10 md:mb-14 text-center">
+				<div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-50 text-purple-700 text-xs font-bold uppercase tracking-wide mb-5 border border-purple-100">
+					<Heart className="w-3 h-3" fill="currentColor" />
+					Testimonials
+				</div>
+				<h2 className="text-2xl md:text-3xl lg:text-5xl font-extrabold text-gray-900 mb-4 tracking-tight">
 					What Home Cooks Are Saying
 				</h2>
 			</div>
 
 			<div className="relative w-full overflow-hidden">
 				{/* Gradient Masks for smooth fade out at edges */}
-				<div className="absolute left-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-r from-gray-50 to-transparent z-10 pointer-events-none" />
-				<div className="absolute right-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-l from-gray-50 to-transparent z-10 pointer-events-none" />
+				<div className="absolute left-0 top-0 bottom-0 w-12 md:w-32 bg-gradient-to-r from-gray-50 to-transparent z-10 pointer-events-none" />
+				<div className="absolute right-0 top-0 bottom-0 w-12 md:w-32 bg-gradient-to-l from-gray-50 to-transparent z-10 pointer-events-none" />
 
 				{/* Scrolling Container */}
 				<div className="flex w-max animate-scroll gap-4 md:gap-6 hover:[animation-play-state:paused] py-4 px-4">
@@ -75,23 +80,23 @@ const Testimonials = memo(function Testimonials() {
 
 function TestimonialCard({ testimonial }: { testimonial: Testimonial }) {
 	return (
-		<div className="w-[300px] md:w-[380px] bg-white rounded-2xl p-8 md:p-10 shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-gray-100/50 flex flex-col items-center text-center transition-transform duration-300 hover:-translate-y-1">
-			<h4 className="text-[11px] md:text-xs font-bold text-purple-700 uppercase tracking-widest mb-4">
+		<div className="w-[280px] md:w-[380px] bg-white rounded-2xl p-6 md:p-8 lg:p-10 shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-gray-100/50 flex flex-col items-center text-center transition-transform duration-300 hover:-translate-y-1">
+			<h4 className="text-[10px] md:text-xs font-bold text-purple-700 uppercase tracking-widest mb-3 md:mb-4">
 				{testimonial.subhead}
 			</h4>
-			<div className="flex gap-1.5 mb-6">
+			<div className="flex gap-1 mb-4 md:mb-6">
 				{Array.from({ length: 5 }).map((_, i) => (
-					<svg key={i} className={`w-5 h-5 md:w-6 md:h-6 ${i < testimonial.rating ? 'text-yellow-400' : 'text-gray-200'}`} fill="currentColor" viewBox="0 0 20 20">
+					<svg key={i} className={`w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6 ${i < testimonial.rating ? 'text-yellow-400' : 'text-gray-200'}`} fill="currentColor" viewBox="0 0 20 20">
 						<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
 					</svg>
 				))}
 			</div>
-			<p className="text-gray-700 text-[15px] md:text-[17px] leading-relaxed italic mb-8 flex-grow">
+			<p className="text-gray-700 text-sm md:text-[15px] lg:text-[17px] leading-relaxed italic mb-6 md:mb-8 flex-grow">
 				"{testimonial.quote}"
 			</p>
 			<div>
-				<h5 className="font-bold text-gray-900 text-[15px] md:text-[16px] leading-tight mb-1">{testimonial.author}</h5>
-				<p className="text-gray-500 text-[13px] md:text-[14px]">{testimonial.role}</p>
+				<h5 className="font-bold text-gray-900 text-sm md:text-[15px] lg:text-[16px] leading-tight mb-0.5 md:mb-1">{testimonial.author}</h5>
+				<p className="text-gray-500 text-xs md:text-[13px] lg:text-[14px]">{testimonial.role}</p>
 			</div>
 		</div>
 	)

@@ -1,5 +1,5 @@
 import { memo, useCallback } from 'react'
-import { Shield, Sparkles, Zap } from 'lucide-react'
+import { Shield, Sparkles, Leaf } from 'lucide-react'
 
 interface Props {
 	onCTAClick?: () => void
@@ -48,24 +48,24 @@ const FinalCTA = memo(function FinalCTA({ onCTAClick }: Props) {
 				</button>
 
 				{/* Trust Badges */}
-				<div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12 text-gray-500 font-medium text-sm md:text-base">
-					<div className="flex items-center gap-2">
-						<div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">
+				<div className="grid grid-cols-2 md:flex md:flex-row items-center justify-center gap-y-6 gap-x-4 md:gap-12 text-gray-500 font-medium text-xs sm:text-sm md:text-base px-2">
+					<div className="flex items-center justify-center gap-2">
+						<div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
 							<Shield size={16} strokeWidth={2.5} />
 						</div>
-						No sign-up required
+						<span className="text-left">No sign-up required</span>
 					</div>
-					<div className="flex items-center gap-2">
-						<div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">
-							<Zap size={16} strokeWidth={2.5} fill="currentColor" className="text-purple-600" />
+					<div className="flex items-center justify-center gap-2">
+						<div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
+							<Leaf size={16} strokeWidth={2.5} />
 						</div>
-						4 Free Monthly Plans
+						<span className="text-left">Zero Food Waste</span>
 					</div>
-					<div className="flex items-center gap-2">
-						<div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">
+					<div className="flex items-center justify-center gap-2 col-span-2 md:col-span-1 mt-1 md:mt-0">
+						<div className="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center flex-shrink-0">
 							<Sparkles size={16} strokeWidth={2.5} />
 						</div>
-						Instant AI Recipes
+						<span className="text-left">Instant AI Recipes</span>
 					</div>
 				</div>
 			</div>

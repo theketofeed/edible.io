@@ -255,4 +255,84 @@ body {
 	.animate-shimmer {
 		animation: shimmer 2s infinite;
 	}
+
+	/* Mobile-responsive text utilities */
+	@media (max-width: 640px) {
+		.text-xs-mobile {
+			font-size: 0.75rem !important;
+		}
+		
+		.text-sm-mobile {
+			font-size: 0.875rem !important;
+		}
+		
+		.text-base-mobile {
+			font-size: 1rem !important;
+		}
+		
+		.px-3-mobile {
+			padding-left: 0.75rem !important;
+			padding-right: 0.75rem !important;
+		}
+		
+		.px-4-mobile {
+			padding-left: 1rem !important;
+			padding-right: 1rem !important;
+		}
+		
+		.py-2-mobile {
+			padding-top: 0.5rem !important;
+			padding-bottom: 0.5rem !important;
+		}
+		
+		.py-3-mobile {
+			padding-top: 0.75rem !important;
+			padding-bottom: 0.75rem !important;
+		}
+		
+		.gap-2-mobile {
+			gap: 0.5rem !important;
+		}
+		
+		.gap-3-mobile {
+			gap: 0.75rem !important;
+		}
+		
+		.gap-4-mobile {
+			gap: 1rem !important;
+		}
+		
+		.flex-col-mobile {
+			flex-direction: column !important;
+		}
+		
+		.w-full-mobile {
+			width: 100% !important;
+		}
+		
+		.hidden-mobile {
+			display: none !important;
+		}
+		
+		.block-mobile {
+			display: block !important;
+		}
+	}
+
+	/* Ensure touch-friendly tap targets on mobile */
+	@media (max-width: 768px) {
+		button, a {
+			min-height: 44px;
+			min-width: 44px;
+		}
+		
+		input, textarea, select {
+			font-size: 16px;
+		}
+		
+		/* Prevent horizontal scroll on mobile */
+		.overflow-x-hidden-mobile {
+			overflow-x: hidden;
+		}
+	}
 }

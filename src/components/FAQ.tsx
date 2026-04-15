@@ -54,13 +54,13 @@ const FAQRow = memo(function FAQRow({
 	onToggle: () => void
 }) {
 	return (
-		<div className="border border-gray-200 rounded-2xl overflow-hidden bg-white transition-all duration-200">
+		<div className="border border-gray-200 rounded-xl md:rounded-2xl overflow-hidden bg-white transition-all duration-200">
 			<button
 				onClick={onToggle}
-				className="w-full px-5 py-4 text-left flex items-center gap-4"
+				className="w-full px-4 md:px-5 py-3 md:py-4 text-left flex items-center gap-3 md:gap-4"
 			>
 				{/* Icon */}
-				<div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center flex-shrink-0">
+				<div className="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-purple-50 flex items-center justify-center flex-shrink-0">
 					{icon}
 				</div>
 
@@ -70,15 +70,15 @@ const FAQRow = memo(function FAQRow({
 				</span>
 
 				{/* Toggle */}
-				<span className="text-2xl font-light text-gray-400 flex-shrink-0 leading-none">
+				<span className="text-xl md:text-2xl font-light text-gray-400 flex-shrink-0 leading-none">
 					{isOpen ? '×' : '+'}
 				</span>
 			</button>
 
 			{/* Answer */}
 			{isOpen && (
-				<div className="px-5 pb-5 pt-1">
-					<p className="ml-14 text-gray-500 text-sm leading-relaxed">
+				<div className="px-4 md:px-5 pb-4 md:pb-5 pt-1">
+					<p className="ml-11 md:ml-14 text-gray-500 text-sm leading-relaxed">
 						{answer}
 					</p>
 				</div>
@@ -95,20 +95,20 @@ const FAQ = memo(function FAQ() {
 	}, [openIndex])
 
 	return (
-		<section id="faq" className="py-20 md:py-24 bg-purple-50">
+		<section id="faq" className="py-12 md:py-20 lg:py-24 bg-purple-50">
 			<div className="max-w-3xl mx-auto px-4">
 				{/* Section Header */}
 				<div className="text-center">
-					<h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+					<h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">
 						Frequently Asked Questions
 					</h2>
-					<p className="text-gray-500 text-center mb-12 mt-3 text-sm md:text-base">
+					<p className="text-gray-500 text-center mb-8 md:mb-12 mt-2 md:mt-3 text-sm md:text-base">
 						Everything you need to know about turning your groceries into great meals.
 					</p>
 				</div>
 
 				{/* FAQ Rows */}
-				<div className="space-y-3">
+				<div className="space-y-2 md:space-y-3">
 					{FAQ_ITEMS.map((item, idx) => (
 						<FAQRow
 							key={idx}

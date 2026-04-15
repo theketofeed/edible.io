@@ -1,5 +1,6 @@
-import { memo, useState, useCallback } from 'react'
+import { memo } from 'react'
 import { Check, Zap, Crown, Shield, Sparkles, Lock } from 'lucide-react'
+import { useState, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { createCheckout } from '../lib/checkout'
 import type { ProductType } from '../lib/checkout'
@@ -46,33 +47,33 @@ const PricingSection = memo(function PricingSection({ onAuthRequired }: PricingS
   ]
 
   return (
-    <section id="pricing" className="py-20 md:py-28 bg-white">
-      <div className="max-w-5xl mx-auto px-4">
+    <section id="pricing" className="py-16 md:py-28 bg-white">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6">
 
         {/* Header */}
-        <div className="text-center mb-14">
+        <div className="text-center mb-10 md:mb-14">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-50 text-purple-700 text-xs font-bold uppercase tracking-wide mb-5 border border-purple-100">
             <Sparkles className="w-3 h-3" />
             Simple Pricing
           </div>
-          <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4 tracking-tight">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 mb-4 tracking-tight leading-tight">
             Start free. Upgrade when <span className="text-purple-600">you're hooked.</span>
           </h2>
-          <p className="text-lg text-gray-500 max-w-xl mx-auto">
+          <p className="text-base sm:text-lg text-gray-500 max-w-xl mx-auto">
             No credit card required to get started. Upgrade anytime.
           </p>
         </div>
 
         {/* Billing Toggle */}
-        <div className="flex justify-center mb-10">
+        <div className="flex justify-center mb-8 md:mb-10">
           <div className="flex items-center p-1 bg-gray-100 rounded-full gap-1">
             <button
               onClick={() => setBillingCycle('monthly')}
-              className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${billingCycle === 'monthly' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`px-4 sm:px-5 py-2 rounded-full text-sm font-semibold transition-all ${billingCycle === 'monthly' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >Monthly</button>
             <button
               onClick={() => setBillingCycle('annual')}
-              className={`px-5 py-2 rounded-full text-sm font-semibold transition-all flex items-center gap-2 ${billingCycle === 'annual' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`px-4 sm:px-5 py-2 rounded-full text-sm font-semibold transition-all flex items-center gap-2 ${billingCycle === 'annual' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Annual
               <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-bold">Save 33%</span>
@@ -80,11 +81,11 @@ const PricingSection = memo(function PricingSection({ onAuthRequired }: PricingS
           </div>
         </div>
 
-        {/* Plan Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+        {/* Plan Cards — stacked on mobile, 3 cols on md+ */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 items-stretch">
 
           {/* Free */}
-          <div className="rounded-3xl border-2 border-gray-100 p-7 flex flex-col bg-white hover:border-gray-200 transition-colors">
+          <div className="rounded-3xl border-2 border-gray-100 p-6 sm:p-7 flex flex-col bg-white hover:border-gray-200 transition-colors">
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center">
@@ -121,7 +122,7 @@ const PricingSection = memo(function PricingSection({ onAuthRequired }: PricingS
           </div>
 
           {/* Pro — highlighted */}
-          <div className="rounded-3xl p-7 flex flex-col relative overflow-hidden bg-gradient-to-b from-purple-600 to-purple-700 shadow-2xl shadow-purple-500/20 scale-[1.02]">
+          <div className="rounded-3xl p-6 sm:p-7 flex flex-col relative overflow-hidden bg-gradient-to-b from-purple-600 to-purple-700 shadow-2xl shadow-purple-500/20 md:scale-[1.02]">
             {/* Most Popular badge */}
             <div className="absolute -top-px left-0 right-0 flex justify-center">
               <span className="bg-yellow-400 text-yellow-900 text-[10px] font-black px-4 py-1 rounded-b-xl uppercase tracking-wide">
@@ -169,7 +170,7 @@ const PricingSection = memo(function PricingSection({ onAuthRequired }: PricingS
           </div>
 
           {/* Founding */}
-          <div className="rounded-3xl p-7 flex flex-col relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #1a0533 0%, #2d0a5e 100%)' }}>
+          <div className="rounded-3xl p-6 sm:p-7 flex flex-col relative overflow-hidden sm:col-span-2 md:col-span-1" style={{ background: 'linear-gradient(135deg, #1a0533 0%, #2d0a5e 100%)' }}>
             <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-20 pointer-events-none" style={{ background: '#C6A0F6', filter: 'blur(40px)' }} />
 
             <div className="absolute -top-px left-0 right-0 flex justify-center">
@@ -217,8 +218,8 @@ const PricingSection = memo(function PricingSection({ onAuthRequired }: PricingS
         </div>
 
         {/* Trust line */}
-        <div className="mt-10 flex items-center justify-center gap-2 text-sm text-gray-400">
-          <Shield className="w-4 h-4" />
+        <div className="mt-8 md:mt-10 flex items-center justify-center gap-2 text-xs sm:text-sm text-gray-400 text-center px-4">
+          <Shield className="w-4 h-4 flex-shrink-0" />
           Secure payment via Dodo Payments · Cancel Pro anytime · Founding plan is a one-time charge
         </div>
 
