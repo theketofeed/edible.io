@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Clock, ChefHat, Timer, ArrowLeft, CheckCircle2, Circle, Share2, Zap, Download, Heart, Lightbulb, Crown } from 'lucide-react'
+import { Clock, ChefHat, Timer, ArrowLeft, CheckCircle2, Circle, Share2, Zap, Download, Heart, Lightbulb, Crown, FileText, Link2, Check } from 'lucide-react'
 import type { Meal } from '../utils/types'
 import Tabs, { Tab } from './Tabs'
 import NutritionBadges from './NutritionBadges'
@@ -12,6 +12,7 @@ import { useAuth } from '../context/AuthContext'
 import { usePlan } from '../hooks/usePlan'
 import { saveSavedRecipe, deleteSavedRecipe, getUserSavedRecipes } from '../lib/db'
 import { supabase } from '../lib/supabase'
+import Tooltip from './Tooltip'
 
 interface RecipeDetailProps {
     meal?: Meal
@@ -92,6 +93,7 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
     const [isSaved, setIsSaved] = useState(false)
     const [pricingOpen, setPricingOpen] = useState(false)
     const [pricingTrigger, setPricingTrigger] = useState('')
+    const [isShareMenuOpen, setIsShareMenuOpen] = useState(false)
 
     // Defensive checks for required properties
     const safeMeal = useMemo(() => {
@@ -224,23 +226,47 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
         return safeMeal?.instructions || []
     }, [safeMeal])
 
-    const handleShare = async () => {
-        if (!safeMeal) return
-        const ingredients = safeMeal.ingredients.map(i => `- ${i}`).join('\n')
-        const steps = safeMeal.instructions.map((s, i) => `${i + 1}. ${s}`).join('\n\n')
-        const nutra = safeMeal.nutrition as any
-        const nutrition = nutra
-            ? `\n📊 Nutrition (per serving):\n🔥 ${nutra.calories || 'N/A'} kcal | 🥩 ${nutra.protein || 'N/A'}g | 🍞 ${nutra.carbs || 'N/A'}g | 🥑 ${nutra.fat || 'N/A'}g`
-            : ''
+    const handleShare = () => {
+        setIsShareMenuOpen(!isShareMenuOpen)
+    }
 
-        const text = `🍽️ ${safeMeal.title}\n🍳 ${mealType} • ⏱️ ${safeMeal.totalTime} mins\n\n📋 Ingredients:\n${ingredients}\n\n👨‍🍳 Instructions:\n${steps}\n${nutrition}\n\nShared via Edible.io ✨`
+    const copyRecipeText = async () => {
+        if (!safeMeal) return
+        
+        const recipeSummary = `${safeMeal.title}
+
+
+${mealType} - ${dayName}
+
+ Prep: ${safeMeal.prepTime} min | Cook: ${safeMeal.cookTime} min | Total: ${safeMeal.totalTime} min
+
+ INGREDIENTS
+${safeMeal.ingredients.map((ing, i) => `${i + 1}. ${ing}`).join('\n')}
+
+ INSTRUCTIONS
+${safeMeal.instructions.map((step, i) => `${i + 1}. ${step}`).join('\n')}
+
+---
+Made with Edible.io`
 
         try {
-            await navigator.clipboard.writeText(text)
-            showToast?.('success', 'Recipe copied to clipboard!')
+            await navigator.clipboard.writeText(recipeSummary)
+            showToast?.('success', 'Recipe summary copied!')
+            setIsShareMenuOpen(false)
         } catch (err) {
-            console.error('Failed to copy recipe:', err)
-            showToast?.('error', 'Failed to copy recipe.')
+            console.error('Copy error:', err)
+            showToast?.('error', 'Failed to copy text.')
+        }
+    }
+
+    const copyRecipeLink = async () => {
+        try {
+            await navigator.clipboard.writeText(window.location.href)
+            showToast?.('success', 'Recipe link copied!')
+            setIsShareMenuOpen(false)
+        } catch (err) {
+            console.error('Copy error:', err)
+            showToast?.('error', 'Failed to copy link.')
         }
     }
 
@@ -486,39 +512,97 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => setIsCookingModeOpen(true)}
-                            className="flex items-center gap-2 h-10 px-4 bg-[#C6A0F6] text-gray-900 rounded-full font-bold hover:shadow-[0_4px_16px_rgba(198,160,246,0.3)] hover:-translate-y-0.5 active:scale-95 transition-all duration-300 group"
+                            className="flex items-center gap-1.5 h-9 sm:h-10 px-3 sm:px-4 bg-[#C6A0F6] text-gray-900 rounded-full font-bold hover:shadow-[0_4px_16px_rgba(198,160,246,0.3)] hover:-translate-y-0.5 active:scale-95 transition-all duration-300 group"
                         >
-                            <ChefHat className="w-4 h-4" />
-                            <span className="text-[14px]">Start Cooking</span>
+                            <ChefHat className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                            <span className="text-[13px] sm:text-[14px]">Start Cooking</span>
                         </button>
                     </div>
 
                     <div className="flex items-center gap-1.5 sm:gap-3">
-                        <button
-                            onClick={() => window.print()}
-                            className="flex items-center gap-2 h-10 px-3 sm:px-4 bg-white text-gray-600 rounded-full font-bold shadow-[0_2px_8px_rgba(0,0,0,0.02)] border border-gray-100 hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all"
-                        >
-                            <Download className="w-4 h-4" />
-                            <span className="hidden sm:inline text-[13px]">PDF</span>
-                        </button>
+                        <Tooltip content="Download PDF">
+                            <button
+                                onClick={() => window.print()}
+                                className="flex items-center gap-2 h-10 px-3 sm:px-4 bg-white text-gray-600 rounded-full font-bold shadow-[0_2px_8px_rgba(0,0,0,0.02)] border border-gray-100 hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all"
+                            >
+                                <Download className="w-4 h-4" />
+                                <span className="hidden sm:inline text-[13px]">PDF</span>
+                            </button>
+                        </Tooltip>
 
-                        <button
-                            onClick={handleSaveRecipe}
-                            aria-label={isSaved ? 'Remove from saved recipes' : 'Save this recipe'}
-                            className="flex items-center gap-2 h-10 px-3 sm:px-4 bg-rose-50 text-rose-600 rounded-full font-bold border border-rose-100/50 hover:bg-rose-100 hover:-translate-y-0.5 transition-all"
-                        >
-                            <Heart className={`w-4 h-4 ${isSaved ? 'fill-rose-600' : ''}`} aria-hidden="true" />
-                            <span className="hidden sm:inline text-[13px]">{isSaved ? 'Saved' : 'Save'}</span>
-                        </button>
+                        <Tooltip content={isSaved ? "Saved" : "Save Recipe"}>
+                            <button
+                                onClick={handleSaveRecipe}
+                                aria-label={isSaved ? 'Remove from saved recipes' : 'Save this recipe'}
+                                className="flex items-center gap-2 h-10 px-3 sm:px-4 bg-rose-50 text-rose-600 rounded-full font-bold border border-rose-100/50 hover:bg-rose-100 hover:-translate-y-0.5 transition-all"
+                            >
+                                <Heart className={`w-4 h-4 ${isSaved ? 'fill-rose-600' : ''}`} aria-hidden="true" />
+                                <span className="hidden sm:inline text-[13px]">{isSaved ? 'Saved' : 'Save'}</span>
+                            </button>
+                        </Tooltip>
 
-                        <button
-                            onClick={handleShare}
-                            aria-label="Share this recipe"
-                            className="flex items-center gap-2 h-10 px-3 sm:px-4 bg-gray-50 text-gray-600 rounded-full font-bold border border-gray-100/50 hover:bg-gray-100 hover:-translate-y-0.5 transition-all"
-                        >
-                            <Share2 className="w-4 h-4" aria-hidden="true" />
-                            <span className="hidden sm:inline text-[13px]">Share</span>
-                        </button>
+                        <Tooltip content="Share Recipe" disabled={isShareMenuOpen}>
+                            <div className="relative">
+                                <button
+                                    onClick={handleShare}
+                                    aria-label="Share this recipe"
+                                    className={`flex items-center gap-2 h-10 px-3 sm:px-4 rounded-full font-bold border transition-all duration-300 ${isShareMenuOpen ? 'bg-purple-600 text-white border-purple-600 shadow-lg' : 'bg-gray-50 text-gray-600 border-gray-100/50 hover:bg-gray-100'} hover:-translate-y-0.5`}
+                                >
+                                    <Share2 className={`w-4 h-4 transition-transform duration-300 ${isShareMenuOpen ? 'rotate-12 scale-110' : ''}`} aria-hidden="true" />
+                                    <span className="hidden sm:inline text-[13px]">Share</span>
+                                </button>
+                                
+                                <AnimatePresence>
+                                    {isShareMenuOpen && (
+                                        <>
+                                            {/* Backdrop */}
+                                            <motion.div 
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                exit={{ opacity: 0 }}
+                                                onClick={() => setIsShareMenuOpen(false)}
+                                                className="fixed inset-0 z-40 bg-black/[0.02] md:bg-transparent"
+                                            />
+                                            
+                                            {/* Options Menu */}
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 12, scale: 0.95 }}
+                                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                exit={{ opacity: 0, y: 12, scale: 0.95 }}
+                                                transition={{ type: "spring", damping: 25, stiffness: 400 }}
+                                                className="absolute top-full mt-3 right-0 w-[260px] bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-100 p-2.5 z-50 flex flex-col gap-1.5"
+                                            >
+                                                <button
+                                                    onClick={copyRecipeText}
+                                                    className="flex items-center gap-3.5 p-3 hover:bg-purple-50 rounded-xl transition-all group text-left"
+                                                >
+                                                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-all duration-300">
+                                                        <FileText className="w-5 h-5" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[14px] font-bold text-gray-900 leading-none mb-1">Copy Summary</p>
+                                                        <p className="text-[11px] text-gray-400 font-medium tracking-tight">Full layout with ingredients</p>
+                                                    </div>
+                                                </button>
+                                                
+                                                <button
+                                                    onClick={copyRecipeLink}
+                                                    className="flex items-center gap-3.5 p-3 hover:bg-emerald-50 rounded-xl transition-all group text-left"
+                                                >
+                                                    <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300">
+                                                        <Link2 className="w-5 h-5" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[14px] font-bold text-gray-900 leading-none mb-1">Copy Link</p>
+                                                        <p className="text-[11px] text-gray-400 font-medium tracking-tight">Direct URL to this recipe</p>
+                                                    </div>
+                                                </button>
+                                            </motion.div>
+                                        </>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                        </Tooltip>
                     </div>
                 </div>
             </div>

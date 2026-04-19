@@ -53,6 +53,7 @@ function MainContent() {
 	const [sourceText, setSourceText] = useState('')
 	const [isLoading, setIsLoading] = useState(false)
 	const [error, setError] = useState<string | null>(null)
+	const [aiUnavailable, setAiUnavailable] = useState(false)
 	const [result, setResult] = useState<MealPlanResult | null>(null)
 	const printRef = useRef<HTMLDivElement | null>(null)
 	const [toasts, setToasts] = useState<ToastMessage[]>([])
@@ -86,6 +87,7 @@ function MainContent() {
 
 	const onItemsDetected = useCallback(async (items: string[], rawText: string) => {
 		setError(null)
+		setAiUnavailable(false)
 		setSourceText(rawText)
 		setShowConfirmation(true)
 		setIsParsing(true)
@@ -138,6 +140,7 @@ function MainContent() {
 			return
 		}
 		setError(null)
+		setAiUnavailable(false)
 		setIsLoading(true)
 
 		// Scroll to generator
@@ -163,8 +166,13 @@ function MainContent() {
 				showToast('success', 'Your meal plan is ready!')
 			}
 		} catch (e: any) {
-			setError(e?.message || 'Failed to generate meal plan.')
-			showToast('error', e?.message || 'Failed to generate meal plan.')
+			if (e?.message === 'AI_UNAVAILABLE') {
+				setAiUnavailable(true)
+				setError(null)
+			} else {
+				setError(e?.message || 'Failed to generate meal plan.')
+				showToast('error', e?.message || 'Failed to generate meal plan.')
+			}
 		} finally {
 			setIsLoading(false)
 		}
@@ -231,6 +239,7 @@ function MainContent() {
 		setGroceryItems([])
 		setSourceText('')
 		setError(null)
+		setAiUnavailable(false)
 		navigate('/')
 		window.scrollTo({ top: 0, behavior: 'smooth' })
 	}
@@ -319,6 +328,26 @@ function MainContent() {
 									</div>
 									
 									{error && !isLoading && <div className="p-4 text-red-700 bg-red-50 rounded-lg">{error}</div>}
+
+									{aiUnavailable && !isLoading && (
+										<motion.div
+											initial={{ opacity: 0, y: 8 }}
+											animate={{ opacity: 1, y: 0 }}
+											className="p-6 bg-amber-50 border border-amber-200 rounded-xl text-center mx-0"
+										>
+											<div className="text-3xl mb-3">🤖</div>
+											<p className="font-bold text-amber-900 mb-1 text-lg">AI is taking a breather</p>
+											<p className="text-sm text-amber-700 mb-5 max-w-sm mx-auto">
+												Both AI providers timed out. This usually fixes itself in a few seconds — give it another try!
+											</p>
+											<button
+												onClick={handleGenerate}
+												className="px-7 py-3 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold rounded-xl transition-all shadow-md"
+											>
+												Try Again
+											</button>
+										</motion.div>
+									)}
 								</div>
 								
 								<div className={`transition-all duration-700 ${isLoading ? 'opacity-20 blur-[2px] pointer-events-none' : ''}`}>

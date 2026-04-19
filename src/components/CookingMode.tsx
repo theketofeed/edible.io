@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { X, ChevronLeft, ChevronRight, Play, Pause, RotateCcw, Timer as TimerIcon, Check } from 'lucide-react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { X, ChevronLeft, ChevronRight, Play, Pause, RotateCcw, Timer as TimerIcon, Check, Mic, MicOff } from 'lucide-react'
 
 interface CookingModeProps {
     steps: string[]
@@ -9,10 +8,15 @@ interface CookingModeProps {
     storageKey?: string
 }
 
-// Cooking Mode Component
 export default function CookingMode({ steps, onClose, mealTitle, storageKey }: CookingModeProps) {
     const [currentStepIndex, setCurrentStepIndex] = useState(0)
     const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set())
+    const stepRef = useRef<HTMLDivElement>(null)
+
+    // Hands-free voice control state
+    const [isVoiceActive, setIsVoiceActive] = useState(false)
+    const [lastTranscript, setLastTranscript] = useState('')
+    const recognitionRef = useRef<any>(null)
 
     // Load completed steps from localStorage
     useEffect(() => {
@@ -37,16 +41,63 @@ export default function CookingMode({ steps, onClose, mealTitle, storageKey }: C
             try {
                 const saved = localStorage.getItem(storageKey)
                 const existing = saved ? JSON.parse(saved) : {}
-                const data = {
-                    ...existing,
-                    steps: Array.from(completedSteps)
-                }
+                const data = { ...existing, steps: Array.from(completedSteps) }
                 localStorage.setItem(storageKey, JSON.stringify(data))
             } catch (e) {
                 console.error('Failed to save cooking progress:', e)
             }
         }
     }, [completedSteps, storageKey])
+
+    // Voice control setup
+    useEffect(() => {
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+        if (!SpeechRecognition) return
+
+        const recognition = new SpeechRecognition()
+        recognition.continuous = true
+        recognition.interimResults = false
+        recognition.lang = 'en-US'
+        recognitionRef.current = recognition
+
+        recognition.onresult = (event: any) => {
+            const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase().trim()
+            setLastTranscript(transcript)
+
+            if (transcript.includes('next') || transcript.includes('forward')) {
+                handleNext()
+            } else if (transcript.includes('previous') || transcript.includes('back')) {
+                handlePrev()
+            } else if (transcript.includes('close') || transcript.includes('exit') || transcript.includes('finish')) {
+                onClose()
+            }
+        }
+
+        recognition.onerror = () => {
+            setIsVoiceActive(false)
+        }
+
+        recognition.onend = () => {
+            if (isVoiceActive) {
+                try { recognition.start() } catch { /* ignore */ }
+            }
+        }
+
+        return () => {
+            try { recognition.stop() } catch { /* ignore */ }
+        }
+    }, [isVoiceActive, onClose])
+
+    // Voice control toggle
+    useEffect(() => {
+        if (!recognitionRef.current) return
+        if (isVoiceActive) {
+            try { recognitionRef.current.start() } catch { /* already running */ }
+        } else {
+            try { recognitionRef.current.stop() } catch { /* already stopped */ }
+            setLastTranscript('')
+        }
+    }, [isVoiceActive])
 
     // Timer state
     const [timerSeconds, setTimerSeconds] = useState(0)
@@ -55,7 +106,7 @@ export default function CookingMode({ steps, onClose, mealTitle, storageKey }: C
 
     const currentStep = steps[currentStepIndex] || ''
 
-    // Detect time in instruction (e.g., "10 minutes", "5 min", "1 hour")
+    // Detect time in instruction
     const detectedTime = useMemo(() => {
         const timeRegex = /(\d+)\s*(min|minute|minutes|hr|hour|hours)/i
         const match = currentStep.match(timeRegex)
@@ -68,7 +119,7 @@ export default function CookingMode({ steps, onClose, mealTitle, storageKey }: C
         return null
     }, [currentStep])
 
-    // Set timer when step changes or time is detected
+    // Set timer when step changes
     useEffect(() => {
         if (detectedTime) {
             setTimerSeconds(detectedTime)
@@ -83,14 +134,13 @@ export default function CookingMode({ steps, onClose, mealTitle, storageKey }: C
 
     // Timer logic
     useEffect(() => {
-        let interval: NodeJS.Timeout
-        if (isTimerRunning && timerSeconds > 0) {
-            interval = setInterval(() => {
-                setTimerSeconds((prev) => prev - 1)
-            }, 1000)
-        } else if (timerSeconds === 0) {
-            setIsTimerRunning(false)
-        }
+        const interval = setInterval(() => {
+            if (isTimerRunning && timerSeconds > 0) {
+                setTimerSeconds(prev => prev - 1)
+            } else if (timerSeconds === 0) {
+                setIsTimerRunning(false)
+            }
+        }, 1000)
         return () => clearInterval(interval)
     }, [isTimerRunning, timerSeconds])
 
@@ -100,167 +150,216 @@ export default function CookingMode({ steps, onClose, mealTitle, storageKey }: C
         return `${mins}:${secs.toString().padStart(2, '0')}`
     }
 
-    const nextStep = useCallback(() => {
+    const handleNext = useCallback(() => {
         if (currentStepIndex < steps.length - 1) {
-            // Mark current step as complete before moving to next
             setCompletedSteps(prev => new Set(prev).add(currentStepIndex))
-            setCurrentStepIndex((prev) => prev + 1)
+            setCurrentStepIndex(prev => prev + 1)
+            stepRef.current?.scrollTo(0, 0)
         }
     }, [currentStepIndex, steps.length])
 
-    const prevStep = useCallback(() => {
+    const handlePrev = useCallback(() => {
         if (currentStepIndex > 0) {
-            setCurrentStepIndex((prev) => prev - 1)
+            setCurrentStepIndex(prev => prev - 1)
+            stepRef.current?.scrollTo(0, 0)
         }
     }, [currentStepIndex])
 
     // Keyboard navigation
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'ArrowRight') nextStep()
-            if (e.key === 'ArrowLeft') prevStep()
+            if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); handleNext() }
+            if (e.key === 'ArrowLeft') { e.preventDefault(); handlePrev() }
             if (e.key === 'Escape') onClose()
         }
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [nextStep, prevStep, onClose])
+    }, [handleNext, handlePrev, onClose])
+
+    const progressPercent = ((currentStepIndex + 1) / steps.length) * 100
 
     return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-white flex flex-col font-sans"
-        >
+        <div className="fixed inset-0 z-[100] bg-neutral-50 flex flex-col" style={{ fontFamily: 'Geist, Geist Sans, -apple-system, BlinkMacSystemFont, Inter, system-ui, sans-serif' }}>
             {/* Header */}
-            <div className="bg-purple-600 text-white px-6 py-4 flex items-center justify-between shadow-lg">
-                <div className="flex flex-col">
-                    <span className="text-[10px] uppercase font-black tracking-widest opacity-70">Cooking Mode</span>
-                    <h2 className="text-lg font-bold truncate max-w-[200px] md:max-w-md">{mealTitle}</h2>
+            <div className="bg-white border-b border-neutral-200 px-4 py-3 flex items-center justify-between flex-shrink-0">
+                <div className="flex flex-col min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                        <span className="text-[10px] uppercase font-bold tracking-widest text-purple-500">Cooking Mode</span>
+                        <span className="text-neutral-300">|</span>
+                        <span className="text-[10px] text-neutral-400">Step {currentStepIndex + 1}/{steps.length}</span>
+                    </div>
+                    <h2 className="text-sm md:text-base font-semibold text-neutral-900 truncate pr-4">{mealTitle}</h2>
                 </div>
+
                 <button
                     onClick={onClose}
-                    className="p-3 hover:bg-white/10 rounded-full transition-colors focus:ring-2 focus:ring-white outline-none"
+                    className="p-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-500 hover:text-neutral-900 rounded-xl transition-colors flex-shrink-0"
                     aria-label="Exit Cooking Mode"
                 >
-                    <X className="w-8 h-8" />
+                    <X className="w-5 h-5" />
                 </button>
             </div>
 
+            {/* Voice Feedback Banner - Shows when voice is active and transcript is received */}
+            {isVoiceActive && lastTranscript && (
+                <div className="bg-purple-50 border-b border-purple-100 px-4 py-2 flex items-center gap-2 flex-shrink-0">
+                    <Mic className="w-4 h-4 text-purple-500 animate-pulse flex-shrink-0" />
+                    <span className="text-sm text-purple-700 truncate">Heard: "{lastTranscript}"</span>
+                </div>
+            )}
+
             {/* Progress Bar */}
-            <div className="h-1.5 bg-gray-100 w-full overflow-hidden">
-                <motion.div
-                    className="h-full bg-purple-500"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${((currentStepIndex + 1) / steps.length) * 100}%` }}
-                    transition={{ type: 'spring', stiffness: 50, damping: 20 }}
+            <div className="h-1 bg-neutral-100 flex-shrink-0">
+                <div
+                    className="h-full bg-purple-500 transition-all duration-300 ease-out"
+                    style={{ width: `${progressPercent}%` }}
                 />
             </div>
 
-            {/* Main Content */}
-            <div className="flex-1 flex flex-col items-center justify-center px-6 md:px-12 text-center overflow-y-auto">
-                <div className="max-w-4xl w-full">
-                    <div className="relative mb-6">
-                        <span className="text-purple-500 font-black text-xl block uppercase tracking-tighter">
-                            Step {currentStepIndex + 1} of {steps.length}
-                        </span>
-                        {completedSteps.has(currentStepIndex) && (
-                            <motion.div
-                                initial={{ scale: 0, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full p-2 shadow-lg"
+            {/* Main Content - Scrollable */}
+            <div className="flex-1 overflow-y-auto overscroll-contain ios-scroll">
+                <div className="min-h-full flex flex-col">
+                    {/* Step Content - Centered and Bold */}
+                    <div className="flex-1 flex flex-col justify-center px-5 md:px-8 lg:px-12 py-8 md:py-12">
+                        <div
+                            ref={stepRef}
+                            className="max-w-xl md:max-w-2xl lg:max-w-3xl mx-auto w-full text-center"
+                        >
+                            <p
+                                className={`font-bold text-xl sm:text-2xl md:text-3xl lg:text-4xl leading-relaxed md:leading-normal ${completedSteps.has(currentStepIndex)
+                                    ? 'text-neutral-300 line-through'
+                                    : 'text-neutral-900'
+                                    }`}
                             >
-                                <Check className="w-6 h-6" />
-                            </motion.div>
-                        )}
+                                {currentStep}
+                            </p>
+                        </div>
                     </div>
 
-                    <AnimatePresence mode="wait">
-                        <motion.p
-                            key={currentStepIndex}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            transition={{ duration: 0.4, ease: 'easeOut' }}
-                            className={`text-4xl md:text-6xl font-black leading-tight md:leading-[1.1] mb-12 ${completedSteps.has(currentStepIndex)
-                                ? 'text-gray-500 line-through'
-                                : 'text-gray-900'
-                                }`}
-                        >
-                            {currentStep}
-                        </motion.p>
-                    </AnimatePresence>
-
-                    {/* Timer Integration */}
+                    {/* Timer - Only show if time detected */}
                     {initialTimerSeconds > 0 && (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="bg-purple-50 p-8 rounded-[2.5rem] border-2 border-purple-100 flex flex-col items-center mb-12 shadow-inner"
-                        >
-                            <div className="flex items-center gap-3 text-purple-600 mb-2">
-                                <TimerIcon className="w-8 h-8" />
-                                <span className="font-black uppercase tracking-widest text-lg">Timer Detection</span>
+                        <div className="px-4 md:px-6 pb-4 md:pb-6 flex-shrink-0">
+                            <div className="max-w-xl md:max-w-2xl mx-auto">
+                                <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-4 md:p-5 flex items-center gap-3 md:gap-5">
+                                    {/* Timer Circle */}
+                                    <div className="relative w-12 h-12 md:w-16 md:h-16 flex-shrink-0">
+                                        <svg className="w-full h-full -rotate-90" viewBox="0 0 64 64">
+                                            <circle
+                                                cx="32" cy="32" r="28"
+                                                className="fill-none stroke-neutral-100"
+                                                strokeWidth="4"
+                                            />
+                                            <circle
+                                                cx="32" cy="32" r="28"
+                                                className="fill-none stroke-purple-500"
+                                                strokeWidth="4"
+                                                strokeLinecap="round"
+                                                strokeDasharray={`${2 * Math.PI * 28}`}
+                                                strokeDashoffset={`${2 * Math.PI * 28 * (1 - timerSeconds / initialTimerSeconds)}`}
+                                                style={{ transition: 'stroke-dashoffset 1s linear' }}
+                                            />
+                                        </svg>
+                                        <TimerIcon className="absolute inset-0 m-auto w-5 h-5 md:w-6 md:h-6 text-purple-500" />
+                                    </div>
+
+                                    {/* Timer Display */}
+                                    <div className="flex-1 min-w-0">
+                                        <div className={`text-2xl md:text-3xl lg:text-4xl font-bold tabular-nums ${timerSeconds === 0 ? 'text-red-500' : 'text-neutral-900'}`}>
+                                            {formatTime(timerSeconds)}
+                                        </div>
+                                        <div className="text-[10px] md:text-xs text-neutral-400 uppercase tracking-wide">Timer</div>
+                                    </div>
+
+                                    {/* Timer Controls */}
+                                    <div className="flex gap-1.5 md:gap-2 flex-shrink-0">
+                                        <button
+                                            onClick={() => setIsTimerRunning(!isTimerRunning)}
+                                            className={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center transition-colors ${isTimerRunning
+                                                ? 'bg-neutral-100 text-neutral-600'
+                                                : 'bg-purple-500 text-white'
+                                                }`}
+                                        >
+                                            {isTimerRunning ? <Pause className="w-4 h-4 md:w-5 md:h-5" /> : <Play className="w-4 h-4 md:w-5 md:h-5" />}
+                                        </button>
+                                        <button
+                                            onClick={() => { setIsTimerRunning(false); setTimerSeconds(initialTimerSeconds) }}
+                                            className="w-10 h-10 md:w-12 md:h-12 bg-neutral-100 text-neutral-400 rounded-xl flex items-center justify-center hover:bg-neutral-200 hover:text-neutral-600 transition-colors"
+                                            aria-label="Reset Timer"
+                                        >
+                                            <RotateCcw className="w-4 h-4 md:w-5 md:h-5" />
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-                            <div className={`text-7xl md:text-8xl font-black tabular-nums transition-colors duration-500 ${timerSeconds === 0 ? 'text-red-500 animate-pulse' : 'text-purple-700'}`}>
-                                {formatTime(timerSeconds)}
-                            </div>
-                            <div className="flex gap-4 mt-6">
-                                <button
-                                    onClick={() => setIsTimerRunning(!isTimerRunning)}
-                                    className={`px-8 py-4 rounded-2xl font-black text-xl flex items-center gap-3 transition-all ${isTimerRunning
-                                        ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                                        : 'bg-green-600 text-white hover:bg-green-700 shadow-lg shadow-green-100'
-                                        }`}
-                                >
-                                    {isTimerRunning ? <Pause className="fill-current" /> : <Play className="fill-current" />}
-                                    {isTimerRunning ? 'Pause' : 'Start Timer'}
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setIsTimerRunning(false)
-                                        setTimerSeconds(initialTimerSeconds)
-                                    }}
-                                    className="p-4 bg-gray-100 text-gray-600 rounded-2xl hover:bg-gray-200 transition-all focus:ring-2 focus:ring-purple-500 outline-none"
-                                    aria-label="Reset Timer"
-                                >
-                                    <RotateCcw className="w-8 h-8" />
-                                </button>
-                            </div>
-                        </motion.div>
+                        </div>
                     )}
                 </div>
             </div>
 
             {/* Footer Navigation */}
-            <div className="p-6 md:p-12 bg-white border-t border-gray-100 flex items-center justify-between gap-6 max-w-5xl mx-auto w-full">
-                <button
-                    onClick={prevStep}
-                    disabled={currentStepIndex === 0}
-                    className="flex-1 flex items-center justify-center gap-2 py-6 md:py-8 rounded-3xl font-black text-2xl border-4 border-gray-100 text-gray-400 enabled:hover:border-purple-200 enabled:hover:text-purple-600 enabled:active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                >
-                    <ChevronLeft className="w-8 h-8" />
-                    <span className="hidden sm:inline">Previous</span>
-                </button>
+            <div className="bg-white border-t border-neutral-200 px-4 py-3 md:py-4 flex-shrink-0">
+                <div className="max-w-xl md:max-w-2xl mx-auto flex items-center gap-2 md:gap-3">
+                    {/* Hands-Free Mode Button */}
+                    <button
+                        onClick={() => setIsVoiceActive(!isVoiceActive)}
+                        className={`group flex items-center gap-2 px-3 md:px-4 py-3 rounded-xl font-semibold text-sm transition-colors ${
+                            isVoiceActive
+                                ? 'bg-purple-500 text-white'
+                                : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                        }`}
+                    >
+                        {isVoiceActive ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
+                        <span className="hidden sm:inline">{isVoiceActive ? 'Listening' : 'Hands-Free'}</span>
+                        {isVoiceActive && (
+                            <span className="sm:hidden flex items-center gap-1">
+                                <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                                <span className="w-2 h-2 bg-white/60 rounded-full animate-pulse" style={{ animationDelay: '150ms' }} />
+                                <span className="w-2 h-2 bg-white/30 rounded-full animate-pulse" style={{ animationDelay: '300ms' }} />
+                            </span>
+                        )}
+                    </button>
 
-                {currentStepIndex === steps.length - 1 ? (
                     <button
-                        onClick={onClose}
-                        className="flex-[2] py-6 md:py-8 bg-green-600 text-white rounded-3xl font-black text-2xl md:text-3xl flex items-center justify-center gap-3 hover:bg-green-700 active:scale-95 transition-all shadow-xl shadow-green-100"
+                        onClick={handlePrev}
+                        disabled={currentStepIndex === 0}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-3.5 rounded-xl font-semibold border border-neutral-200 text-neutral-600 bg-white hover:bg-neutral-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                     >
-                        <Check className="w-10 h-10" />
-                        Finish Cooking
+                        <ChevronLeft className="w-5 h-5" />
+                        <span className="text-sm md:text-base">Back</span>
                     </button>
-                ) : (
-                    <button
-                        onClick={nextStep}
-                        className="flex-[2] py-6 md:py-8 bg-purple-600 text-white rounded-3xl font-black text-2xl md:text-3xl flex items-center justify-center gap-3 hover:bg-purple-700 active:scale-95 transition-all shadow-xl shadow-purple-100"
-                    >
-                        Next Step
-                        <ChevronRight className="w-10 h-10" />
-                    </button>
-                )}
+
+                    {currentStepIndex === steps.length - 1 ? (
+                        <button
+                            onClick={onClose}
+                            className="flex-[2] py-3.5 bg-neutral-900 text-white rounded-xl font-semibold flex items-center justify-center gap-1.5 hover:bg-neutral-800 transition-colors"
+                        >
+                            <Check className="w-5 h-5" />
+                            <span className="text-sm md:text-base">Finish</span>
+                        </button>
+                    ) : (
+                        <button
+                            onClick={handleNext}
+                            className="flex-[2] py-3.5 bg-purple-500 text-white rounded-xl font-semibold flex items-center justify-center gap-1.5 hover:bg-purple-600 transition-colors"
+                        >
+                            <span className="text-sm md:text-base">Next</span>
+                            <ChevronRight className="w-5 h-5" />
+                        </button>
+                    )}
+                </div>
+
+                {/* Voice Commands Hint */}
+                <div className="max-w-xl mx-auto mt-2 text-center">
+                    <span className="text-[10px] text-neutral-400">
+                        {isVoiceActive ? 'Say: "Next" • "Back" • "Close"' : 'Enable hands-free for voice control'}
+                    </span>
+                </div>
             </div>
-        </motion.div>
+
+            <style>{`
+                .ios-scroll {
+                    -webkit-overflow-scrolling: touch;
+                }
+            `}</style>
+        </div>
     )
 }
