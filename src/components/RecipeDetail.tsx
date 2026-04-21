@@ -5,7 +5,7 @@ import type { Meal } from '../utils/types'
 import Tabs, { Tab } from './Tabs'
 import NutritionBadges from './NutritionBadges'
 import type { ToastKind } from './Toast'
-import { fetchMealImage } from '../lib/unsplashApi'
+import { fetchMealImage } from '../lib/mealImages'
 import CookingMode from './CookingMode'
 import PricingModal from './PricingModal'
 import { useAuth } from '../context/AuthContext'
@@ -618,9 +618,18 @@ Made with Edible.io`
                     {/* Food Image Hero */}
                     <div className="h-[200px] md:h-[300px] bg-purple-100 flex items-center justify-center relative group">
                         {isImageLoading ? (
-                            <div className="absolute inset-0 bg-purple-50 flex items-center justify-center overflow-hidden">
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full animate-shimmer" />
-                                <ChefHat className="w-24 h-24 md:w-32 md:h-32 text-purple-100" />
+                            <div className="absolute inset-0 bg-gradient-to-br from-purple-100 via-purple-50 to-lavender-100 flex items-center justify-center overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shimmer" />
+                                <div className="relative flex flex-col items-center gap-3">
+                                    <svg className="w-16 h-16 md:w-20 md:h-20 text-purple-300 animate-pulse" viewBox="0 0 64 64" fill="none">
+                                        <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="3" fill="none" opacity="0.3" />
+                                        <path d="M20 40 Q32 20 44 40" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" />
+                                        <circle cx="32" cy="36" r="4" fill="currentColor" opacity="0.5" />
+                                        <circle cx="22" cy="28" r="3" fill="currentColor" opacity="0.4" />
+                                        <circle cx="42" cy="28" r="3" fill="currentColor" opacity="0.4" />
+                                    </svg>
+                                    <span className="text-purple-300 text-sm font-medium">Loading image...</span>
+                                </div>
                             </div>
                         ) : recipeImage ? (
                             <>
@@ -646,9 +655,15 @@ Made with Edible.io`
                         ) : (
                             <div className="absolute inset-0 bg-gradient-to-br from-purple-500 via-purple-400 to-lavender-400 flex items-center justify-center">
                                 <div className="absolute inset-0 bg-black/10"></div>
-                                <div className="relative">
+                                <div className="relative flex flex-col items-center gap-3">
                                     <div className="absolute inset-0 blur-3xl bg-white/20 rounded-full animate-pulse"></div>
-                                    <ChefHat className="w-24 h-24 md:w-48 md:h-48 text-white/40 relative z-10" />
+                                    <svg className="w-20 h-20 md:w-28 md:h-28 text-white/40 relative z-10" viewBox="0 0 64 64" fill="none">
+                                        <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="3" fill="none" opacity="0.5" />
+                                        <path d="M20 40 Q32 20 44 40" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" />
+                                        <circle cx="32" cy="36" r="4" fill="currentColor" opacity="0.7" />
+                                        <circle cx="22" cy="28" r="3" fill="currentColor" opacity="0.6" />
+                                        <circle cx="42" cy="28" r="3" fill="currentColor" opacity="0.6" />
+                                    </svg>
                                 </div>
                             </div>
                         )}

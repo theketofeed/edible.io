@@ -3,7 +3,7 @@ import { Copy, Download, RefreshCw, ChevronRight, X, Bookmark, Check, Save } fro
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import type { MealPlanResult, DayMeals, Meal } from '../utils/types'
-import { fetchMealImage } from '../lib/unsplashApi'
+import { fetchMealImage } from '../lib/mealImages'
 import { useAuth } from '../context/AuthContext'
 import { usePlan } from '../hooks/usePlan'
 import { saveMealPlan } from '../lib/db'
@@ -87,7 +87,7 @@ const MealCard = memo(function MealCard({
 	const [imageUrl, setImageUrl] = useState<string | null>(null)
 	const [imageError, setImageError] = useState(false)
 
-	useEffect(() => {
+useEffect(() => {
 		async function getImg() {
 			const url = await fetchMealImage(meal.title)
 			if (url) setImageUrl(url)
@@ -95,7 +95,42 @@ const MealCard = memo(function MealCard({
 		getImg()
 	}, [meal.title])
 
-	const fallbackSvg = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Crect fill='%23f3f4f6' width='56' height='56' rx='10'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle' font-size='26'%3E${getMealTypeIcon(mealType)}%3C/text%3E%3C/svg%3E`
+	function getRecipeEmoji(title: string): string {
+		const t = title.toLowerCase()
+		if (t.includes('salad')) return '🥗'
+		if (t.includes('wrap') || t.includes('burrito')) return '🌯'
+		if (t.includes('taco')) return '🌮'
+		if (t.includes('sandwich') || t.includes('burger') || t.includes('sub')) return '🥪'
+		if (t.includes('pasta') || t.includes('spaghetti') || t.includes('noodle')) return '🍝'
+		if (t.includes('pizza')) return '🍕'
+		if (t.includes('soup') || t.includes('stew') || t.includes('chili')) return '🍲'
+		if (t.includes('rice') || t.includes('quinoa') || t.includes('grain')) return '🍚'
+		if (t.includes('egg') || t.includes('omelet') || t.includes('scramble')) return '🍳'
+		if (t.includes('pancake') || t.includes('waffle') || t.includes('french toast')) return '🥞'
+		if (t.includes('toast') || t.includes('avocado toast')) return '🥑'
+		if (t.includes('smoothie') || t.includes('shake')) return '🥤'
+		if (t.includes('strawberry') || t.includes('berry')) return '🍓'
+		if (t.includes('apple')) return '🍎'
+		if (t.includes('banana')) return '🍌'
+		if (t.includes('grape')) return '🍇'
+		if (t.includes('orange')) return '🍊'
+		if (t.includes('chicken') || t.includes('turkey') || t.includes('meat') || t.includes('beef')) return '🍗'
+		if (t.includes('fish') || t.includes('salmon') || t.includes('tuna') || t.includes('shrimp')) return '🐟'
+		if (t.includes('bean') || t.includes('lentil') || t.includes('black')) return '🫘'
+		if (t.includes('potato') || t.includes('fries') || t.includes('sweet')) return '🍟'
+		if (t.includes('bread') || t.includes('toast') || t.includes('bagel')) return '🍞'
+		if (t.includes('tortilla')) return '🫓'
+		if (t.includes('cheese')) return '🧀'
+		if (t.includes('bacon') || t.includes('sausage')) return '🥓'
+		if (t.includes('pancake') || t.includes('waffle')) return '🥞'
+		if (t.includes('oatmeal') || t.includes('oats') || t.includes('cereal')) return '🥣'
+		if (t.includes('fruit')) return '🍓'
+		if (t.includes('cookie') || t.includes('brownie')) return '🍪'
+		if (t.includes('muffin')) return '🧁'
+		return getMealTypeIcon(mealType)
+	}
+
+	const fallbackSvg = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 56'%3E%3Crect fill='%23f3f4f6' width='56' height='56' rx='10'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle' font-size='26'%3E${getRecipeEmoji(meal.title)}%3C/text%3E%3C/svg%3E`
 
 	const cal = meal.nutrition?.calories ?? 0
 	const p = meal.nutrition?.protein ?? 0

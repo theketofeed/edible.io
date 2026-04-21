@@ -143,14 +143,6 @@ function MainContent() {
 		setAiUnavailable(false)
 		setIsLoading(true)
 
-		// Scroll to generator
-		setTimeout(() => {
-			const uploadSection = document.getElementById('upload-section')
-			if (uploadSection) {
-				uploadSection.scrollIntoView({ behavior: 'smooth', block: 'center' })
-			}
-		}, 100)
-
 		try {
 			const plan = await generateMealPlan({ items: groceryItems, diet, sourceText, days: effectivePlanDays })
 			setResult(plan)
@@ -267,7 +259,7 @@ function MainContent() {
 			<Routes>
 				<Route path="/" element={
 					<>
-						{!result && (
+						{(!result || isLoading) && (
 							<div className="flex-1">
 								<div className="max-w-5xl mx-auto px-4 py-8 md:py-12">
 									<div className={`transition-all duration-700 ${isLoading ? 'opacity-40 blur-[1px]' : ''}`}>

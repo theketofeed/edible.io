@@ -12,7 +12,7 @@ import {
 import logo from "../assets/Transparent logo.png"
 import { useAuth } from "../context/AuthContext"
 import { getUserMealPlans, getProfile, deleteMealPlan, getUserSavedRecipes } from "../lib/db"
-import { fetchMealImage } from "../lib/unsplashApi"
+import { fetchMealImage } from "../lib/mealImages"
 import type { MealPlanResult, Meal, SavedRecipe } from "../utils/types"
 import PlanBadge from "../components/PlanBadge"
 

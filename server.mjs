@@ -89,15 +89,23 @@ app.post('/api/debug/webhook-test', rawBodyParser, async (req, res) => {
 
 // Claude API endpoint
 app.post('/api/claude', async (req, res) => {
+	const controller = new AbortController()
+	const timeoutId = setTimeout(() => {
+		controller.abort()
+		console.warn('[Claude Backend] Request timed out after 15s')
+	}, 15000)
+
 	try {
 		const { prompt } = req.body
 
 		if (!prompt) {
+			clearTimeout(timeoutId)
 			return res.status(400).json({ error: 'Missing prompt' })
 		}
 
 		const apiKey = process.env.VITE_CLAUDE_API_KEY
 		if (!apiKey || apiKey.trim() === '' || apiKey === 'your_key_here') {
+			clearTimeout(timeoutId)
 			console.warn('[Claude Backend] No valid Claude API key found.')
 			return res.status(401).json({ error: 'Claude API key not configured' })
 		}
@@ -120,9 +128,11 @@ app.post('/api/claude', async (req, res) => {
 				system: 'You output JSON only. No code fences. No commentary.',
 				messages: [{ role: 'user', content: prompt }],
 				temperature: 0.55
-			})
+			}),
+			signal: controller.signal
 		})
 
+		clearTimeout(timeoutId)
 		console.log('[Claude Backend] Response status:', response.status)
 
 		if (!response.ok) {
@@ -135,7 +145,11 @@ app.post('/api/claude', async (req, res) => {
 		console.log('[Claude Backend] Claude responded successfully')
 		res.json(json)
 	} catch (err) {
+		clearTimeout(timeoutId)
 		console.error('[Claude Backend] Error:', err)
+		if (err.name === 'AbortError' || err.message?.includes('aborted')) {
+			return res.status(504).json({ error: 'Claude API timed out' })
+		}
 		res.status(500).json({ error: err.message })
 	}
 })
