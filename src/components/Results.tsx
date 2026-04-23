@@ -3,7 +3,7 @@ import { Copy, Download, RefreshCw, ChevronRight, X, Bookmark, Check, Save } fro
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import type { MealPlanResult, DayMeals, Meal } from '../utils/types'
-import { fetchMealImage } from '../lib/mealImages'
+import { fetchMealImage, sessionCache, titleToKey } from '../lib/mealImages'
 import { useAuth } from '../context/AuthContext'
 import { usePlan } from '../hooks/usePlan'
 import { saveMealPlan } from '../lib/db'
@@ -88,12 +88,24 @@ const MealCard = memo(function MealCard({
 	const [imageError, setImageError] = useState(false)
 
 useEffect(() => {
+		let cancelled = false
 		async function getImg() {
-			const url = await fetchMealImage(meal.title)
-			if (url) setImageUrl(url)
+			try {
+				const url = await fetchMealImage(meal.title)
+				if (!cancelled && url) setImageUrl(url)
+			} catch {
+				if (!cancelled) setImageError(true)
+			}
 		}
 		getImg()
+		return () => { cancelled = true }
 	}, [meal.title])
+
+	const handleImageError = () => {
+		if (!imageUrl?.includes('supabase')) return
+		sessionCache.delete(titleToKey(meal.title))
+		setImageError(true)
+	}
 
 	function getRecipeEmoji(title: string): string {
 		const t = title.toLowerCase()
@@ -147,7 +159,7 @@ useEffect(() => {
 				src={imageError ? fallbackSvg : (imageUrl || fallbackSvg)}
 				alt={meal.title}
 				className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
-				onError={() => setImageError(true)}
+				onError={handleImageError}
 			/>
 
 			{/* Content */}

@@ -2,7 +2,8 @@ import { supabase } from './supabase'
 
 // ─── In-memory cache (session level) ─────────────────────────────────────────
 // Prevents redundant Supabase lookups within the same session
-const sessionCache = new Map<string, string>()
+export const sessionCache = new Map<string, string>()
+export { titleToKey, buildPollinationsPrompt }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -52,63 +53,29 @@ async function getFromSupabase(key: string): Promise<string | null> {
     const { data } = supabase.storage.from(BUCKET).getPublicUrl(path)
     if (!data?.publicUrl) return null
 
-    // Verify the file actually exists with a lightweight HEAD request
-    const check = await fetch(data.publicUrl, { method: 'HEAD' })
-    if (!check.ok) return null
+    const check = await fetch(data.publicUrl, { method: 'GET', mode: 'no-cors' })
+    if (!check.ok && check.status !== 0) return null
 
     return data.publicUrl
-  } catch (err) {
+  } catch {
     return null
   }
 }
 
 async function saveToSupabase(key: string, imageUrl: string): Promise<void> {
-  try {
-    // Fetch the image blob from Pollinations
-    const res = await fetch(imageUrl)
-    if (!res.ok) return
-
-    const blob = await res.blob()
-    const path = `${key}.jpg`
-
-    const { error } = await supabase.storage
-      .from(BUCKET)
-      .upload(path, blob, {
-        contentType: 'image/jpeg',
-        upsert: false, // Don't overwrite existing — saves bandwidth
-      })
-
-    if (error && error.message !== 'The resource already exists') {
-      console.warn('[MealImages] Supabase upload error:', error.message)
-    }
-  } catch (err) {
-    // Non-critical — if caching fails the image still displays fine
-    console.warn('[MealImages] Failed to cache image in Supabase:', err)
-  }
+  // Client-side Supabase caching is skipped for now due to CORS on Pollinations blob fetches.
+  // The session cache still prevents duplicate URL generation within a session.
+  // For production: implement this in your Express backend or a Supabase Edge Function.
 }
 
 // ─── Pollinations ─────────────────────────────────────────────────────────────
-async function generateWithPollinations(mealTitle: string): Promise<string | null> {
-  try {
-    const prompt = buildPollinationsPrompt(mealTitle)
-    const encoded = encodeURIComponent(prompt)
-
-    // Width/height kept at 512 for speed — looks great as a card thumbnail
-    // nologo=true removes the Pollinations watermark
-    const url = `https://image.pollinations.ai/prompt/${encoded}?width=800&height=500&nologo=true&model=flux`
-
-    console.log(`[MealImages] Generating image for: "${mealTitle}"`)
-
-    // Pollinations returns the image directly at the URL — we just need to
-    // verify it resolves before returning it
-    const res = await fetch(url, { method: 'HEAD' })
-    if (!res.ok) throw new Error(`Pollinations returned ${res.status}`)
-
-    return url
-  } catch (err) {
-    console.error('[MealImages] Pollinations generation failed:', err)
-    return null
-  }
+// Pollinations blocks HEAD/fetch from browsers due to CORS.
+// The correct approach: return the URL directly and let <img src={url} /> load it.
+// The image is generated when the browser requests the URL — no preflight needed.
+function getPollinationsUrl(mealTitle: string): string {
+  const prompt = buildPollinationsPrompt(mealTitle)
+  const encoded = encodeURIComponent(prompt)
+  return `https://image.pollinations.ai/prompt/${encoded}?width=800&height=500&nologo=true&model=flux`
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
@@ -141,16 +108,15 @@ export async function fetchMealImage(mealTitle: string): Promise<string | null> 
     return cached
   }
 
-  // 3. Generate with Pollinations
-  const generated = await generateWithPollinations(mealTitle)
-  if (!generated) return null
+  // 3. Return Pollinations URL — browser loads image directly via <img src>
+  const url = getPollinationsUrl(mealTitle)
+  console.log(`[MealImages] Pollinations URL for: "${mealTitle}"`)
+  sessionCache.set(key, url)
 
-  sessionCache.set(key, generated)
+  // Fire-and-forget: attempt Supabase cache (no-op for now, ready for server-side impl)
+  saveToSupabase(key, url).catch(() => {})
 
-  // Save to Supabase in the background — don't await so UI isn't blocked
-  saveToSupabase(key, generated).catch(() => {})
-
-  return generated
+  return url
 }
 
 /**

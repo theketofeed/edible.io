@@ -143,7 +143,20 @@ app.post('/api/claude', async (req, res) => {
 
 		const json = await response.json()
 		console.log('[Claude Backend] Claude responded successfully')
-		res.json(json)
+		
+		const rawContent = json.content || json.choices?.[0]?.message?.content || ''
+		let text: string
+		
+		if (Array.isArray(rawContent)) {
+			const textBlock = rawContent.find((b: any) => b.type === 'text')
+			text = textBlock?.text || rawContent[0]?.text || ''
+		} else if (typeof rawContent === 'string') {
+			text = rawContent
+		} else {
+			text = JSON.stringify(rawContent)
+		}
+		
+		res.json({ content: [{ type: 'text', text }] })
 	} catch (err) {
 		clearTimeout(timeoutId)
 		console.error('[Claude Backend] Error:', err)

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowUp, AlertCircle, ArrowLeft, Lock } from 'lucide-react'
+import { ArrowUp, AlertCircle, ArrowLeft, Lock, ArrowUpRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { BrowserRouter as Router, Routes, Route, useNavigate, useParams, useLocation } from 'react-router-dom'
 import Header from './components/Header'
+import logo from './assets/Transparent logo.png'
 import HeroSection from './components/HeroSection'
 import UploadArea from './components/UploadArea'
 import DietSelector from './components/DietSelector'
@@ -323,20 +324,27 @@ function MainContent() {
 
 									{aiUnavailable && !isLoading && (
 										<motion.div
-											initial={{ opacity: 0, y: 8 }}
-											animate={{ opacity: 1, y: 0 }}
-											className="p-6 bg-amber-50 border border-amber-200 rounded-xl text-center mx-0"
+											initial={{ opacity: 0, scale: 0.95 }}
+											animate={{ opacity: 1, scale: 1 }}
+											className="p-8 bg-white border border-purple-100 rounded-3xl text-center shadow-xl shadow-purple-500/5 max-w-lg mx-auto"
 										>
-											<div className="text-3xl mb-3">🤖</div>
-											<p className="font-bold text-amber-900 mb-1 text-lg">AI is taking a breather</p>
-											<p className="text-sm text-amber-700 mb-5 max-w-sm mx-auto">
-												Both AI providers timed out. This usually fixes itself in a few seconds — give it another try!
+											<motion.img 
+												src={logo} 
+												alt="Edible" 
+												className="w-16 h-16 mb-6 mx-auto object-contain"
+												animate={{ scale: [1, 1.05, 1] }}
+												transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+											/>
+											<h3 className="text-2xl font-black text-gray-900 mb-2">edible is taking a breather</h3>
+											<p className="text-gray-600 mb-8 leading-relaxed">
+												edible is experiencing high demand right now. This usually fixes itself in a few seconds — give it another try!
 											</p>
 											<button
 												onClick={handleGenerate}
-												className="px-7 py-3 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold rounded-xl transition-all shadow-md"
+												className="w-full sm:w-auto px-8 py-4 bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-bold rounded-2xl transition-all shadow-lg shadow-purple-200 flex items-center justify-center gap-2 group mx-auto"
 											>
 												Try Again
+												<ArrowUpRight className="w-5 h-5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
 											</button>
 										</motion.div>
 									)}

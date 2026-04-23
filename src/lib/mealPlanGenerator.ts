@@ -201,14 +201,27 @@ async function callClaude(prompt: string): Promise<{ totalDays: number; days: Da
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt }),
-      signal: AbortSignal.timeout(12000), // 12s timeout
+      signal: AbortSignal.timeout(12000),
     })
 
     if (!response.ok) throw new Error(`Backend HTTP ${response.status}`)
 
     const json = await response.json()
-    const content = json.content?.[0]?.text
-    if (!content) throw new Error('Missing content in Claude response')
+    
+    let content: string
+    if (json.content && Array.isArray(json.content)) {
+      const textBlock = json.content.find((b: any) => b.type === 'text')
+      content = textBlock?.text || json.content[0]?.text || ''
+    } else if (typeof json.content === 'string') {
+      content = json.content
+    } else {
+      content = ''
+    }
+    
+    if (!content) {
+      console.warn('[Claude] Empty response content')
+      return null
+    }
 
     const cleaned = content.replace(/```json\n?|\n?```/g, '').trim()
     const parsed = JSON.parse(cleaned)

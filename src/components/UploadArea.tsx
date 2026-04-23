@@ -313,11 +313,6 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 									<span className="text-black/50">•</span>
 									<span className="text-black/50">{formatFileSize(selectedFile.size)}</span>
 								</div>
-								{typeof detectedCount === 'number' && detectedCount > 0 && (
-									<p className="text-xs text-black/60 mt-2">
-										✓ {detectedCount} items detected
-									</p>
-								)}
 								{typeof ocrConfidence === 'number' && (
 									<p className="text-xs text-black/50 mt-1">
 										OCR confidence: {Math.round(ocrConfidence)}%
