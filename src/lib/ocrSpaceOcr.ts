@@ -11,48 +11,53 @@ interface OcrSpaceResponse {
     OCRExitCode?: number
 }
 
+/**
+ * Convert a File to a base64 data URI string.
+ */
+async function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+    })
+}
+
 export async function runOcrSpace(file: File) {
-    const apiKey = import.meta.env.VITE_OCR_SPACE_API_KEY
+    console.log('[OCR] Converting file to base64 for proxy...')
 
-    // Diagnostic logging
-    console.log('[OCR] Loading env vars. Available keys:', Object.keys(import.meta.env).filter(k => k.startsWith('VITE_')))
+    const base64Image = await fileToBase64(file)
 
-    if (!apiKey) {
-        throw new Error(`Missing OCR.space API key. Available keys: ${Object.keys(import.meta.env).filter(k => k.startsWith('VITE_')).join(', ')}`)
-    }
-
-    const formData = new FormData()
-    formData.append('file', file)
-    // formData.append('apikey', apiKey) // Using header instead
-    formData.append('language', 'eng')
-    formData.append('isOverlayRequired', 'false')
-    formData.append('detectOrientation', 'true')
-    formData.append('scale', 'true')
-    formData.append('OCREngine', '2') // Engine 2 is better for receipts/numbers
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
 
     try {
-        console.log('[OCR] Sending request to OCR.space with key length:', apiKey.length)
+        console.log('[OCR] Sending request to backend OCR proxy...')
 
         const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 35000) // 35s (server has 30s internal timeout)
 
         try {
-            const response = await fetch('https://api.ocr.space/parse/image', {
+            const response = await fetch(`${backendUrl}/api/ocr`, {
                 method: 'POST',
                 headers: {
-                    'apikey': apiKey
+                    'Content-Type': 'application/json'
                 },
-                body: formData,
+                body: JSON.stringify({
+                    base64Image,
+                    language: 'eng',
+                    ocrEngine: '2' // Engine 2 is better for receipts/numbers
+                }),
                 signal: controller.signal
             })
             clearTimeout(timeoutId)
 
             if (!response.ok) {
-                throw new Error(`OCR.space API error: ${response.statusText}`)
+                const errorData = await response.json().catch(() => ({ error: response.statusText }))
+                throw new Error(`OCR proxy error: ${errorData.error || response.statusText}`)
             }
 
             const data: OcrSpaceResponse = await response.json()
-            // ... strict check rest of logic ...
+
             if (data.IsErroredOnProcessing || (data.ErrorMessage && data.ErrorMessage.length > 0)) {
                 const errorMsg = data.ErrorMessage?.join(', ') || 'Unknown error from OCR.space'
                 throw new Error(errorMsg)
@@ -72,6 +77,8 @@ export async function runOcrSpace(file: File) {
             const confidence = rawText.length > 10 ? 90 : 50
             const items = extractGroceryItems(rawText)
 
+            console.log('[OCR] ✅ Successfully parsed text:', rawText.substring(0, 100) + '...')
+
             return {
                 items,
                 rawText,
@@ -79,10 +86,10 @@ export async function runOcrSpace(file: File) {
                 metadata: null
             }
 
-        } catch (fetchError) {
+        } catch (fetchError: any) {
             clearTimeout(timeoutId)
-            if (initialErrorIsAbort(fetchError)) { // Check if aborted
-                throw new Error('OCR request timed out after 30 seconds. Please check your internet connection.')
+            if (fetchError.name === 'AbortError' || (fetchError instanceof DOMException && fetchError.name === 'AbortError')) {
+                throw new Error('OCR request timed out after 35 seconds. Please check your internet connection.')
             }
             throw fetchError
         }
@@ -91,8 +98,4 @@ export async function runOcrSpace(file: File) {
         console.error('OCR.space error:', error)
         throw error
     }
-}
-
-function initialErrorIsAbort(e: any) {
-    return e.name === 'AbortError' || (e instanceof DOMException && e.name === 'AbortError')
 }

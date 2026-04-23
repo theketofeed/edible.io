@@ -121,6 +121,64 @@ app.post('/api/claude', async (req, res) => {
 	}
 })
 
+// ─── OCR.space proxy ───────────────────────────────────────────────────────
+app.post('/api/ocr', async (req, res) => {
+	try {
+		const apiKey = process.env.VITE_OCR_SPACE_API_KEY
+		if (!apiKey) {
+			return res.status(500).json({ error: 'OCR.space API key not configured on server' })
+		}
+
+		// The frontend sends us base64 image data + options
+		const { base64Image, language, ocrEngine } = req.body
+
+		if (!base64Image) {
+			return res.status(400).json({ error: 'Missing base64Image in request body' })
+		}
+
+		console.log('[OCR Proxy] Forwarding request to OCR.space...')
+
+		const formBody = new URLSearchParams()
+		formBody.append('base64Image', base64Image)
+		formBody.append('language', language || 'eng')
+		formBody.append('isOverlayRequired', 'false')
+		formBody.append('detectOrientation', 'true')
+		formBody.append('scale', 'true')
+		formBody.append('OCREngine', ocrEngine || '2')
+
+		const controller = new AbortController()
+		const timeoutId = setTimeout(() => controller.abort(), 30000)
+
+		const response = await fetch('https://api.ocr.space/parse/image', {
+			method: 'POST',
+			headers: {
+				'apikey': apiKey,
+				'Content-Type': 'application/x-www-form-urlencoded'
+			},
+			body: formBody.toString(),
+			signal: controller.signal
+		})
+		clearTimeout(timeoutId)
+
+		if (!response.ok) {
+			const text = await response.text().catch(() => '')
+			console.error(`[OCR Proxy] HTTP ${response.status}: ${text}`)
+			return res.status(response.status).json({ error: `OCR.space API error: ${response.status}`, details: text })
+		}
+
+		const data = await response.json()
+		console.log('[OCR Proxy] ✅ Success')
+		res.json(data)
+
+	} catch (err) {
+		console.error('[OCR Proxy] Error:', err)
+		if (err.name === 'AbortError') {
+			return res.status(504).json({ error: 'OCR.space request timed out' })
+		}
+		res.status(500).json({ error: err.message })
+	}
+})
+
 // ─── Checkout ──────────────────────────────────────────────────────────────
 app.post('/api/checkout', async (req, res) => {
 	try {
