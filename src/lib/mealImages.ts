@@ -71,63 +71,37 @@ function getCategoryFallback(mealTitle: string): string {
   return 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&h=500&fit=crop'
 }
 
-// ─── HuggingFace FLUX.1-schnell (AI generation) ───────────────────────────────
-// Free tier: 1,000 req/day. 2–5s generation time. State-of-the-art quality.
-// Get your free key at: https://huggingface.co/settings/tokens
-const HF_MODEL_URL = 'https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell'
-
+// ─── HuggingFace FLUX.1-schnell via Backend Proxy (safer, handles retries) ──
+// Backend proxies all HuggingFace calls for better reliability and security
 async function generateWithHuggingFace(mealTitle: string): Promise<string | null> {
-  const apiKey = (import.meta as any).env?.VITE_HF_API_KEY as string | undefined
-  if (!apiKey?.trim() || apiKey === 'your_key_here') return null
-
-  const prompt = buildFoodPrompt(mealTitle)
-
+  const backendUrl = (import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:3001'
+  
   try {
-    const response = await fetch(HF_MODEL_URL, {
+    console.log(`[MealImages] Requesting HF generation for: "${mealTitle}"`)
+    const response = await fetch(`${backendUrl}/api/generate-meal-image`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ inputs: prompt }),
-      signal: AbortSignal.timeout(30000),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mealTitle }),
+      signal: AbortSignal.timeout(40000),
     })
 
-    // Model cold-starting — wait and retry once
-    if (response.status === 503) {
-      const errorData = await response.json().catch(() => ({}))
-      const waitMs = Math.min((errorData.estimated_time || 20) * 1000, 20000)
-      console.log(`[MealImages] HF model loading, waiting ${waitMs / 1000}s...`)
-      await new Promise(r => setTimeout(r, waitMs))
-
-      const retry = await fetch(HF_MODEL_URL, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ inputs: prompt }),
-        signal: AbortSignal.timeout(30000),
-      })
-      if (!retry.ok) {
-        console.warn(`[MealImages] HF retry failed: ${retry.status}`)
-        return null
-      }
-      const blob = await retry.blob()
-      return URL.createObjectURL(blob)
-    }
-
     if (!response.ok) {
-      console.warn(`[MealImages] HF API error: ${response.status}`)
+      const error = await response.json().catch(() => ({}))
+      console.warn(`[MealImages] HF backend error: ${response.status} -`, error)
       return null
     }
 
     const blob = await response.blob()
+    if (blob.size === 0) {
+      console.warn('[MealImages] HF returned empty blob')
+      return null
+    }
+
     const objectUrl = URL.createObjectURL(blob)
-    console.log(`[MealImages] ✅ HF generated image for: "${mealTitle}"`)
+    console.log(`[MealImages] ✅ HF generated image (${blob.size} bytes) for: "${mealTitle}"`)
     return objectUrl
   } catch (err) {
-    console.warn('[MealImages] HF generation failed:', err)
+    console.warn('[MealImages] HF generation failed:', err instanceof Error ? err.message : err)
     return null
   }
 }
@@ -139,11 +113,14 @@ async function generateWithHuggingFace(mealTitle: string): Promise<string | null
  * Strategy:
  * 1. Session memory cache → instant
  * 2. Category fallback    → instant (used immediately while AI generates)
- * 3. HuggingFace FLUX     → 2–5s AI generation, replaces fallback in cache
+ * 3. HuggingFace FLUX     → 2–5s AI generation via backend proxy, replaces fallback in cache
  *
  * The AI generation runs in the background — components that call this will
  * get the fallback instantly, and if called again for the same meal after
  * generation completes, they'll get the AI image.
+ * 
+ * Setup required: Add VITE_HF_API_KEY to .env.local
+ * See .env.local.template for instructions
  */
 export async function fetchMealImage(mealTitle: string): Promise<string | null> {
   if (!mealTitle?.trim()) return null
@@ -151,19 +128,31 @@ export async function fetchMealImage(mealTitle: string): Promise<string | null> 
   const key = titleToKey(mealTitle)
 
   // 1. Session cache — zero latency
-  if (sessionCache.has(key)) return sessionCache.get(key)!
+  if (sessionCache.has(key)) {
+    const cached = sessionCache.get(key)!
+    console.log(`[MealImages] Cache hit for: "${mealTitle}"`)
+    return cached
+  }
 
   // 2. Set category fallback immediately so the image slot is never empty
   const fallback = getCategoryFallback(mealTitle)
   sessionCache.set(key, fallback)
+  console.log(`[MealImages] Using fallback for: "${mealTitle}" (will upgrade to AI if available)`)
 
   // 3. Fire AI generation in background — updates cache when done
   //    (next render cycle or page navigation will use the upgraded URL)
-  generateWithHuggingFace(mealTitle).then(aiUrl => {
-    if (aiUrl) {
-      sessionCache.set(key, aiUrl)
-    }
-  })
+  generateWithHuggingFace(mealTitle)
+    .then(aiUrl => {
+      if (aiUrl) {
+        sessionCache.set(key, aiUrl)
+        console.log(`[MealImages] ✅ Upgraded cache with AI image for: "${mealTitle}"`)
+      } else {
+        console.log(`[MealImages] AI generation unavailable for: "${mealTitle}" — using fallback`)
+      }
+    })
+    .catch(err => {
+      console.error(`[MealImages] Unexpected error generating image for "${mealTitle}":`, err)
+    })
 
   return fallback
 }

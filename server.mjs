@@ -41,7 +41,8 @@ app.use(cors())
 
 const rawBodyParser = express.raw({ type: 'application/json' })
 app.use('/api/webhooks', rawBodyParser)
-app.use(express.json())
+app.use(express.json({ limit: '25mb' }))
+app.use(express.urlencoded({ limit: '25mb', extended: true }))
 
 // ─── Claude API proxy ──────────────────────────────────────────────────────
 app.post('/api/claude', async (req, res) => {
@@ -276,6 +277,92 @@ app.post('/api/webhooks/dodo', async (req, res) => {
     console.error('[Webhook] Unhandled error:', err)
     res.status(200).json({ error: err.message })
   }
+})
+
+// ─── HuggingFace Image Generation Proxy ────────────────────────────────────
+app.post('/api/generate-meal-image', async (req, res) => {
+	const { mealTitle } = req.body
+
+	if (!mealTitle || typeof mealTitle !== 'string') {
+		return res.status(400).json({ error: 'Missing or invalid mealTitle' })
+	}
+
+	const apiKey = process.env.VITE_HF_API_KEY
+	if (!apiKey || apiKey.trim() === '' || apiKey === 'your_key_here') {
+		console.warn('[MealImages] No valid HuggingFace API key found.')
+		return res.status(400).json({ error: 'HuggingFace API key not configured' })
+	}
+
+	const HF_MODEL_URL = 'https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell'
+
+	const buildFoodPrompt = (title) => [
+		title,
+		'professional food photography',
+		'restaurant quality plating',
+		'natural lighting',
+		'shallow depth of field',
+		'white ceramic plate',
+		'appetizing',
+		'vibrant colors',
+		'4k ultra HD',
+	].join(', ')
+
+	const prompt = buildFoodPrompt(mealTitle)
+
+	try {
+		console.log(`[MealImages] Generating image for: "${mealTitle}"`)
+
+		const response = await fetch(HF_MODEL_URL, {
+			method: 'POST',
+			headers: {
+				'Authorization': `Bearer ${apiKey}`,
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({ inputs: prompt }),
+			timeout: 35000,
+		})
+
+		// Model cold-starting — wait and retry once
+		if (response.status === 503) {
+			const errorData = await response.json().catch(() => ({}))
+			const waitMs = Math.min((errorData.estimated_time || 20) * 1000, 20000)
+			console.log(`[MealImages] HF model loading, waiting ${waitMs / 1000}s...`)
+			await new Promise(r => setTimeout(r, waitMs))
+
+			const retry = await fetch(HF_MODEL_URL, {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${apiKey}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ inputs: prompt }),
+				timeout: 35000,
+			})
+
+			if (!retry.ok) {
+				console.warn(`[MealImages] HF retry failed: ${retry.status}`)
+				return res.status(500).json({ error: 'HuggingFace retry failed' })
+			}
+
+			const blob = await retry.buffer()
+			res.set('Content-Type', 'image/jpeg')
+			return res.send(blob)
+		}
+
+		if (!response.ok) {
+			const text = await response.text().catch(() => '')
+			console.warn(`[MealImages] HF API error: ${response.status} - ${text}`)
+			return res.status(response.status).json({ error: `HuggingFace API error: ${response.status}` })
+		}
+
+		const blob = await response.buffer()
+		console.log(`[MealImages] ✅ HF generated image (${blob.length} bytes) for: "${mealTitle}"`)
+		res.set('Content-Type', 'image/jpeg')
+		res.send(blob)
+	} catch (err) {
+		console.error('[MealImages] Generation failed:', err?.message || err)
+		res.status(500).json({ error: 'Image generation failed', details: err?.message })
+	}
 })
 
 // ─── Health check ──────────────────────────────────────────────────────────
