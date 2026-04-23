@@ -201,7 +201,7 @@ async function callClaude(prompt: string): Promise<{ totalDays: number; days: Da
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt }),
-      signal: AbortSignal.timeout(12000),
+      signal: AbortSignal.timeout(40000),
     })
 
     if (!response.ok) throw new Error(`Backend HTTP ${response.status}`)

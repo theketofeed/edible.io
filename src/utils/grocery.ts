@@ -1,4 +1,4 @@
-// Receipt metadata patterns - ONLY obvious non-food items
+// Receipt metadata patterns - obvious non-food single words
 const RECEIPT_METADATA_PATTERNS = [
 	/^subtotal$/i,
 	/^total$/i,
@@ -12,91 +12,127 @@ const RECEIPT_METADATA_PATTERNS = [
 	/^loyalty$/i,
 	/^date$/i,
 	/^receipt$/i,
-	/^thank\s+you$/i,
 ]
 
 const EXCLUDED_PATTERNS = [
-	// Weight/measure garbage - lines with just weights
-	/kg\s*net/i,
-	/lb\s*net/i,
-	/lbs?(?:\s|$)/i,
-	/\boz(?:\s|$)/i,
-	// Price patterns (including price/weight combos)
-	/\$\d+[\.,]\d{2}/i, // $X.XX
-	/£\d+[\.,]\d{2}/i, // £X.XX
-	/€\d+[\.,]\d{2}/i, // €X.XX
-	/\$\d+[\.,]\d{2}\/kg/i, // $X.XX/kg
-	/\$\d+[\.,]\d{2}\/lb/i, // $X.XX/lb
-	// Single generic words
-	/^special$/i,
-	/^loyalty$/i,
-	/^subtotal$/i,
-	/^total$/i,
-	/^cash$/i,
-	/^change$/i,
-	/^date$/i,
-	/^receipt$/i,
-	/^thank\s+you$/i,
-	// Date patterns: MM/DD/YYYY, DD/MM/YYYY
-	/^\d{1,2}\/\d{1,2}\/\d{4}$/,
-	// Days of week (case insensitive)
-	/^(mon|tue|wed|thu|fri|sat|sun)$/i,
-	// Lines that are only numbers (including negative, decimals)
+	// Phone numbers
+	/\b\d{3}[-.\s]\d{3}[-.\s]\d{4}\b/,
+	/tel\s*\d/i,
+	/phone/i,
+	// Email addresses
+	/@[a-z0-9.-]+\.[a-z]{2,}/i,
+	// Transaction / card info
+	/\bdebit\b/i,
+	/\bcredit\b/i,
+	/\bvisa\b/i,
+	/\bmastercard\b/i,
+	/\bapproved\b/i,
+	/\bdeclined\b/i,
+	/\bterm\s*id\b/i,
+	/\bsequence\s*#/i,
+	/\btransaction\b/i,
+	/\bauth\b/i,
+	/\bref\s*#/i,
+	/\bcard\b/i,
+	/\bpin\b/i,
+	// Hex/alphanumeric transaction codes (e.g. "fe010d03")
+	/^[a-f0-9]{6,}$/i,
+	/^[a-z0-9]{8,}$/i,
+	// Date/time patterns
+	/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s+\d{1,2}\s+\d{4}/i,
+	/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/,
+	/\d{1,2}:\d{2}(:\d{2})?(\s*(am|pm))?/i,
+	/date\/time/i,
+	// Store address / location info
+	/\b\d+\s+[a-z]+\s+(avenue|ave|street|st|road|rd|blvd|drive|dr|lane|ln|way)\b/i,
+	/\b(oshawa|toronto|vancouver|calgary|ottawa|montreal|winnipeg)\b/i, // Canadian cities
+	/\b(new york|los angeles|chicago|houston|phoenix|philadelphia)\b/i, // US cities
+	// Store-specific footer text
+	/feedback/i,
+	/comments to/i,
+	/please email/i,
+	/we value/i,
+	/visit us/i,
+	/follow us/i,
+	/survey/i,
+	/farmboy/i,
+	/walmart/i,
+	/costco/i,
+	/target/i,
+	/^result$/i,
+	// Price patterns
+	/\$\d+[\.,]\d{2}/,
+	/£\d+[\.,]\d{2}/,
+	/€\d+[\.,]\d{2}/,
+	// Lines that are only numbers
 	/^-?\d+\.?\d*$/,
 	// Lines that are only symbols
 	/^[\*\-\._]{2,}$/,
-	// Existing patterns
-	/^\$?\d+\.?\d*\s*[ft]?$/i, // Prices like "$6.99 f"
-	/^@/i, // Price indicators like "@ 5 for"
-	/lb\s*@/i, // Weight prices
+	// Price indicators
+	/^\$?\d+\.?\d*\s*[ft]?$/i,
+	/^@/i,
+	/lb\s*@/i,
 	/tare\s*weight/i,
-	/subtotal|total|tax|fee|paid|visa|rate|amt/i,
-	/^\d{3}-\d{4}/i, // Phone numbers
-	/^(whole|foods\.?|market|tribeca|trb|greenwich|street|new york|city|ny|10007)/i, // Store info
-	/^--/i, // Separators
+	/subtotal|sub\s*total|total|tax|fee|paid|visa|rate|taxed\s+amt/i,
+	/^\d{3}-\d{4}/i,
+	/^--/i,
 	/metropolita|summary/i,
 	/^name$/i,
 	/^amt\.?$/i,
-	/^taxed/i,
 	/^sold items/i,
-	/^\d+:\d+$/i, // Times like "21:53"
-	/^c\s+\d/i, // Tax codes like "c 4.50"
-	/^\$\s*\d/i, // Dollar amounts like "$ 4.00"
-];
+	/^\d+:\d+$/i,
+	/^c\s+\d/i,
+	/^\$\s*\d/i,
+	// Sequence numbers (long digit strings)
+	/^\d{8,}$/,
+	/^#\s*\d{6,}/,
+	// "result", "approved", generic transaction words
+	/^(result|approved|declined|void|refund)$/i,
+	// Postal codes
+	/\b[a-z]\d[a-z]\s*\d[a-z]\d\b/i, // Canadian postal
+	/\b\d{5}(-\d{4})?\b/, // US ZIP
+]
 
 const isExcluded = (text: string) =>
-	EXCLUDED_PATTERNS.some(pattern => pattern.test(text));
+	EXCLUDED_PATTERNS.some(pattern => pattern.test(text))
 
 // Food keywords that indicate a valid food item
 const FOOD_KEYWORDS = new Set([
 	// Vegetables
 	'zucchini', 'banana', 'potato', 'potatoes', 'broccoli', 'brussels', 'sprouts', 'peas', 'tomato', 'tomatoes', 'lettuce',
 	'spinach', 'kale', 'carrot', 'carrots', 'onion', 'onions', 'pepper', 'peppers', 'cucumber', 'cucumbers', 'celery',
-	'corn', 'bean', 'beans', 'black bean', 'black beans', 'peas', 'asparagus', 'cauliflower', 'cabbage', 'mushroom', 'mushrooms', 'avocado', 'avocados',
-	'romaine', 'cilantro', 'heart',
+	'corn', 'bean', 'beans', 'black bean', 'black beans', 'asparagus', 'cauliflower', 'cabbage', 'mushroom', 'mushrooms',
+	'avocado', 'avocados', 'romaine', 'cilantro', 'heart', 'arugula', 'leek', 'leeks', 'radish', 'beet', 'beets',
+	'squash', 'pumpkin', 'artichoke', 'eggplant', 'sweet potato',
 	// Fruits
 	'apple', 'apples', 'orange', 'oranges', 'grape', 'grapes', 'berry', 'berries', 'strawberry', 'strawberries',
 	'blueberry', 'blueberries', 'raspberry', 'raspberries', 'peach', 'peaches', 'pear', 'pears', 'plum', 'plums',
 	'cherry', 'cherries', 'mango', 'mangoes', 'pineapple', 'watermelon', 'melon', 'kiwi', 'kiwis', 'lemon', 'lemons',
-	'lime', 'limes', 'raisins',
+	'lime', 'limes', 'raisins', 'apricot', 'nectarine', 'fig', 'date', 'pomegranate',
 	// Proteins
 	'chicken', 'turkey', 'beef', 'pork', 'fish', 'salmon', 'tuna', 'shrimp', 'crab', 'crabmeat', 'lobster', 'egg', 'eggs',
-	'tofu', 'tempeh', 'seitan', 'bacon', 'sausage', 'ham', 'steak', 'ground', 'tenders', 'ckn', 'roti',
+	'tofu', 'tempeh', 'seitan', 'bacon', 'sausage', 'ham', 'steak', 'ground', 'tenders', 'ckn', 'roti', 'tilapia',
+	'cod', 'halibut', 'trout', 'sardine', 'anchovy', 'duck', 'lamb', 'veal', 'venison',
 	// Dairy
 	'milk', 'cheese', 'yogurt', 'yoghurt', 'butter', 'cream', 'sour cream', 'cottage cheese', 'greek yogurt', 'shred',
+	'mozzarella', 'cheddar', 'parmesan', 'feta', 'brie', 'gouda', 'ricotta',
 	// Grains / bakery
 	'bread', 'rice', 'pasta', 'noodles', 'quinoa', 'oats', 'oatmeal', 'wheat', 'barley', 'couscous', 'tortilla', 'wrap',
-	'croissant', 'cookies',
+	'croissant', 'cookies', 'bagel', 'muffin', 'roll', 'bun', 'pita', 'cracker', 'cereal', 'granola', 'flour',
 	// Other / pantry
-	'oil', 'olive', 'olive oil', 'vinegar', 'balsamic', 'balsamic vinegar', 'salt', 'sugar', 'flour', 'honey', 'jam', 'jelly',
+	'oil', 'olive', 'olive oil', 'vinegar', 'balsamic', 'balsamic vinegar', 'salt', 'sugar', 'honey', 'jam', 'jelly',
 	'peanut', 'peanuts', 'almond', 'almonds', 'walnut', 'walnuts', 'cashew', 'cashews', 'seed', 'seeds', 'nut', 'nuts',
+	'butter', 'margarine', 'shortening', 'lard',
 	// Herbs and spices
 	'cilantro', 'parsley', 'basil', 'oregano', 'thyme', 'rosemary', 'sage', 'mint', 'garlic', 'ginger', 'cumin',
-	'paprika', 'pepper', 'peppercorn', 'cinnamon', 'nutmeg', 'bay leaf', 'turmeric', 'dill', 'tarragon',
+	'paprika', 'cinnamon', 'nutmeg', 'bay leaf', 'turmeric', 'dill', 'tarragon', 'chili', 'cayenne', 'curry',
 	// Common condiments
-	'ketchup', 'mustard', 'mayo', 'mayonnaise', 'sauce', 'salsa', 'pesto', 'soy sauce',
-	// Coffee
-	'coffee', 'roast',
+	'ketchup', 'mustard', 'mayo', 'mayonnaise', 'sauce', 'salsa', 'pesto', 'soy sauce', 'hot sauce', 'sriracha',
+	'hummus', 'tahini', 'ranch', 'dressing',
+	// Beverages
+	'coffee', 'roast', 'tea', 'juice', 'water', 'milk',
+	// Frozen / misc
+	'pizza', 'frozen', 'ice cream', 'sorbet',
 ])
 
 function normalizeItem(value: string): string {
@@ -107,15 +143,13 @@ function normalizeItem(value: string): string {
 
 	if (!cleaned || cleaned.length < 2) return ''
 
-	// ── Strip LEADING weight measurements ──────────────────
-	// Handles: "0.778kg zucchini", "1.5 lb chicken", "200g spinach"
+	// Strip LEADING weight measurements
 	cleaned = cleaned
-		.replace(/^\d+[\.,]?\d*\s*kg\s+/i, '')	   // "0.778kg zucchini" → "zucchini"
-		.replace(/^\d+[\.,]?\d*\s*lbs?\s+/i, '')  // "1.5 lb chicken" → "chicken"
-		.replace(/^\d+[\.,]?\d*\s*oz\s+/i, '')    // "5.5oz salmon" → "salmon"
-		.replace(/^\d+[\.,]?\d*\s*g\s+/i, '')	    // "200g spinach" → "spinach"
+		.replace(/^\d+[\.,]?\d*\s*kg\s+/i, '')
+		.replace(/^\d+[\.,]?\d*\s*lbs?\s+/i, '')
+		.replace(/^\d+[\.,]?\d*\s*oz\s+/i, '')
+		.replace(/^\d+[\.,]?\d*\s*g\s+/i, '')
 		.trim()
-	// ────────────────────────────────────────────────────────
 
 	// Strip TRAILING weight suffixes
 	cleaned = cleaned
@@ -130,6 +164,9 @@ function normalizeItem(value: string): string {
 
 	// Strip prices at the end
 	cleaned = cleaned.replace(/\s*\$\d+[\.,]\d{2}\s*$/, '').trim()
+	
+	// Strip trailing price-per-weight like "@ $4.39/kg" or "1@ 3/$2.50"
+	cleaned = cleaned.replace(/\s*\d*@.*$/i, '').trim()
 
 	// Strip line numbers at start
 	cleaned = cleaned.replace(/^\d+[\s.\-:]+/, '').trim()
@@ -137,14 +174,9 @@ function normalizeItem(value: string): string {
 	return cleaned
 }
 
-/**
- * Convert weight quantities to human-readable format
- * Examples: "1.85 lb" → "1 lb 13 oz", "0.778 kg" → "~778g"
- */
 export function humanReadableWeight(quantity: string | number): string {
 	const raw = String(quantity).trim()
 
-	// Parse "1.85 lb" format
 	const lbMatch = raw.match(/^(\d+[\.,]?\d*)\s*lbs?$/i)
 	if (lbMatch) {
 		const lbs = parseFloat(lbMatch[1].replace(',', '.'))
@@ -155,7 +187,6 @@ export function humanReadableWeight(quantity: string | number): string {
 		return remOz > 0 ? `${wholeLbs} lb ${remOz} oz` : `${wholeLbs} lb`
 	}
 
-	// Parse "0.778 kg" format
 	const kgMatch = raw.match(/^(\d+[\.,]?\d*)\s*kg$/i)
 	if (kgMatch) {
 		const kg = parseFloat(kgMatch[1].replace(',', '.'))
@@ -163,7 +194,6 @@ export function humanReadableWeight(quantity: string | number): string {
 		return `${kg.toFixed(2).replace(/\.?0+$/, '')} kg`
 	}
 
-	// Parse "200 g" format
 	const gMatch = raw.match(/^(\d+[\.,]?\d*)\s*g$/i)
 	if (gMatch) {
 		const g = parseFloat(gMatch[1].replace(',', '.'))
@@ -171,7 +201,7 @@ export function humanReadableWeight(quantity: string | number): string {
 		return `~${Math.round(g)}g`
 	}
 
-	return raw  // return as-is if no match
+	return raw
 }
 
 function looksLikeFood(item: string): boolean {
@@ -179,23 +209,37 @@ function looksLikeFood(item: string): boolean {
 
 	const lower = item.toLowerCase()
 
-	// CRITICAL: Check exclusions FIRST
-	if (isExcluded(lower)) {
-		return false
-	}
+	// Check exclusions first
+	if (isExcluded(lower)) return false
 
-	// Reject obvious metadata
+	// Reject obvious metadata words
 	for (const pattern of RECEIPT_METADATA_PATTERNS) {
 		if (pattern.test(lower)) return false
 	}
+
+	// Reject items that contain digits mixed with letters in a transaction-ID way
+	// e.g. "fe010d03", "595001001061", "fe010d03"
+	if (/^[a-f0-9]{6,}$/i.test(lower)) return false
+	if (/^\d{6,}$/.test(lower)) return false
+
+	// Reject items with @ symbol (price indicators)
+	if (lower.includes('@')) return false
+
+	// Reject items that look like store names / addresses
+	if (/\d+\s+(first|second|third|avenue|street|road)/i.test(lower)) return false
 
 	// Accept anything that contains a food keyword
 	for (const keyword of FOOD_KEYWORDS) {
 		if (lower.includes(keyword)) return true
 	}
 
-	// Reject short all-caps items with no vowels
+	// Reject short all-caps items with no vowels (codes/abbreviations)
 	if (item.length <= 4 && item === item.toUpperCase() && !/[aeiou]/i.test(item)) {
+		return false
+	}
+
+	// Reject items that are suspiciously long with no food keywords (likely addresses/descriptions)
+	if (lower.length > 40 && !Array.from(FOOD_KEYWORDS).some(kw => lower.includes(kw))) {
 		return false
 	}
 
@@ -215,25 +259,21 @@ export function cleanGroceryList(inputItems: string[]): string[] {
 		const normalized = normalizeItem(raw).trim()
 		if (!normalized) continue
 
-		// Skip items shorter than 3 characters
 		if (normalized.length < 3) {
 			console.log(`[Cleaning] Item too short (< 3 chars): "${normalized}"`)
 			continue
 		}
 
-		// CRITICAL: Apply exclusion check
 		if (isExcluded(normalized)) {
 			console.log(`[Cleaning] Excluded by pattern: "${raw}"`)
 			continue
 		}
 
-		// Filter obvious non-food items
 		if (!looksLikeFood(normalized)) {
 			console.log(`[Cleaning] Filtered out: "${raw}"`)
 			continue
 		}
 
-		// Deduplicate
 		const key = normalized.toLowerCase()
 		if (!seen.has(key)) {
 			seen.add(key)
@@ -260,28 +300,23 @@ export function extractGroceryItems(input: string): string[] {
 		const normalized = normalizeItem(line)
 		if (!normalized) continue
 
-		// Skip items shorter than 3 characters
 		if (normalized.length < 3) {
 			console.log(`[Extraction] Item too short (< 3 chars): "${normalized}"`)
 			continue
 		}
 
-		// CRITICAL: Apply exclusion check
 		if (isExcluded(normalized)) {
 			console.log(`[Extraction] Excluded by pattern: "${line}"`)
 			continue
 		}
 
-		// Check if it looks like food
 		if (!looksLikeFood(normalized)) {
 			console.log(`[Extraction] Filtered out: "${line}" (not recognized as food)`)
 			continue
 		}
 
-		// Deduplicate
 		const key = normalized.toLowerCase()
 		if (seen.has(key)) {
-			console.log(`[Extraction] Skipping duplicate: "${line}"`)
 			continue
 		}
 
@@ -327,7 +362,7 @@ Return a JSON array of objects with this structure:
 ]
 
 Rules:
-- Extract ONLY food items (no store info, totals, dates, etc.)
+- Extract ONLY food items (no store info, totals, dates, transaction codes, phone numbers, emails, addresses, etc.)
 - Clean up item names (remove brand names if obvious)
 - Infer category: protein, vegetable, fruit, dairy, grain, pantry, frozen, or miscellaneous
 - If quantity is unclear, use "1 unit"
@@ -336,7 +371,6 @@ Rules:
 Receipt text:
 ${rawOcrText}`
 
-		console.log('[ReceiptAI] Sending receipt text to Groq for parsing')
 		const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
 			method: 'POST',
 			headers: {
@@ -363,16 +397,11 @@ ${rawOcrText}`
 		const content = json.choices?.[0]?.message?.content
 		if (!content) throw new Error('Missing content in Groq response')
 
-		console.log('[ReceiptAI] Raw AI response:', content)
-
-		// Parse the response - could be an array directly or wrapped in an object
 		let parsedItems: any[] = []
 		try {
 			const parsed = JSON.parse(content)
 			parsedItems = Array.isArray(parsed) ? parsed : (parsed.items || parsed.food_items || [])
 		} catch (e) {
-			console.error('[ReceiptAI] Failed to parse AI response as JSON:', e)
-			// Fallback to basic extraction
 			const basicItems = extractGroceryItems(rawOcrText)
 			return {
 				items: basicItems.map(item => ({
@@ -385,9 +414,6 @@ ${rawOcrText}`
 			}
 		}
 
-		console.log('[ReceiptAI] Parsed items from AI:', parsedItems)
-
-		// Validate and clean up the parsed items
 		const validCategories = ['protein', 'vegetable', 'fruit', 'dairy', 'grain', 'pantry', 'frozen', 'miscellaneous']
 		const items = parsedItems
 			.map(item => ({
@@ -400,14 +426,12 @@ ${rawOcrText}`
 			}))
 			.filter(item => item.item && item.item.length >= 3)
 
-		console.log('[ReceiptAI] Final parsed items:', items.length)
 		return {
 			items,
 			rawText: rawOcrText
 		}
 	} catch (err) {
 		console.error('[ReceiptAI] Error during AI parsing:', err)
-		// Fallback to basic extraction on error
 		const basicItems = extractGroceryItems(rawOcrText)
 		return {
 			items: basicItems.map(item => ({

@@ -86,6 +86,7 @@ const MealCard = memo(function MealCard({
 }) {
 	const [imageUrl, setImageUrl] = useState<string | null>(null)
 	const [imageError, setImageError] = useState(false)
+	const [imageLoaded, setImageLoaded] = useState(false)
 
 useEffect(() => {
 		let cancelled = false
@@ -101,11 +102,12 @@ useEffect(() => {
 		return () => { cancelled = true }
 	}, [meal.title])
 
-	const handleImageError = () => {
-		if (!imageUrl?.includes('supabase')) return
+	const handleImageError = useCallback(() => {
+		// Clear from cache so future renders don't use the broken URL
 		sessionCache.delete(titleToKey(meal.title))
+		setImageUrl(null)
 		setImageError(true)
-	}
+	}, [meal.title])
 
 	function getRecipeEmoji(title: string): string {
 		const t = title.toLowerCase()
@@ -155,12 +157,19 @@ useEffect(() => {
 			onClick={() => onNavigate(dayIndex, mealType, meal)}
 		>
 			{/* Image */}
-			<img
-				src={imageError ? fallbackSvg : (imageUrl || fallbackSvg)}
-				alt={meal.title}
-				className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
-				onError={handleImageError}
-			/>
+			<div className="w-14 h-14 rounded-xl flex-shrink-0 overflow-hidden relative bg-gray-100">
+				{/* Shimmer while loading */}
+				{!imageLoaded && !imageError && (
+					<div className="absolute inset-0 bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 animate-pulse rounded-xl" />
+				)}
+				<img
+					src={imageError ? fallbackSvg : (imageUrl || fallbackSvg)}
+					alt={meal.title}
+					className={`w-full h-full object-cover transition-opacity duration-500 ${imageLoaded || imageError || !imageUrl ? 'opacity-100' : 'opacity-0'}`}
+					onLoad={() => setImageLoaded(true)}
+					onError={handleImageError}
+				/>
+			</div>
 
 			{/* Content */}
 			<div className="flex-1 min-w-0">
