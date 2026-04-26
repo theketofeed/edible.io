@@ -58,7 +58,7 @@ function buildPrompt(items: string[], diet: DietType, days: number): string {
     ? `\nFORBIDDEN for ${diet}: ${forbidden.join(', ')}`
     : ''
 
-  return `You are a meal planning chef. Create a ${days}-day ${diet} meal plan.
+  return `You are a Michelin-star meal planning chef. Create a ${days}-day ${diet} meal plan.
 
 DIET RULE: ${dietRule}${forbiddenNote}
 
@@ -67,6 +67,8 @@ ${itemsList}
 
 CRITICAL: Only use ingredients from the list above. Do NOT add salmon, chickpeas, feta, mushrooms, or any ingredient not listed.
 
+Give each recipe a realistic, mouth-watering, and highly enticing restaurant-style name. Avoid generic titles like "Oatmeal" or "Chicken Salad"; use vivid descriptors (e.g., "Creamy Peanut Butter Spiced Oats", "Grilled Chicken with Crisp Lemon Vinaigrette Greens").
+
 Return ONLY valid JSON (no markdown, no commentary):
 {
   "totalDays": ${days},
@@ -74,7 +76,7 @@ Return ONLY valid JSON (no markdown, no commentary):
     {
       "day": "Day 1",
       "Breakfast": {
-        "title": "Recipe Name",
+        "title": "Enticing Recipe Name",
         "instructions": ["Step 1", "Step 2", "ENJOY!❤️"],
         "ingredients": ["ingredient 1", "ingredient 2"],
         "tips": ["Chef tip specific to this recipe"],

@@ -91,6 +91,8 @@ const EXCLUDED_PATTERNS = [
 	// Postal codes
 	/\b[a-z]\d[a-z]\s*\d[a-z]\d\b/i, // Canadian postal
 	/\b\d{5}(-\d{4})?\b/, // US ZIP
+	// Weight-only strings (e.g. ".370 kg", "500g")
+	/^[\.,]?\d+[\.,]?\d*\s*(kg|g|lbs?|oz|lb)\s*$/i,
 ]
 
 const isExcluded = (text: string) =>
@@ -143,23 +145,23 @@ function normalizeItem(value: string): string {
 
 	if (!cleaned || cleaned.length < 2) return ''
 
-	// Strip LEADING weight measurements
+	// Strip LEADING weight measurements (handles ".370 kg" at start)
 	cleaned = cleaned
-		.replace(/^\d+[\.,]?\d*\s*kg\s+/i, '')
-		.replace(/^\d+[\.,]?\d*\s*lbs?\s+/i, '')
-		.replace(/^\d+[\.,]?\d*\s*oz\s+/i, '')
-		.replace(/^\d+[\.,]?\d*\s*g\s+/i, '')
+		.replace(/^[\.,]?\d+[\.,]?\d*\s*kg\s+/i, '')
+		.replace(/^[\.,]?\d+[\.,]?\d*\s*lbs?\s+/i, '')
+		.replace(/^[\.,]?\d+[\.,]?\d*\s*oz\s+/i, '')
+		.replace(/^[\.,]?\d+[\.,]?\d*\s*g\s+/i, '')
 		.trim()
 
-	// Strip TRAILING weight suffixes
+	// Strip TRAILING weight suffixes (handles ".370 kg" at end)
 	cleaned = cleaned
 		.replace(/\s*\d+\s*x\s*$/i, '')
-		.replace(/\s*\d+[\.,]\d+\s*kg\s*$/i, '')
-		.replace(/\s*\d+[\.,]\d+\s*lbs?\s*$/i, '')
-		.replace(/\s*\d+[\.,]\d+\s*oz\s*$/i, '')
-		.replace(/\s*\d+\s*kg\s*$/i, '')
-		.replace(/\s*\d+\s*lbs?\s*$/i, '')
-		.replace(/\s*\d+\s*oz\s*$/i, '')
+		.replace(/\s*[\.,]?\d+[\.,]\d+\s*kg\s*$/i, '')
+		.replace(/\s*[\.,]?\d+[\.,]\d+\s*lbs?\s*$/i, '')
+		.replace(/\s*[\.,]?\d+[\.,]\d+\s*oz\s*$/i, '')
+		.replace(/\s*[\.,]?\d+\s*kg\s*$/i, '')
+		.replace(/\s*[\.,]?\d+\s*lbs?\s*$/i, '')
+		.replace(/\s*[\.,]?\d+\s*oz\s*$/i, '')
 		.trim()
 
 	// Strip prices at the end

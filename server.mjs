@@ -78,7 +78,7 @@ app.post('/api/claude', async (req, res) => {
 				'anthropic-version': '2023-06-01'
 			},
 			body: JSON.stringify({
-				model: 'claude-haiku-4-5-20251001',
+				model: 'claude-3-5-haiku-20241022',
 				max_tokens: 4096,
 				system: 'You output JSON only. No code fences. No commentary.',
 				messages: [{ role: 'user', content: prompt }],
@@ -287,13 +287,18 @@ app.post('/api/generate-meal-image', async (req, res) => {
 		return res.status(400).json({ error: 'Missing or invalid mealTitle' })
 	}
 
-	const apiKey = process.env.VITE_HF_API_KEY
-	if (!apiKey || apiKey.trim() === '' || apiKey === 'your_key_here') {
-		console.warn('[MealImages] No valid HuggingFace API key found.')
-		return res.status(400).json({ error: 'HuggingFace API key not configured' })
+	const apiKey = process.env.VITE_HF_API_KEY?.trim()
+	if (!apiKey || apiKey === 'your_key_here') {
+		console.warn('[MealImages] ⚠️ No valid HuggingFace API key found. Check .env.local VITE_HF_API_KEY')
+		return res.status(401).json({ error: 'HuggingFace API key not configured' })
 	}
 
-	const HF_MODEL_URL = 'https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell'
+	// Try multiple models with fallback strategy
+	const models = [
+		'black-forest-labs/FLUX.1-schnell',  // State-of-the-art, fastest
+		'stabilityai/stable-diffusion-3.5-large-turbo', // Reliable fallback
+		'runwayml/stable-diffusion-v1-5', // Proven workhorse
+	]
 
 	const buildFoodPrompt = (title) => [
 		title,
@@ -309,60 +314,111 @@ app.post('/api/generate-meal-image', async (req, res) => {
 
 	const prompt = buildFoodPrompt(mealTitle)
 
-	try {
-		console.log(`[MealImages] Generating image for: "${mealTitle}"`)
+	for (const model of models) {
+		const HF_MODEL_URL = `https://api-inference.huggingface.co/models/${model}`
 
-		const response = await fetch(HF_MODEL_URL, {
-			method: 'POST',
-			headers: {
-				'Authorization': `Bearer ${apiKey}`,
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify({ inputs: prompt }),
-			timeout: 35000,
-		})
+		try {
+			console.log(`[MealImages] Attempting generation with model: ${model}`)
+			console.log(`[MealImages] API Key prefix: ${apiKey.substring(0, 10)}...`)
+			console.log(`[MealImages] Prompt: "${prompt.substring(0, 80)}..."`)
 
-		// Model cold-starting — wait and retry once
-		if (response.status === 503) {
-			const errorData = await response.json().catch(() => ({}))
-			const waitMs = Math.min((errorData.estimated_time || 20) * 1000, 20000)
-			console.log(`[MealImages] HF model loading, waiting ${waitMs / 1000}s...`)
-			await new Promise(r => setTimeout(r, waitMs))
-
-			const retry = await fetch(HF_MODEL_URL, {
+			const response = await fetch(HF_MODEL_URL, {
 				method: 'POST',
 				headers: {
 					'Authorization': `Bearer ${apiKey}`,
 					'Content-Type': 'application/json',
 				},
 				body: JSON.stringify({ inputs: prompt }),
-				timeout: 35000,
+				signal: AbortSignal.timeout(35000),
 			})
 
-			if (!retry.ok) {
-				console.warn(`[MealImages] HF retry failed: ${retry.status}`)
-				return res.status(500).json({ error: 'HuggingFace retry failed' })
+			console.log(`[MealImages] ${model} response status: ${response.status}`)
+
+			// Model cold-starting — wait and retry once
+			if (response.status === 503) {
+				const errorData = await response.json().catch(() => ({}))
+				const waitMs = Math.min((errorData.estimated_time || 20) * 1000, 20000)
+				console.log(`[MealImages] Model loading (503), waiting ${waitMs / 1000}s...`)
+				await new Promise(r => setTimeout(r, waitMs))
+
+				const retry = await fetch(HF_MODEL_URL, {
+					method: 'POST',
+					headers: {
+						'Authorization': `Bearer ${apiKey}`,
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({ inputs: prompt }),
+					signal: AbortSignal.timeout(35000),
+				})
+
+				if (!retry.ok) {
+					console.warn(`[MealImages] Retry failed with status ${retry.status}`)
+					continue // Try next model
+				}
+
+				const arrayBuffer = await retry.arrayBuffer()
+				const blob = Buffer.from(arrayBuffer)
+				console.log(`[MealImages] ✅ Generated (${blob.length} bytes) with ${model}`)
+				res.set('Content-Type', 'image/jpeg')
+				return res.send(blob)
 			}
 
-			const blob = await retry.buffer()
-			res.set('Content-Type', 'image/jpeg')
-			return res.send(blob)
-		}
+			if (response.ok) {
+				const arrayBuffer = await response.arrayBuffer()
+				const blob = Buffer.from(arrayBuffer)
+				if (blob.length > 0) {
+					console.log(`[MealImages] ✅ Generated (${blob.length} bytes) with ${model}`)
+					res.set('Content-Type', 'image/jpeg')
+					return res.send(blob)
+				}
+			}
 
-		if (!response.ok) {
-			const text = await response.text().catch(() => '')
-			console.warn(`[MealImages] HF API error: ${response.status} - ${text}`)
-			return res.status(response.status).json({ error: `HuggingFace API error: ${response.status}` })
-		}
+			// If model failed, log and try next
+			const errorText = await response.text().catch(() => 'Unknown error')
+			console.warn(`[MealImages] ${model} failed (${response.status}): ${errorText.substring(0, 100)}`)
+			continue
 
-		const blob = await response.buffer()
-		console.log(`[MealImages] ✅ HF generated image (${blob.length} bytes) for: "${mealTitle}"`)
-		res.set('Content-Type', 'image/jpeg')
-		res.send(blob)
-	} catch (err) {
-		console.error('[MealImages] Generation failed:', err?.message || err)
-		res.status(500).json({ error: 'Image generation failed', details: err?.message })
+		} catch (err) {
+			console.error(`[MealImages] ${model} error:`, err?.message || err)
+			continue // Try next model
+		}
 	}
+
+	// All HF models exhausted — try Pollinations AI (super reliable fallback)
+	try {
+		console.log('[MealImages] 🔄 Attempting Pollinations AI fallback...')
+		const encodedPrompt = encodeURIComponent(prompt)
+		const pollinationsUrl = `https://gen.pollinations.ai/image/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${Math.floor(Math.random() * 1000000)}&model=flux`
+		
+		let pResponse;
+		let retries = 3;
+		while (retries > 0) {
+			pResponse = await fetch(pollinationsUrl, { signal: AbortSignal.timeout(20000) })
+			if (pResponse.ok) {
+				const arrayBuffer = await pResponse.arrayBuffer()
+				const blob = Buffer.from(arrayBuffer)
+				console.log(`[MealImages] ✅ Generated (${blob.length} bytes) with Pollinations fallback`)
+				res.set('Content-Type', 'image/jpeg')
+				return res.send(blob)
+			}
+			retries--;
+			if (retries > 0) {
+				console.log(`[MealImages] Pollinations returned ${pResponse.status}, retrying in 2s...`);
+				await new Promise(r => setTimeout(r, 2000));
+			} else {
+				console.error(`[MealImages] Pollinations finally failed with status ${pResponse.status}`);
+			}
+		}
+	} catch (pErr) {
+		console.error('[MealImages] Pollinations fallback failed:', pErr.message)
+	}
+
+	// All models exhausted
+	console.error('[MealImages] ❌ All models failed for:', mealTitle)
+	res.status(500).json({ 
+		error: 'Image generation unavailable',
+		details: 'All HuggingFace models and Pollinations fallback exhausted.'
+	})
 })
 
 // ─── Health check ──────────────────────────────────────────────────────────
