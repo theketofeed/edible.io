@@ -67,7 +67,7 @@ ${itemsList}
 
 CRITICAL: Only use ingredients from the list above. Do NOT add salmon, chickpeas, feta, mushrooms, or any ingredient not listed.
 
-Give each recipe a realistic, mouth-watering, and highly enticing restaurant-style name. Avoid generic titles like "Oatmeal" or "Chicken Salad"; use vivid descriptors (e.g., "Creamy Peanut Butter Spiced Oats", "Grilled Chicken with Crisp Lemon Vinaigrette Greens").
+Give each recipe a simple, straightforward name that describes what it is. Use main ingredients and cooking method (e.g., "Turkey and Vegetable Scramble", "Grilled Pork Loin with Peppers"). NO flowery or poetic adjectives like "Sunrise", "Crisp", "Golden" etc.
 
 Return ONLY valid JSON (no markdown, no commentary):
 {

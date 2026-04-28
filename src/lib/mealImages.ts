@@ -1,5 +1,9 @@
 // ─── In-memory cache (session level) ─────────────────────────────────────────
 export const sessionCache = new Map<string, string>()
+
+// ─── In-flight requests (deduplication) ────────────────────────────────────────
+const inFlightRequests = new Map<string, Promise<string | null>>()
+
 export { titleToKey, buildPollinationsPrompt }
 
 function titleToKey(mealTitle: string): string {
@@ -74,36 +78,51 @@ function getCategoryFallback(mealTitle: string): string {
 // ─── HuggingFace FLUX.1-schnell via Backend Proxy (safer, handles retries) ──
 // Backend proxies all HuggingFace calls for better reliability and security
 async function generateWithHuggingFace(mealTitle: string): Promise<string | null> {
-  const backendUrl = (import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:3001'
+  const key = titleToKey(mealTitle)
   
-  try {
-    console.log(`[MealImages] Requesting HF generation for: "${mealTitle}"`)
-    const response = await fetch(`${backendUrl}/api/generate-meal-image`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mealTitle }),
-      signal: AbortSignal.timeout(40000),
-    })
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}))
-      console.warn(`[MealImages] HF backend error: ${response.status} -`, error)
-      return null
-    }
-
-    const blob = await response.blob()
-    if (blob.size === 0) {
-      console.warn('[MealImages] HF returned empty blob')
-      return null
-    }
-
-    const objectUrl = URL.createObjectURL(blob)
-    console.log(`[MealImages] ✅ HF generated image (${blob.size} bytes) for: "${mealTitle}"`)
-    return objectUrl
-  } catch (err) {
-    console.warn('[MealImages] HF generation failed:', err instanceof Error ? err.message : err)
-    return null
+  // Deduplicate in-flight requests
+  if (inFlightRequests.has(key)) {
+    console.log(`[MealImages] Request already in-flight for: "${mealTitle}"`)
+    return inFlightRequests.get(key)!
   }
+  
+  const request = (async () => {
+    const backendUrl = (import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:3001'
+    
+    try {
+      console.log(`[MealImages] Requesting AI generation for: "${mealTitle}"`)
+      const response = await fetch(`${backendUrl}/api/generate-meal-image`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mealTitle }),
+        signal: AbortSignal.timeout(45000),
+      })
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}))
+        console.warn(`[MealImages] Backend error: ${response.status} -`, error)
+        return null
+      }
+
+      const blob = await response.blob()
+      if (blob.size === 0) {
+        console.warn('[MealImages] Backend returned empty blob')
+        return null
+      }
+
+      const objectUrl = URL.createObjectURL(blob)
+      console.log(`[MealImages] ✅ Generated image (${blob.size} bytes) for: "${mealTitle}"`)
+      return objectUrl
+    } catch (err) {
+      console.warn('[MealImages] Generation failed:', err instanceof Error ? err.message : err)
+      return null
+    } finally {
+      inFlightRequests.delete(key)
+    }
+  })()
+  
+  inFlightRequests.set(key, request)
+  return request
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────

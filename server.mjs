@@ -78,7 +78,7 @@ app.post('/api/claude', async (req, res) => {
 				'anthropic-version': '2023-06-01'
 			},
 			body: JSON.stringify({
-				model: 'claude-3-5-haiku-20241022',
+				model: 'claude-3-5-sonnet-20241022',
 				max_tokens: 4096,
 				system: 'You output JSON only. No code fences. No commentary.',
 				messages: [{ role: 'user', content: prompt }],
@@ -295,9 +295,9 @@ app.post('/api/generate-meal-image', async (req, res) => {
 
 	// Try multiple models with fallback strategy
 	const models = [
-		'black-forest-labs/FLUX.1-schnell',  // State-of-the-art, fastest
-		'stabilityai/stable-diffusion-3.5-large-turbo', // Reliable fallback
-		'runwayml/stable-diffusion-v1-5', // Proven workhorse
+		'stabilityai/stable-diffusion-3.5-large-turbo',  
+		'black-forest-labs/FLUX.1-dev',  
+		'stabilityai/stable-diffusion-xl-base-1.0',
 	]
 
 	const buildFoodPrompt = (title) => [
@@ -388,29 +388,61 @@ app.post('/api/generate-meal-image', async (req, res) => {
 	try {
 		console.log('[MealImages] 🔄 Attempting Pollinations AI fallback...')
 		const encodedPrompt = encodeURIComponent(prompt)
-		const pollinationsUrl = `https://gen.pollinations.ai/image/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${Math.floor(Math.random() * 1000000)}&model=flux`
+		const pollinationsUrl = `https://image.pollinations.ai/image?prompt=${encodedPrompt}&width=1024&height=1024&seed=${Math.floor(Math.random() * 1000000)}`
 		
 		let pResponse;
-		let retries = 3;
+		let retries = 8;
+		let baseWait = 1000;
+		
 		while (retries > 0) {
-			pResponse = await fetch(pollinationsUrl, { signal: AbortSignal.timeout(20000) })
-			if (pResponse.ok) {
-				const arrayBuffer = await pResponse.arrayBuffer()
-				const blob = Buffer.from(arrayBuffer)
-				console.log(`[MealImages] ✅ Generated (${blob.length} bytes) with Pollinations fallback`)
-				res.set('Content-Type', 'image/jpeg')
-				return res.send(blob)
-			}
-			retries--;
-			if (retries > 0) {
-				console.log(`[MealImages] Pollinations returned ${pResponse.status}, retrying in 2s...`);
-				await new Promise(r => setTimeout(r, 2000));
-			} else {
-				console.error(`[MealImages] Pollinations finally failed with status ${pResponse.status}`);
+			try {
+				pResponse = await fetch(pollinationsUrl, { 
+					signal: AbortSignal.timeout(30000),
+					headers: {
+						'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+					}
+				})
+				if (pResponse.ok) {
+					const arrayBuffer = await pResponse.arrayBuffer()
+					const blob = Buffer.from(arrayBuffer)
+					if (blob.length > 0) {
+						console.log(`[MealImages] ✅ Generated (${blob.length} bytes) with Pollinations fallback`)
+						res.set('Content-Type', 'image/jpeg')
+						return res.send(blob)
+					}
+				}
+				
+				// Handle rate limiting (429) with exponential backoff
+				if (pResponse.status === 429) {
+					retries--;
+					if (retries > 0) {
+						const waitTime = baseWait * Math.pow(2, 5 - retries); // exponential: 2000, 4000, 8000
+						console.log(`[MealImages] Rate limited (429), waiting ${waitTime}ms... (${retries} retries left)`);
+						await new Promise(r => setTimeout(r, waitTime));
+						continue;
+					}
+				} else if (pResponse.status === 401 || pResponse.status === 403) {
+					retries--;
+					if (retries > 0) {
+						console.log(`[MealImages] Auth error (${pResponse.status}), waiting 2s...`);
+						await new Promise(r => setTimeout(r, 2000));
+						continue;
+					}
+				}
+				
+				retries = 0; // Exit on other errors
+			} catch (fetchErr) {
+				retries--;
+				if (retries > 0) {
+					console.log(`[MealImages] Pollinations fetch error: ${fetchErr.message}, retrying...`);
+					await new Promise(r => setTimeout(r, 1500));
+				}
 			}
 		}
+		
+		console.error(`[MealImages] Pollinations fallback exhausted`);
 	} catch (pErr) {
-		console.error('[MealImages] Pollinations fallback failed:', pErr.message)
+		console.error('[MealImages] Pollinations fallback critical error:', pErr.message)
 	}
 
 	// All models exhausted
