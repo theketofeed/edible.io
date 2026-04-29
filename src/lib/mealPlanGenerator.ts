@@ -3,8 +3,6 @@ import type { DietType, GenerateMealPlanParams, MealPlanResult, DayMeals, Meal, 
 import { extractGroceryItems, cleanGroceryList } from '../utils/grocery'
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-const GROQ_BASE_URL = 'https://api.groq.com/openai/v1'
-const GROQ_MODEL = 'llama-3.3-70b-versatile'
 
 // ─── Diet Rules (concise) ─────────────────────────────────────────────────────
 const DIET_RULES: Record<DietType, string> = {
@@ -198,8 +196,9 @@ function validatePlan(plan: { days: DayMeals[] }, allowedItems: string[]): boole
 // ─── AI Callers ───────────────────────────────────────────────────────────────
 async function callClaude(prompt: string): Promise<{ totalDays: number; days: DayMeals[] } | null> {
   console.log('[Claude] Calling backend proxy...')
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
   try {
-    const response = await fetch('http://localhost:3001/api/claude', {
+    const response = await fetch(`${backendUrl}/api/claude`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt }),
@@ -237,32 +236,22 @@ async function callClaude(prompt: string): Promise<{ totalDays: number; days: Da
 }
 
 async function callGroq(prompt: string): Promise<{ totalDays: number; days: DayMeals[] } | null> {
-  console.log('[Groq] Calling Groq API...')
-  const apiKey = import.meta.env.VITE_GROQ_API_KEY as string | undefined
-
-  if (!apiKey || apiKey.trim() === '' || apiKey === 'your_key_here') {
-    console.warn('[Groq] No valid API key')
-    return null
-  }
+  console.log('[Groq] Calling backend proxy...')
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
 
   try {
-    const res = await fetch(`${GROQ_BASE_URL}/chat/completions`, {
+    const res = await fetch(`${backendUrl}/api/groq`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: GROQ_MODEL,
         messages: [
           { role: 'system', content: 'You output JSON only. No markdown fences. No commentary.' },
           { role: 'user', content: prompt },
         ],
-        temperature: 0.4,
-        max_tokens: 4096,
-        response_format: { type: 'json_object' },
       }),
-      signal: AbortSignal.timeout(12000), // 12s timeout
+      signal: AbortSignal.timeout(15000), // 15s timeout
     })
 
     if (!res.ok) throw new Error(`Groq HTTP ${res.status}`)

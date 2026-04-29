@@ -20,7 +20,7 @@ fetch('https://api.anthropic.com/v1/messages', {
 		'anthropic-version': '2023-06-01'
 	},
 	body: JSON.stringify({
-		model: 'claude-3-haiku-20240307',
+		model: 'claude-3-5-haiku-20241022',
 		max_tokens: 100,
 		system: 'Respond with JSON only',
 		messages: [{ role: 'user', content: 'Test: respond with {"status": "ok"}' }],

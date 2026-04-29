@@ -1,5 +1,6 @@
 // Receipt Parser - Groq only (Gemini removed)
-const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY
+// Groq calls must go through your backend proxy, not the frontend
+// The GROQ_API_KEY lives on the server only
 
 export interface ParsedItem {
 	id: string
@@ -33,29 +34,24 @@ export async function parseReceiptWithGemini(rawText: string): Promise<ParsedIte
 }
 
 async function parseReceiptWithGroq(rawText: string): Promise<ParsedItem[]> {
-	if (!GROQ_API_KEY) {
-		console.warn('[ReceiptParser] No Groq API key found.')
-		return []
-	}
+	const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
 
 	try {
-		console.log('[ReceiptParser] Parsing receipt with Groq (llama-3.3-70b)...')
+		console.log('[ReceiptParser] Parsing receipt with Groq via backend proxy...')
 
-		const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+		const response = await fetch(`${backendUrl}/api/groq`, {
 			method: 'POST',
 			headers: {
-				'Authorization': `Bearer ${GROQ_API_KEY}`,
 				'Content-Type': 'application/json'
 			},
 			body: JSON.stringify({
-				model: 'llama-3.3-70b-versatile',
 				messages: [
 					{ role: 'system', content: PARSER_PROMPT },
 					{ role: 'user', content: `RAW OCR TEXT:\n"""\n${rawText}\n"""` }
 				],
-				temperature: 0.1,
-				max_tokens: 2000
-			})
+				temperature: 0.1
+			}),
+			signal: AbortSignal.timeout(20000)
 		})
 
 		if (!response.ok) {

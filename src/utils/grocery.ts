@@ -332,23 +332,8 @@ export function extractGroceryItems(input: string): string[] {
 }
 
 export async function parseReceiptWithAI(rawOcrText: string): Promise<import('./types').ParsedReceiptResult> {
-	console.log('[ReceiptAI] Starting AI-powered receipt parsing')
-
-	const apiKey = (import.meta as any).env?.VITE_GROQ_API_KEY as string | undefined
-
-	if (!apiKey || apiKey.trim() === '' || apiKey === 'your_key_here') {
-		console.warn('[ReceiptAI] No valid Groq API key found. Using basic extraction instead.')
-		const basicItems = extractGroceryItems(rawOcrText)
-		return {
-			items: basicItems.map(item => ({
-				item,
-				quantity: '1 unit',
-				price: 'Unknown',
-				category: 'miscellaneous' as const
-			})),
-			rawText: rawOcrText
-		}
-	}
+	console.log('[ReceiptAI] Starting AI-powered receipt parsing via backend proxy')
+	const backendUrl = (import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:3001'
 
 	try {
 		const prompt = `Parse this grocery receipt and extract ONLY the food items with their quantities and prices.
@@ -373,21 +358,19 @@ Rules:
 Receipt text:
 ${rawOcrText}`
 
-		const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+		const response = await fetch(`${backendUrl}/api/groq`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${apiKey}`
 			},
 			body: JSON.stringify({
-				model: 'llama-3.3-70b-versatile',
 				messages: [
 					{ role: 'system', content: 'You are a helpful assistant that parses grocery receipts. Return ONLY valid JSON arrays. No code fences, no commentary.' },
 					{ role: 'user', content: prompt }
 				],
 				temperature: 0.3,
-				response_format: { type: 'json_object' }
-			})
+			}),
+			signal: AbortSignal.timeout(20000)
 		})
 
 		if (!response.ok) {

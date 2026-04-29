@@ -95,6 +95,19 @@ body {
 		display: none !important;
 	}
 
+	.pdf-only {
+		position: fixed;
+		left: -10000px;
+		top: 0;
+		width: 800px; /* Fixed width for consistent PDF layout */
+		z-index: -100;
+		visibility: hidden;
+	}
+
+	.pdf-export-mode .pdf-only {
+		visibility: visible;
+	}
+
 	.print-only {
 		display: block !important;
 	}
@@ -335,4 +348,47 @@ body {
 			overflow-x: hidden;
 		}
 	}
+}
+/* PDF Export Utilities */
+.pdf-export-container {
+    background: white !important;
+    width: 100%;
+}
+
+.pdf-only {
+    position: fixed;
+    left: -10000px;
+    top: 0;
+    width: 800px !important;
+    z-index: -100;
+}
+
+/* Ensure it is visible during capture */
+.pdf-export-mode.pdf-only {
+    position: relative !important;
+    left: 0 !important;
+    z-index: 9999 !important;
+    visibility: visible !important;
+    display: block !important;
+    width: 800px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.pdf-export-mode .no-pdf {
+    display: none !important;
+}
+
+.pdf-page-break {
+    page-break-before: always;
+    break-before: page;
+}
+
+.pdf-avoid-break {
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+.pdf-section {
+    margin-bottom: 2rem;
 }

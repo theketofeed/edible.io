@@ -1,5 +1,6 @@
 import express from 'express'
 import cors from 'cors'
+import rateLimit from 'express-rate-limit'
 import dotenv from 'dotenv'
 import { createClient } from '@supabase/supabase-js'
 import DodoPayments from 'dodopayments'
@@ -33,19 +34,59 @@ if (webhookSecret) {
 }
 
 const supabaseAdmin = createClient(
-  process.env.VITE_SUPABASE_URL,
-  process.env.VITE_SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
 )
 
-app.use(cors())
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:4173',
+  process.env.FRONTEND_URL,
+  'https://youractualdomain.com', // replace with your real domain
+].filter(Boolean)
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
+  credentials: true
+}))
 
 const rawBodyParser = express.raw({ type: 'application/json' })
 app.use('/api/webhooks', rawBodyParser)
 app.use(express.json({ limit: '25mb' }))
 app.use(express.urlencoded({ limit: '25mb', extended: true }))
 
+// ─── Rate Limiting ───────────────────────────────────────────────────────────
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' }
+})
+
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // 10 AI calls per minute per IP
+  message: { error: 'AI rate limit reached. Please wait a moment.' }
+})
+
+const checkoutLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 20,
+  message: { error: 'Too many checkout attempts.' }
+})
+
+app.use(generalLimiter) // applies to everything
+
 // ─── Claude API proxy ──────────────────────────────────────────────────────
-app.post('/api/claude', async (req, res) => {
+app.post('/api/claude', aiLimiter, async (req, res) => {
 	const controller = new AbortController()
 	const timeoutId = setTimeout(() => {
 		controller.abort()
@@ -54,13 +95,12 @@ app.post('/api/claude', async (req, res) => {
 
 	try {
 		const { prompt } = req.body
-
-		if (!prompt) {
+		if (typeof prompt !== 'string' || prompt.length > 20000) {
 			clearTimeout(timeoutId)
-			return res.status(400).json({ error: 'Missing prompt' })
+			return res.status(400).json({ error: 'Invalid prompt' })
 		}
 
-		const apiKey = process.env.VITE_CLAUDE_API_KEY
+		const apiKey = process.env.CLAUDE_API_KEY
 		if (!apiKey || apiKey.trim() === '' || apiKey === 'your_key_here') {
 			clearTimeout(timeoutId)
 			console.warn('[Claude Backend] No valid Claude API key found.')
@@ -78,7 +118,7 @@ app.post('/api/claude', async (req, res) => {
 				'anthropic-version': '2023-06-01'
 			},
 			body: JSON.stringify({
-				model: 'claude-3-5-sonnet-20241022',
+				model: 'claude-haiku-4-5',
 				max_tokens: 4096,
 				system: 'You output JSON only. No code fences. No commentary.',
 				messages: [{ role: 'user', content: prompt }],
@@ -122,10 +162,64 @@ app.post('/api/claude', async (req, res) => {
 	}
 })
 
+// ─── Groq API proxy ────────────────────────────────────────────────────────
+app.post('/api/groq', aiLimiter, async (req, res) => {
+	const controller = new AbortController()
+	const timeoutId = setTimeout(() => controller.abort(), 15000)
+	try {
+		const { messages, model, temperature, max_tokens } = req.body
+		if (!Array.isArray(messages) || messages.length > 20) {
+			clearTimeout(timeoutId)
+			return res.status(400).json({ error: 'Invalid messages' })
+		}
+		for (const msg of messages) {
+			if (typeof msg.content !== 'string' || msg.content.length > 20000) {
+				clearTimeout(timeoutId)
+				return res.status(400).json({ error: 'Message too large' })
+			}
+		}
+
+		const apiKey = process.env.GROQ_API_KEY
+		if (!apiKey) {
+			clearTimeout(timeoutId)
+			return res.status(401).json({ error: 'Groq API key not configured' })
+		}
+
+		const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${apiKey}`
+			},
+			body: JSON.stringify({
+				messages,
+				model: model || 'llama-3.3-70b-versatile',
+				temperature: temperature ?? 0.4,
+				max_tokens: max_tokens || 4096,
+				response_format: { type: 'json_object' }
+			}),
+			signal: controller.signal
+		})
+		clearTimeout(timeoutId)
+
+		if (!response.ok) {
+			const text = await response.text().catch(() => '')
+			return res.status(response.status).json({ error: `Groq error: ${response.status}`, details: text })
+		}
+
+		const json = await response.json()
+		res.json(json)
+	} catch (err) {
+		clearTimeout(timeoutId)
+		if (err.name === 'AbortError') return res.status(504).json({ error: 'Groq timed out' })
+		res.status(500).json({ error: err.message })
+	}
+})
+
 // ─── OCR.space proxy ───────────────────────────────────────────────────────
 app.post('/api/ocr', async (req, res) => {
 	try {
-		const apiKey = process.env.VITE_OCR_SPACE_API_KEY
+		const apiKey = process.env.OCR_SPACE_API_KEY
 		if (!apiKey) {
 			return res.status(500).json({ error: 'OCR.space API key not configured on server' })
 		}
@@ -181,11 +275,15 @@ app.post('/api/ocr', async (req, res) => {
 })
 
 // ─── Checkout ──────────────────────────────────────────────────────────────
-app.post('/api/checkout', async (req, res) => {
+app.post('/api/checkout', checkoutLimiter, async (req, res) => {
 	try {
 		const { productType, userId, userEmail } = req.body
-		if (!productType || !userId || !userEmail) {
-			return res.status(400).json({ error: 'Missing required fields' })
+		if (typeof userId !== 'string' || typeof userEmail !== 'string' || 
+				!userEmail.includes('@') || userId.length > 100) {
+			return res.status(400).json({ error: 'Invalid user data' })
+		}
+		if (!productType) {
+			return res.status(400).json({ error: 'Missing productType' })
 		}
 
 		const productMap = {
@@ -280,16 +378,15 @@ app.post('/api/webhooks/dodo', async (req, res) => {
 })
 
 // ─── HuggingFace Image Generation Proxy ────────────────────────────────────
-app.post('/api/generate-meal-image', async (req, res) => {
+app.post('/api/generate-meal-image', aiLimiter, async (req, res) => {
 	const { mealTitle } = req.body
-
-	if (!mealTitle || typeof mealTitle !== 'string') {
-		return res.status(400).json({ error: 'Missing or invalid mealTitle' })
+	if (typeof mealTitle !== 'string' || mealTitle.length > 200) {
+		return res.status(400).json({ error: 'Invalid meal title' })
 	}
 
-	const apiKey = process.env.VITE_HF_API_KEY?.trim()
+	const apiKey = process.env.HF_API_KEY?.trim()
 	if (!apiKey || apiKey === 'your_key_here') {
-		console.warn('[MealImages] ⚠️ No valid HuggingFace API key found. Check .env.local VITE_HF_API_KEY')
+		console.warn('[MealImages] ⚠️ No valid HuggingFace API key found. Check .env.local HF_API_KEY')
 		return res.status(401).json({ error: 'HuggingFace API key not configured' })
 	}
 

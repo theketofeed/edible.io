@@ -138,7 +138,7 @@ async function generateWithHuggingFace(mealTitle: string): Promise<string | null
  * get the fallback instantly, and if called again for the same meal after
  * generation completes, they'll get the AI image.
  * 
- * Setup required: Add VITE_HF_API_KEY to .env.local
+ * Setup required: Add HF_API_KEY to .env.local
  * See .env.local.template for instructions
  */
 export async function fetchMealImage(mealTitle: string): Promise<string | null> {

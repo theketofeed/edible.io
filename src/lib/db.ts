@@ -155,43 +155,29 @@ export async function saveSavedRecipe(recipeTitle: string, mealType: string, rec
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
-  // We explicitly handle the duplicate key error (409 / 23505) in case
-  // the user clicks multiple times rapidly or the RLS policies cause conflict
   const { data, error } = await supabase
     .from('saved_recipes')
-    .insert({
-      user_id: user.id,
-      recipe_title: recipeTitle,
-      meal_type: mealType,
-      recipe_data: recipeData,
-    })
+    .upsert(
+      {
+        user_id: user.id,
+        recipe_title: recipeTitle,
+        meal_type: mealType,
+        recipe_data: recipeData,
+      },
+      { onConflict: 'user_id,recipe_title' }
+    )
     .select()
     .maybeSingle()
 
   if (error) {
-    // If it's a conflict, just return the existing record rather than crashing
-    if (error.code === '23505' || error.message?.includes('duplicate') || error.message?.includes('409') || error.code === '409') {
-      const { data: existing, error: fetchError } = await supabase
-        .from('saved_recipes')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('recipe_title', recipeTitle)
-        .maybeSingle()
-
-      if (fetchError) throw fetchError
-      if (existing) {
-        invalidateRecipeCache(user.id)
-        return existing as SavedRecipe
-      }
-    }
+    console.error('[db] saveSavedRecipe error:', error)
     throw error
   }
 
-  // Invalidate cache to ensure UI reflects the new count
   invalidateRecipeCache(user.id)
-
-  return data as SavedRecipe
+  return data
 }
+
 
 export async function getUserSavedRecipes() {
   const { data: { user } } = await supabase.auth.getUser()

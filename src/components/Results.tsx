@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext'
 import { usePlan } from '../hooks/usePlan'
 import { saveMealPlan } from '../lib/db'
 import logo from '../assets/Transparent logo.png'
+import BulkDownloadButton from './BulkDownloadButton'
 
 interface Props {
 	result: MealPlanResult
@@ -382,6 +383,8 @@ const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result
 					</div>
 					Export PDF
 				</motion.button>
+
+				<BulkDownloadButton result={result} showToast={showToast} />
 
 				<motion.button 
 					whileHover={{ y: -2, scale: 1.02 }}

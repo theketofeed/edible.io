@@ -5,8 +5,9 @@ export async function createCheckout(
   userId: string,
   userEmail: string
 ): Promise<{ success: boolean; url?: string; error?: string }> {
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
   try {
-    const response = await fetch('http://localhost:3001/api/checkout', {
+    const response = await fetch(`${backendUrl}/api/checkout`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ productType, userId, userEmail })

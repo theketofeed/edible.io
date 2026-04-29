@@ -23,8 +23,10 @@
     "dodopayments": "^2.26.0",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.4.1",
     "framer-motion": "^12.33.0",
-    "html2pdf.js": "^0.9.3",
+    "html2pdf.js": "^0.14.0",
+    "jszip": "^3.10.1",
     "lottie-react": "^2.4.1",
     "lucide-react": "^0.460.0",
     "node-fetch": "^2.7.0",
@@ -37,6 +39,7 @@
     "tesseract.js": "^5.1.1"
   },
   "devDependencies": {
+    "@types/jszip": "^3.4.0",
     "@types/node": "^24.10.1",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",

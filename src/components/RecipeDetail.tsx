@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Clock, ChefHat, Timer, ArrowLeft, CheckCircle2, Circle, Share2, Zap, Download, Heart, Lightbulb, Crown, FileText, Link2, Check } from 'lucide-react'
 import type { Meal } from '../utils/types'
@@ -13,6 +13,8 @@ import { usePlan } from '../hooks/usePlan'
 import { saveSavedRecipe, deleteSavedRecipe, getUserSavedRecipes } from '../lib/db'
 import { supabase } from '../lib/supabase'
 import Tooltip from './Tooltip'
+import { downloadElementAsPDF } from '../utils/pdfHelper'
+import logo from '../assets/Transparent logo.png'
 
 interface RecipeDetailProps {
     meal?: Meal
@@ -94,6 +96,8 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
     const [pricingOpen, setPricingOpen] = useState(false)
     const [pricingTrigger, setPricingTrigger] = useState('')
     const [isShareMenuOpen, setIsShareMenuOpen] = useState(false)
+    const [isDownloading, setIsDownloading] = useState(false)
+    const pdfRef = useRef<HTMLDivElement>(null)
 
     // Defensive checks for required properties
     const safeMeal = useMemo(() => {
@@ -197,7 +201,7 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
                 await deleteSavedRecipe(safeMeal.title)
                 showToast?.('success', 'Recipe removed from saved')
             } else {
-                // Check limit BEFORE insert (non-blocking — cache handles speed)
+                // Only check limit for genuinely new saves
                 const { allowed } = await checkRecipeLimit()
                 if (!allowed) {
                     setIsSaved(false) // revert — limit reached
@@ -205,7 +209,6 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
                     setPricingOpen(true)
                     return
                 }
-                // upsert in db.ts means no 409 even if already exists
                 await saveSavedRecipe(safeMeal.title, mealType, safeMeal)
                 showToast?.('success', 'Recipe saved!')
             }
@@ -220,6 +223,7 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
             showToast?.('error', 'Failed to update saved recipe')
         }
     }
+
 
     // Parse instructions into distinct steps
     const instructionSteps = useMemo(() => {
@@ -267,6 +271,37 @@ Made with Edible.io`
         } catch (err) {
             console.error('Copy error:', err)
             showToast?.('error', 'Failed to copy link.')
+        }
+    }
+
+    const handleDownloadPDF = async () => {
+        if (!pdfRef.current || !safeMeal) return
+        
+        setIsDownloading(true)
+        showToast?.('info', 'Preparing your PDF...')
+        
+        try {
+            // Add helper class for capture
+            const el = pdfRef.current
+            el.classList.add('pdf-export-mode')
+            
+            // Short delay for layout to stabilize
+            await new Promise(r => setTimeout(r, 500))
+            
+            const filename = `${safeMeal.title.replace(/\s+/g, '-').toLowerCase()}-recipe.pdf`
+            const success = await downloadElementAsPDF(el, { filename })
+            
+            if (success) {
+                showToast?.('success', 'Recipe PDF downloaded!')
+            } else {
+                showToast?.('error', 'Failed to generate PDF. Please try again.')
+            }
+        } catch (err) {
+            console.error('PDF Error:', err)
+            showToast?.('error', 'An error occurred while generating PDF.')
+        } finally {
+            setIsDownloading(false)
+            pdfRef.current?.classList.remove('pdf-export-mode')
         }
     }
 
@@ -522,11 +557,16 @@ Made with Edible.io`
                     <div className="flex items-center gap-1.5 sm:gap-3">
                         <Tooltip content="Download PDF">
                             <button
-                                onClick={() => window.print()}
-                                className="flex items-center gap-2 h-10 px-3 sm:px-4 bg-white text-gray-600 rounded-full font-bold shadow-[0_2px_8px_rgba(0,0,0,0.02)] border border-gray-100 hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all"
+                                onClick={handleDownloadPDF}
+                                disabled={isDownloading}
+                                className={`flex items-center gap-2 h-10 px-3 sm:px-4 bg-white text-gray-600 rounded-full font-bold shadow-[0_2px_8px_rgba(0,0,0,0.02)] border border-gray-100 hover:shadow-[0_4px_12px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all ${isDownloading ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
-                                <Download className="w-4 h-4" />
-                                <span className="hidden sm:inline text-[13px]">PDF</span>
+                                {isDownloading ? (
+                                    <div className="w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                    <Download className="w-4 h-4" />
+                                )}
+                                <span className="hidden sm:inline text-[13px]">{isDownloading ? 'Generating...' : 'PDF'}</span>
                             </button>
                         </Tooltip>
 
@@ -764,6 +804,140 @@ Made with Edible.io`
                 onClose={() => setPricingOpen(false)}
                 trigger={pricingTrigger}
             />
+
+            {/* Hidden PDF Template */}
+            <div ref={pdfRef} className="pdf-only pdf-export-container p-12 bg-white text-gray-900 w-[800px]">
+                <div className="pdf-avoid-break mb-12">
+                    <div className="flex items-end justify-between border-b-2 border-purple-100 pb-6 mb-8 w-full">
+                        <div>
+                            <h2 className="text-2xl font-black tracking-tight leading-none flex whitespace-nowrap items-baseline">Edible<span className="text-purple-500">.io</span></h2>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Personalized AI Chef</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">{dayName}</p>
+                            <p className="text-sm font-black text-purple-600 uppercase tracking-tight">{mealType}</p>
+                        </div>
+                    </div>
+
+                    <h1 className="text-4xl font-black text-gray-900 mb-8 leading-tight tracking-tight">
+                        {safeMeal.title}
+                    </h1>
+
+                    {recipeImage && (
+                        <div className="mb-8 rounded-[2rem] overflow-hidden h-[350px] border border-gray-100 shadow-sm">
+                            <img src={recipeImage} alt={safeMeal.title} className="w-full h-full object-cover" />
+                        </div>
+                    )}
+                </div>
+
+                <div className="mb-10 pdf-avoid-break">
+                    <div className="flex gap-8 mb-10 pb-8 border-b border-gray-50">
+                        <div className="flex items-center gap-3">
+                            <Clock className="w-5 h-5 text-orange-500" />
+                            <div>
+                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Prep</p>
+                                <p className="text-sm font-bold">{safeMeal.prepTime} min</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <ChefHat className="w-5 h-5 text-emerald-500" />
+                            <div>
+                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Cook</p>
+                                <p className="text-sm font-bold">{safeMeal.cookTime} min</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <Timer className="w-5 h-5 text-purple-600" />
+                            <div>
+                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Total</p>
+                                <p className="text-sm font-bold">{safeMeal.totalTime} min</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {safeMeal.nutrition && (
+                        <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100 mb-10 w-full box-border">
+                            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-6">Nutrition Guide (per serving)</p>
+                            <div className="grid grid-cols-4 gap-8 w-full">
+                                <div className="text-center">
+                                    <p className="text-2xl font-black text-gray-900 leading-none mb-1">{safeMeal.nutrition.calories}</p>
+                                    <p className="text-[11px] text-gray-500 font-bold uppercase tracking-tight">Calories</p>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-2xl font-black text-gray-900 leading-none mb-1">{safeMeal.nutrition.protein}g</p>
+                                    <p className="text-[11px] text-gray-500 font-bold uppercase tracking-tight">Protein</p>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-2xl font-black text-gray-900 leading-none mb-1">{safeMeal.nutrition.carbs}g</p>
+                                    <p className="text-[11px] text-gray-500 font-bold uppercase tracking-tight">Carbs</p>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-2xl font-black text-gray-900 leading-none mb-1">{safeMeal.nutrition.fat}g</p>
+                                    <p className="text-[11px] text-gray-500 font-bold uppercase tracking-tight">Fat</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="grid grid-cols-1 gap-12">
+                    <div className="pdf-avoid-break">
+                        <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                            <div className="w-1 h-6 bg-purple-500 rounded-full"></div>
+                            Ingredients
+                        </h2>
+                        <ul className="space-y-3">
+                            {safeMeal.ingredients.map((ing, i) => (
+                                <li key={i} className="flex gap-4 items-center py-2 border-b border-gray-50">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-purple-200"></div>
+                                    <span className="text-gray-700 font-medium">{ing}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    <div className="pdf-page-break pt-8">
+                        <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                            <div className="w-1 h-6 bg-purple-500 rounded-full"></div>
+                            Instructions
+                        </h2>
+                        <div className="space-y-6">
+                            {instructionSteps.map((step, i) => (
+                                <div key={i} className="flex gap-5 pdf-avoid-break">
+                                    <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600 font-black text-sm flex-shrink-0">
+                                        {i + 1}
+                                    </div>
+                                    <p className="text-gray-700 leading-relaxed font-medium pt-1">
+                                        {step}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {canSeeChefTips && safeMeal.tips && safeMeal.tips.length > 0 && (
+                        <div className="pdf-page-break pt-8">
+                            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                                <div className="w-1 h-6 bg-purple-500 rounded-full"></div>
+                                Chef Tips
+                            </h2>
+                            <div className="space-y-4">
+                                {safeMeal.tips.map((tip, i) => (
+                                    <div key={i} className="bg-purple-50/50 p-6 rounded-2xl border border-purple-100/50 italic text-gray-700 font-medium">
+                                        "{tip}"
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="mt-16 pt-8 border-t border-gray-100 text-center">
+                    <p className="text-sm text-gray-400 font-medium italic">
+                        Made with love by Edible.io — Your Personal AI Chef
+                    </p>
+                </div>
+            </div>
         </motion.div>
     )
 }
