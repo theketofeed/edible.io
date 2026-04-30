@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 import DodoPayments from 'dodopayments'
 import { Webhook } from 'standardwebhooks'
 import crypto from 'crypto'
+import rateLimit from 'express-rate-limit'
 
 dotenv.config({ path: '.env.local' })
 
@@ -36,6 +37,12 @@ const supabaseAdmin = createClient(
   process.env.VITE_SUPABASE_URL,
   process.env.VITE_SUPABASE_SERVICE_KEY
 )
+
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // 10 AI calls per minute per IP
+  message: { error: 'AI rate limit reached. Please wait a moment.' }
+})
 
 const allowedOrigins = [
   'http://localhost:5173',
