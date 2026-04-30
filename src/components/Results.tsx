@@ -381,10 +381,10 @@ const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result
 					<div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center mr-3 border border-purple-100/50">
 						<Download className="w-4 h-4 text-purple-500" />
 					</div>
-					Export PDF
+					Download Plan (PDF)
 				</motion.button>
 
-				<BulkDownloadButton result={result} showToast={showToast} />
+				<BulkDownloadButton result={result} showToast={showToast} onUpgradeRequired={onUpgradeRequired} />
 
 				<motion.button 
 					whileHover={{ y: -2, scale: 1.02 }}

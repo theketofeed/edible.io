@@ -48,8 +48,10 @@ export function usePlan() {
     if (isPro) return { allowed: true, remaining: Infinity }
 
     if (isLoggedIn && !profile) {
-      console.warn('[usePlan] Profile not loaded yet, blocking generation for safety.')
-      return { allowed: false, remaining: 0 }
+      // Profile still loading — treat as free user with fresh slate so we don't
+      // block the UI. Once the profile loads, subsequent checks will be accurate.
+      const remaining = FREE_GENERATION_LIMIT
+      return { allowed: remaining > 0, remaining }
     }
 
     if (!isLoggedIn) {
@@ -153,6 +155,7 @@ export function usePlan() {
     isFounding,
     isLoggedIn,
     canExportPDF: isPro,
+    canBulkDownloadRecipes: isPro,
     canSeeChefTips: isPro,
     maxSavedPlans: isPro ? Infinity : FREE_SAVED_PLANS_LIMIT,
     maxSavedRecipes: isPro ? Infinity : FREE_SAVED_RECIPES_LIMIT,
@@ -164,3 +167,4 @@ export function usePlan() {
     checkRecipeLimit,
   }
 }
+

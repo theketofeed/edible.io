@@ -155,6 +155,8 @@ export async function saveSavedRecipe(recipeTitle: string, mealType: string, rec
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
+  // Use upsert to atomically insert-or-update, eliminating 409 race conditions.
+  // Requires a unique constraint on (user_id, recipe_title) in the database.
   const { data, error } = await supabase
     .from('saved_recipes')
     .upsert(

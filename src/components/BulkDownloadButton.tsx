@@ -12,16 +12,22 @@ import { usePlan } from '../hooks/usePlan'
 interface Props {
     result: MealPlanResult
     showToast: (type: 'success' | 'error' | 'info', message: string) => void
+    onUpgradeRequired?: (trigger: string) => void
 }
 
-export default function BulkDownloadButton({ result, showToast }: Props) {
-    const { canSeeChefTips } = usePlan()
+export default function BulkDownloadButton({ result, showToast, onUpgradeRequired }: Props) {
+    const { canSeeChefTips, canBulkDownloadRecipes } = usePlan()
     const [isExporting, setIsExporting] = useState(false)
     const [progress, setProgress] = useState(0)
     const [currentMeal, setCurrentMeal] = useState<{ meal: Meal, dayName: string, mealType: string } | null>(null)
     const pdfRef = useRef<HTMLDivElement>(null)
 
     const handleBulkDownload = async () => {
+        if (!canBulkDownloadRecipes) {
+            onUpgradeRequired?.('bulk_download_recipes')
+            return
+        }
+
         setIsExporting(true)
         setProgress(0)
         showToast('info', 'Preparing all recipe PDFs. This may take a moment...')
@@ -67,10 +73,10 @@ export default function BulkDownloadButton({ result, showToast }: Props) {
             link.click()
             window.URL.revokeObjectURL(url)
 
-            showToast('success', 'ZIP folder with all recipes downloaded!')
+            showToast('success', 'All recipes downloaded successfully!')
         } catch (err) {
             console.error('Bulk Export Error:', err)
-            showToast('error', 'Failed to generate ZIP folder.')
+            showToast('error', 'Failed to download recipes.')
         } finally {
             setIsExporting(false)
             setCurrentMeal(null)
@@ -94,7 +100,7 @@ export default function BulkDownloadButton({ result, showToast }: Props) {
                         <FileArchive className="w-4 h-4 text-amber-500" />
                     )}
                 </div>
-                {isExporting ? 'Creating ZIP...' : 'Download ZIP'}
+                {isExporting ? 'Preparing Recipes...' : 'Download All Recipes'}
             </motion.button>
 
             {/* Hidden Renderer Portal */}

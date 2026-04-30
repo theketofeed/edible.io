@@ -40,6 +40,7 @@ export default function PricingModal({ isOpen, onClose, trigger }: Props) {
   const triggerMessage = {
     generation_limit: "You've used all 4 of your free meal plan generations this month. Upgrade to Pro for unlimited plans, every month.",
     pdf_export: "PDF export is a Pro feature. Upgrade to download, print, and share beautifully formatted meal plans anytime.",
+    bulk_download_recipes: "Downloading all recipes is a Pro feature. Upgrade to export your entire meal plan as beautifully formatted PDFs — ready to print, save, or share.",
     chef_tips: "Chef tips are a Pro feature. Unlock expert cooking techniques and insider tips to take every meal to the next level.",
     recipe_limit: "You've hit the 10-recipe limit on the free plan. Upgrade to Pro for unlimited recipe saving so you never lose a meal you love.",
   }[trigger || ''] || "Upgrade to Pro and unlock the full Edible experience — unlimited plans, chef tips, PDF exports, and more."
