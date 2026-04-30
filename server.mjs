@@ -1,6 +1,5 @@
 import express from 'express'
 import cors from 'cors'
-import rateLimit from 'express-rate-limit'
 import dotenv from 'dotenv'
 import { createClient } from '@supabase/supabase-js'
 import DodoPayments from 'dodopayments'
@@ -34,12 +33,13 @@ if (webhookSecret) {
 }
 
 const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.VITE_SUPABASE_URL,
+  process.env.VITE_SUPABASE_SERVICE_KEY
 )
 
 const allowedOrigins = [
   'http://localhost:5173',
+  'http://localhost:5174',
   'http://localhost:4173',
   process.env.FRONTEND_URL,
   'https://youractualdomain.com', // replace with your real domain
@@ -62,31 +62,8 @@ app.use('/api/webhooks', rawBodyParser)
 app.use(express.json({ limit: '25mb' }))
 app.use(express.urlencoded({ limit: '25mb', extended: true }))
 
-// ─── Rate Limiting ───────────────────────────────────────────────────────────
-const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many requests, please try again later.' }
-})
-
-const aiLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 10, // 10 AI calls per minute per IP
-  message: { error: 'AI rate limit reached. Please wait a moment.' }
-})
-
-const checkoutLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 20,
-  message: { error: 'Too many checkout attempts.' }
-})
-
-app.use(generalLimiter) // applies to everything
-
 // ─── Claude API proxy ──────────────────────────────────────────────────────
-app.post('/api/claude', aiLimiter, async (req, res) => {
+app.post('/api/claude', async (req, res) => {
 	const controller = new AbortController()
 	const timeoutId = setTimeout(() => {
 		controller.abort()
@@ -95,12 +72,13 @@ app.post('/api/claude', aiLimiter, async (req, res) => {
 
 	try {
 		const { prompt } = req.body
-		if (typeof prompt !== 'string' || prompt.length > 20000) {
+
+		if (!prompt) {
 			clearTimeout(timeoutId)
-			return res.status(400).json({ error: 'Invalid prompt' })
+			return res.status(400).json({ error: 'Missing prompt' })
 		}
 
-		const apiKey = process.env.CLAUDE_API_KEY
+		const apiKey = process.env.VITE_CLAUDE_API_KEY
 		if (!apiKey || apiKey.trim() === '' || apiKey === 'your_key_here') {
 			clearTimeout(timeoutId)
 			console.warn('[Claude Backend] No valid Claude API key found.')
@@ -118,7 +96,7 @@ app.post('/api/claude', aiLimiter, async (req, res) => {
 				'anthropic-version': '2023-06-01'
 			},
 			body: JSON.stringify({
-				model: 'claude-haiku-4-5',
+				model: 'claude-3-5-sonnet-20241022',
 				max_tokens: 4096,
 				system: 'You output JSON only. No code fences. No commentary.',
 				messages: [{ role: 'user', content: prompt }],
@@ -162,64 +140,10 @@ app.post('/api/claude', aiLimiter, async (req, res) => {
 	}
 })
 
-// ─── Groq API proxy ────────────────────────────────────────────────────────
-app.post('/api/groq', aiLimiter, async (req, res) => {
-	const controller = new AbortController()
-	const timeoutId = setTimeout(() => controller.abort(), 15000)
-	try {
-		const { messages, model, temperature, max_tokens } = req.body
-		if (!Array.isArray(messages) || messages.length > 20) {
-			clearTimeout(timeoutId)
-			return res.status(400).json({ error: 'Invalid messages' })
-		}
-		for (const msg of messages) {
-			if (typeof msg.content !== 'string' || msg.content.length > 20000) {
-				clearTimeout(timeoutId)
-				return res.status(400).json({ error: 'Message too large' })
-			}
-		}
-
-		const apiKey = process.env.GROQ_API_KEY
-		if (!apiKey) {
-			clearTimeout(timeoutId)
-			return res.status(401).json({ error: 'Groq API key not configured' })
-		}
-
-		const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${apiKey}`
-			},
-			body: JSON.stringify({
-				messages,
-				model: model || 'llama-3.3-70b-versatile',
-				temperature: temperature ?? 0.4,
-				max_tokens: max_tokens || 4096,
-				response_format: { type: 'json_object' }
-			}),
-			signal: controller.signal
-		})
-		clearTimeout(timeoutId)
-
-		if (!response.ok) {
-			const text = await response.text().catch(() => '')
-			return res.status(response.status).json({ error: `Groq error: ${response.status}`, details: text })
-		}
-
-		const json = await response.json()
-		res.json(json)
-	} catch (err) {
-		clearTimeout(timeoutId)
-		if (err.name === 'AbortError') return res.status(504).json({ error: 'Groq timed out' })
-		res.status(500).json({ error: err.message })
-	}
-})
-
 // ─── OCR.space proxy ───────────────────────────────────────────────────────
 app.post('/api/ocr', async (req, res) => {
 	try {
-		const apiKey = process.env.OCR_SPACE_API_KEY
+		const apiKey = process.env.VITE_OCR_SPACE_API_KEY
 		if (!apiKey) {
 			return res.status(500).json({ error: 'OCR.space API key not configured on server' })
 		}
@@ -275,15 +199,11 @@ app.post('/api/ocr', async (req, res) => {
 })
 
 // ─── Checkout ──────────────────────────────────────────────────────────────
-app.post('/api/checkout', checkoutLimiter, async (req, res) => {
+app.post('/api/checkout', async (req, res) => {
 	try {
 		const { productType, userId, userEmail } = req.body
-		if (typeof userId !== 'string' || typeof userEmail !== 'string' || 
-				!userEmail.includes('@') || userId.length > 100) {
-			return res.status(400).json({ error: 'Invalid user data' })
-		}
-		if (!productType) {
-			return res.status(400).json({ error: 'Missing productType' })
+		if (!productType || !userId || !userEmail) {
+			return res.status(400).json({ error: 'Missing required fields' })
 		}
 
 		const productMap = {
@@ -377,176 +297,147 @@ app.post('/api/webhooks/dodo', async (req, res) => {
   }
 })
 
-// ─── HuggingFace Image Generation Proxy ────────────────────────────────────
-app.post('/api/generate-meal-image', aiLimiter, async (req, res) => {
-	const { mealTitle } = req.body
-	if (typeof mealTitle !== 'string' || mealTitle.length > 200) {
-		return res.status(400).json({ error: 'Invalid meal title' })
-	}
+// ─── Meal Image Cache & Queue ──────────────────────────────────────────────
+const imageCache = new Map() // key → { buffer, contentType, timestamp }
+const IMAGE_CACHE_TTL = 60 * 60 * 1000 // 1 hour
 
-	const apiKey = process.env.HF_API_KEY?.trim()
-	if (!apiKey || apiKey === 'your_key_here') {
-		console.warn('[MealImages] ⚠️ No valid HuggingFace API key found. Check .env.local HF_API_KEY')
-		return res.status(401).json({ error: 'HuggingFace API key not configured' })
-	}
+function getImageCacheKey(title) {
+	return title.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().replace(/\s+/g, '-').slice(0, 80)
+}
 
-	// Try multiple models with fallback strategy
-	const models = [
-		'stabilityai/stable-diffusion-3.5-large-turbo',  
-		'black-forest-labs/FLUX.1-dev',  
-		'stabilityai/stable-diffusion-xl-base-1.0',
-	]
+async function fetchPexelsImage(mealTitle) {
+	const pexelsKey = process.env.VITE_PEXELS_API_KEY || process.env.PEXELS_API_KEY
+	if (!pexelsKey) return null
 
-	const buildFoodPrompt = (title) => [
-		title,
-		'professional food photography',
-		'restaurant quality plating',
-		'natural lighting',
-		'shallow depth of field',
-		'white ceramic plate',
-		'appetizing',
-		'vibrant colors',
-		'4k ultra HD',
-	].join(', ')
-
-	const prompt = buildFoodPrompt(mealTitle)
-
-	for (const model of models) {
-		const HF_MODEL_URL = `https://api-inference.huggingface.co/models/${model}`
-
-		try {
-			console.log(`[MealImages] Attempting generation with model: ${model}`)
-			console.log(`[MealImages] API Key prefix: ${apiKey.substring(0, 10)}...`)
-			console.log(`[MealImages] Prompt: "${prompt.substring(0, 80)}..."`)
-
-			const response = await fetch(HF_MODEL_URL, {
-				method: 'POST',
-				headers: {
-					'Authorization': `Bearer ${apiKey}`,
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({ inputs: prompt }),
-				signal: AbortSignal.timeout(35000),
-			})
-
-			console.log(`[MealImages] ${model} response status: ${response.status}`)
-
-			// Model cold-starting — wait and retry once
-			if (response.status === 503) {
-				const errorData = await response.json().catch(() => ({}))
-				const waitMs = Math.min((errorData.estimated_time || 20) * 1000, 20000)
-				console.log(`[MealImages] Model loading (503), waiting ${waitMs / 1000}s...`)
-				await new Promise(r => setTimeout(r, waitMs))
-
-				const retry = await fetch(HF_MODEL_URL, {
-					method: 'POST',
-					headers: {
-						'Authorization': `Bearer ${apiKey}`,
-						'Content-Type': 'application/json',
-					},
-					body: JSON.stringify({ inputs: prompt }),
-					signal: AbortSignal.timeout(35000),
-				})
-
-				if (!retry.ok) {
-					console.warn(`[MealImages] Retry failed with status ${retry.status}`)
-					continue // Try next model
-				}
-
-				const arrayBuffer = await retry.arrayBuffer()
-				const blob = Buffer.from(arrayBuffer)
-				console.log(`[MealImages] ✅ Generated (${blob.length} bytes) with ${model}`)
-				res.set('Content-Type', 'image/jpeg')
-				return res.send(blob)
-			}
-
-			if (response.ok) {
-				const arrayBuffer = await response.arrayBuffer()
-				const blob = Buffer.from(arrayBuffer)
-				if (blob.length > 0) {
-					console.log(`[MealImages] ✅ Generated (${blob.length} bytes) with ${model}`)
-					res.set('Content-Type', 'image/jpeg')
-					return res.send(blob)
-				}
-			}
-
-			// If model failed, log and try next
-			const errorText = await response.text().catch(() => 'Unknown error')
-			console.warn(`[MealImages] ${model} failed (${response.status}): ${errorText.substring(0, 100)}`)
-			continue
-
-		} catch (err) {
-			console.error(`[MealImages] ${model} error:`, err?.message || err)
-			continue // Try next model
-		}
-	}
-
-	// All HF models exhausted — try Pollinations AI (super reliable fallback)
 	try {
-		console.log('[MealImages] 🔄 Attempting Pollinations AI fallback...')
-		const encodedPrompt = encodeURIComponent(prompt)
-		const pollinationsUrl = `https://image.pollinations.ai/image?prompt=${encodedPrompt}&width=1024&height=1024&seed=${Math.floor(Math.random() * 1000000)}`
-		
-		let pResponse;
-		let retries = 8;
-		let baseWait = 1000;
-		
-		while (retries > 0) {
-			try {
-				pResponse = await fetch(pollinationsUrl, { 
-					signal: AbortSignal.timeout(30000),
-					headers: {
-						'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-					}
-				})
-				if (pResponse.ok) {
-					const arrayBuffer = await pResponse.arrayBuffer()
+		console.log(`[MealImages] 📸 Pexels search: "${mealTitle}"`)
+		const query = encodeURIComponent(mealTitle)
+		const searchUrl = `https://api.pexels.com/v1/search?query=${query}&per_page=1`
+
+		const pexelsRes = await fetch(searchUrl, {
+			headers: { 'Authorization': pexelsKey },
+			signal: AbortSignal.timeout(8000)
+		})
+
+		if (pexelsRes.ok) {
+			const data = await pexelsRes.json()
+			const photo = data?.photos?.[0]
+			if (photo?.src?.large) {
+				const imageUrl = photo.src.large
+				console.log(`[MealImages] ✅ Pexels found image for: "${mealTitle}"`)
+
+				const imgRes = await fetch(imageUrl, { signal: AbortSignal.timeout(8000) })
+				if (imgRes.ok) {
+					const arrayBuffer = await imgRes.arrayBuffer()
 					const blob = Buffer.from(arrayBuffer)
 					if (blob.length > 0) {
-						console.log(`[MealImages] ✅ Generated (${blob.length} bytes) with Pollinations fallback`)
-						res.set('Content-Type', 'image/jpeg')
-						return res.send(blob)
+						const contentType = imgRes.headers.get('content-type') || 'image/jpeg'
+						return { buffer: blob, contentType }
 					}
 				}
-				
-				// Handle rate limiting (429) with exponential backoff
-				if (pResponse.status === 429) {
-					retries--;
-					if (retries > 0) {
-						const waitTime = baseWait * Math.pow(2, 5 - retries); // exponential: 2000, 4000, 8000
-						console.log(`[MealImages] Rate limited (429), waiting ${waitTime}ms... (${retries} retries left)`);
-						await new Promise(r => setTimeout(r, waitTime));
-						continue;
-					}
-				} else if (pResponse.status === 401 || pResponse.status === 403) {
-					retries--;
-					if (retries > 0) {
-						console.log(`[MealImages] Auth error (${pResponse.status}), waiting 2s...`);
-						await new Promise(r => setTimeout(r, 2000));
-						continue;
-					}
-				}
-				
-				retries = 0; // Exit on other errors
-			} catch (fetchErr) {
-				retries--;
-				if (retries > 0) {
-					console.log(`[MealImages] Pollinations fetch error: ${fetchErr.message}, retrying...`);
-					await new Promise(r => setTimeout(r, 1500));
-				}
+			} else {
+				console.log(`[MealImages] Pexels returned no results for: "${mealTitle}"`)
 			}
+		} else {
+			console.warn(`[MealImages] Pexels search failed (${pexelsRes.status})`)
 		}
-		
-		console.error(`[MealImages] Pollinations fallback exhausted`);
-	} catch (pErr) {
-		console.error('[MealImages] Pollinations fallback critical error:', pErr.message)
+	} catch (err) {
+		console.warn(`[MealImages] Pexels error: ${err.message}`)
+	}
+	return null
+}
+
+// ─── Meal Image Proxy: Spoonacular → Pexels fallback ─────────────────
+// Strategy:
+//   1. Server-side cache      — instant response for repeated requests
+//   2. Spoonacular complexSearch — real food photos, instant, free tier (150 req/day)
+//   3. Pexels API           — beautiful stock photography fallback
+app.post('/api/generate-meal-image', aiLimiter, async (req, res) => {
+	const { mealTitle } = req.body
+
+	if (!mealTitle || typeof mealTitle !== 'string') {
+		return res.status(400).json({ error: 'Missing or invalid mealTitle' })
 	}
 
-	// All models exhausted
-	console.error('[MealImages] ❌ All models failed for:', mealTitle)
-	res.status(500).json({ 
+	const cacheKey = getImageCacheKey(mealTitle)
+
+	// ── Step 0: Check server-side cache ──────────────────────────────────────
+	const cached = imageCache.get(cacheKey)
+	if (cached && (Date.now() - cached.timestamp) < IMAGE_CACHE_TTL) {
+		console.log(`[MealImages] 💾 Cache hit for: "${mealTitle}" (${cached.buffer.length} bytes)`)
+		res.set('Content-Type', cached.contentType)
+		return res.send(cached.buffer)
+	}
+
+	const spoonacularKey = process.env.SPOONACULAR_API_KEY?.trim()
+
+	// ── Step 1: Spoonacular complexSearch ────────────────────────────────────
+	if (spoonacularKey && spoonacularKey !== 'your_key_here') {
+		try {
+			console.log(`[MealImages] 🔍 Spoonacular search: "${mealTitle}"`)
+			const query = encodeURIComponent(mealTitle)
+			const spoonUrl = `https://api.spoonacular.com/recipes/complexSearch?query=${query}&number=1&apiKey=${spoonacularKey}`
+
+			const spoonRes = await fetch(spoonUrl, {
+				signal: AbortSignal.timeout(8000),
+				headers: { 'Accept': 'application/json' }
+			})
+
+			if (spoonRes.ok) {
+				const data = await spoonRes.json()
+				const recipe = data?.results?.[0]
+				if (recipe?.image) {
+					let imageUrl = recipe.image
+					if (!imageUrl.startsWith('http')) {
+						imageUrl = `https://img.spoonacular.com/recipes/${imageUrl}`
+					}
+					console.log(`[MealImages] ✅ Spoonacular found image for: "${mealTitle}" → ${imageUrl}`)
+
+					const imgRes = await fetch(imageUrl, { signal: AbortSignal.timeout(8000) })
+					if (imgRes.ok) {
+						const arrayBuffer = await imgRes.arrayBuffer()
+						const blob = Buffer.from(arrayBuffer)
+						if (blob.length > 0) {
+							const contentType = imgRes.headers.get('content-type') || 'image/jpeg'
+							// Cache the result
+							imageCache.set(cacheKey, { buffer: blob, contentType, timestamp: Date.now() })
+							res.set('Content-Type', contentType)
+							console.log(`[MealImages] ✅ Served Spoonacular image (${blob.length} bytes)`)
+							return res.send(blob)
+						}
+					}
+				} else {
+					console.log(`[MealImages] Spoonacular returned no results for: "${mealTitle}"`)
+				}
+			} else {
+				const errText = await spoonRes.text().catch(() => '')
+				console.warn(`[MealImages] Spoonacular failed (${spoonRes.status}): ${errText.substring(0, 100)}`)
+			}
+		} catch (err) {
+			console.warn(`[MealImages] Spoonacular error: ${err.message}`)
+		}
+	} else {
+		console.log('[MealImages] No SPOONACULAR_API_KEY — skipping to Pexels')
+	}
+
+	// ── Step 2: Pexels API fallback ──────────────────
+	try {
+		const result = await fetchPexelsImage(mealTitle)
+		if (result) {
+			// Cache the result
+			imageCache.set(cacheKey, { buffer: result.buffer, contentType: result.contentType, timestamp: Date.now() })
+			res.set('Content-Type', result.contentType)
+			return res.send(result.buffer)
+		}
+	} catch (err) {
+		console.warn(`[MealImages] Pexels fetch error: ${err.message}`)
+	}
+
+	// ── All sources exhausted ─────────────────────────────────────────────────
+	console.error(`[MealImages] ❌ All sources failed for: "${mealTitle}"`)
+	res.status(500).json({
 		error: 'Image generation unavailable',
-		details: 'All HuggingFace models and Pollinations fallback exhausted.'
+		details: 'Spoonacular and Pexels both failed.'
 	})
 })
 

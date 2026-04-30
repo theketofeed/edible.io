@@ -65,7 +65,7 @@ ${itemsList}
 
 CRITICAL: Only use ingredients from the list above. Do NOT add salmon, chickpeas, feta, mushrooms, or any ingredient not listed.
 
-Give each recipe a simple, straightforward name that describes what it is. Use main ingredients and cooking method (e.g., "Turkey and Vegetable Scramble", "Grilled Pork Loin with Peppers"). NO flowery or poetic adjectives like "Sunrise", "Crisp", "Golden" etc.
+Give each recipe an appetizing and appealing name that sounds delicious but not overly ridiculous or pretentious. For example, instead of "Roasted Chicken with Green Bean and Onion", use "Herb-Roasted Chicken with Garlic Green Beans". Instead of "Oatmeal with Peanut Butter", use "Creamy Peanut Butter Oat Porridge". Make it sound like a great meal without using absurd 5-star restaurant flowery words.
 
 Return ONLY valid JSON (no markdown, no commentary):
 {

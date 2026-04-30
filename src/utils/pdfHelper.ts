@@ -9,7 +9,7 @@ export const downloadElementAsPDF = async (element: HTMLElement, options: PDFOpt
     const opt = {
         margin: options.margin || 0.5,
         filename: options.filename,
-        image: { type: 'jpeg', quality: 0.98 },
+        image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: {
             scale: 2,
             useCORS: true,
@@ -36,7 +36,7 @@ export const getElementAsPDFBlob = async (element: HTMLElement, filename: string
     const opt = {
         margin: 0.5,
         filename: filename,
-        image: { type: 'jpeg', quality: 0.98 },
+        image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: {
             scale: 2,
             useCORS: true,
