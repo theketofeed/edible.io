@@ -75,8 +75,8 @@ function getCategoryFallback(mealTitle: string): string {
   return 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&h=500&fit=crop'
 }
 
-// ─── HuggingFace FLUX.1-schnell via Backend Proxy (safer, handles retries) ──
-// Backend proxies all HuggingFace calls for better reliability and security
+// ─── Backend Image Proxy (Spoonacular → Pollinations) ───────────────────────
+// Backend tries Spoonacular first (real food photos), falls back to Pollinations AI.
 async function generateWithHuggingFace(mealTitle: string): Promise<string | null> {
   const key = titleToKey(mealTitle)
   
@@ -131,15 +131,15 @@ async function generateWithHuggingFace(mealTitle: string): Promise<string | null
  *
  * Strategy:
  * 1. Session memory cache → instant
- * 2. Category fallback    → instant (used immediately while AI generates)
- * 3. HuggingFace FLUX     → 2–5s AI generation via backend proxy, replaces fallback in cache
+ * 2. Category fallback    → instant (shown immediately while real image loads)
+ * 3. Backend fetch        → Spoonacular real food photo (8s timeout), then
+ *                           Pollinations AI generation (45s timeout)
+ *                           Result replaces the fallback in cache.
  *
- * The AI generation runs in the background — components that call this will
- * get the fallback instantly, and if called again for the same meal after
- * generation completes, they'll get the AI image.
- * 
- * Setup required: Add VITE_HF_API_KEY to .env.local
- * See .env.local.template for instructions
+ * The backend fetch runs in the background — components get a fallback instantly
+ * and the upgraded image appears on next render after the backend responds.
+ *
+ * Setup: Add SPOONACULAR_API_KEY to .env.local (free at spoonacular.com/food-api)
  */
 export async function fetchMealImage(mealTitle: string): Promise<string | null> {
   if (!mealTitle?.trim()) return null
@@ -185,7 +185,7 @@ export async function fetchMealImages(
   onProgress?: (completed: number, total: number) => void,
 ): Promise<Record<string, string>> {
   const results: Record<string, string> = {}
-  const CONCURRENCY = 3
+  const CONCURRENCY = 2 // reduced to avoid overwhelming Pollinations
 
   for (let i = 0; i < mealTitles.length; i += CONCURRENCY) {
     const batch = mealTitles.slice(i, i + CONCURRENCY)
@@ -194,6 +194,10 @@ export async function fetchMealImages(
       if (batchResults[idx]) results[title] = batchResults[idx]!
     })
     onProgress?.(Math.min(i + CONCURRENCY, mealTitles.length), mealTitles.length)
+    // Small delay between batches to avoid hammering the backend
+    if (i + CONCURRENCY < mealTitles.length) {
+      await new Promise(r => setTimeout(r, 500))
+    }
   }
 
   return results

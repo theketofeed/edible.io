@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "backend": "node server.mjs",
+    "backend": "node --watch server.mjs",
     "server": "node server-mindee.mjs",
     "dev:all": "concurrently \"npm run backend\" \"npm run dev\"",
     "build": "tsc -b && vite build",

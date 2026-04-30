@@ -4,9 +4,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 interface TooltipProps {
     children: ReactNode
     content: string
+    disabled?: boolean
 }
 
-export default function Tooltip({ children, content }: TooltipProps) {
+export default function Tooltip({ children, content, disabled }: TooltipProps) {
     const [isVisible, setIsVisible] = useState(false)
 
     return (
@@ -24,7 +25,7 @@ export default function Tooltip({ children, content }: TooltipProps) {
         >
             {children}
             <AnimatePresence>
-                {isVisible && (
+                {isVisible && !disabled && (
                     <motion.div
                         initial={{ opacity: 0, y: 5, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
