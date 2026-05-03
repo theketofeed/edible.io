@@ -34,8 +34,8 @@ if (webhookSecret) {
 }
 
 const supabaseAdmin = createClient(
-  process.env.VITE_SUPABASE_URL,
-  process.env.VITE_SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY
 )
 
 const aiLimiter = rateLimit({
@@ -85,7 +85,7 @@ app.post('/api/claude', async (req, res) => {
 			return res.status(400).json({ error: 'Missing prompt' })
 		}
 
-		const apiKey = process.env.VITE_CLAUDE_API_KEY
+		const apiKey = process.env.CLAUDE_API_KEY || process.env.VITE_CLAUDE_API_KEY
 		if (!apiKey || apiKey.trim() === '' || apiKey === 'your_key_here') {
 			clearTimeout(timeoutId)
 			console.warn('[Claude Backend] No valid Claude API key found.')
@@ -150,7 +150,7 @@ app.post('/api/claude', async (req, res) => {
 // ─── OCR.space proxy ───────────────────────────────────────────────────────
 app.post('/api/ocr', async (req, res) => {
 	try {
-		const apiKey = process.env.VITE_OCR_SPACE_API_KEY
+		const apiKey = process.env.OCR_SPACE_API_KEY || process.env.VITE_OCR_SPACE_API_KEY
 		if (!apiKey) {
 			return res.status(500).json({ error: 'OCR.space API key not configured on server' })
 		}
@@ -200,6 +200,68 @@ app.post('/api/ocr', async (req, res) => {
 		console.error('[OCR Proxy] Error:', err)
 		if (err.name === 'AbortError') {
 			return res.status(504).json({ error: 'OCR.space request timed out' })
+		}
+		res.status(500).json({ error: err.message })
+	}
+})
+
+// ─── Groq API proxy ───────────────────────────────────────────────────────
+app.post('/api/groq', aiLimiter, async (req, res) => {
+	const controller = new AbortController()
+	const timeoutId = setTimeout(() => {
+		controller.abort()
+		console.warn('[Groq Backend] Request timed out after 25s')
+	}, 25000)
+
+	try {
+		const apiKey = process.env.GROQ_API_KEY
+		if (!apiKey || apiKey.trim() === '') {
+			clearTimeout(timeoutId)
+			console.warn('[Groq Backend] No GROQ_API_KEY found in environment.')
+			return res.status(401).json({ error: 'Groq API key not configured on server' })
+		}
+
+		const { messages, temperature, model } = req.body
+		if (!messages || !Array.isArray(messages)) {
+			clearTimeout(timeoutId)
+			return res.status(400).json({ error: 'Missing or invalid messages array' })
+		}
+
+		console.log('[Groq Backend] Forwarding request to Groq...')
+		console.log('[Groq Backend] API Key prefix:', apiKey.substring(0, 10) + '...')
+
+		const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${apiKey.trim()}`
+			},
+			body: JSON.stringify({
+				model: model || 'llama-3.3-70b-versatile',
+				messages,
+				temperature: temperature ?? 0.5,
+				response_format: { type: 'json_object' }
+			}),
+			signal: controller.signal
+		})
+
+		clearTimeout(timeoutId)
+		console.log('[Groq Backend] Response status:', response.status)
+
+		if (!response.ok) {
+			const text = await response.text().catch(() => '')
+			console.error(`[Groq Backend] HTTP ${response.status}: ${text}`)
+			return res.status(response.status).json({ error: `Groq API error: ${response.status}`, details: text })
+		}
+
+		const json = await response.json()
+		console.log('[Groq Backend] ✅ Success')
+		res.json(json)
+	} catch (err) {
+		clearTimeout(timeoutId)
+		console.error('[Groq Backend] Error:', err)
+		if (err.name === 'AbortError' || err.message?.includes('aborted')) {
+			return res.status(504).json({ error: 'Groq API timed out' })
 		}
 		res.status(500).json({ error: err.message })
 	}

@@ -9,6 +9,7 @@ import { usePlan } from '../hooks/usePlan'
 import { saveMealPlan } from '../lib/db'
 import logo from '../assets/Transparent logo.png'
 import BulkDownloadButton from './BulkDownloadButton'
+import MealImagePlaceholder from './MealImagePlaceholder'
 
 interface Props {
 	result: MealPlanResult
@@ -158,18 +159,27 @@ useEffect(() => {
 			onClick={() => onNavigate(dayIndex, mealType, meal)}
 		>
 			{/* Image */}
-			<div className="w-14 h-14 rounded-xl flex-shrink-0 overflow-hidden relative bg-gray-100">
-				{/* Shimmer while loading */}
+			<div className="w-14 h-14 rounded-xl flex-shrink-0 overflow-hidden relative bg-gray-50">
+				{/* Animated SVG placeholder — shown until the real image loads */}
 				{!imageLoaded && !imageError && (
-					<div className="absolute inset-0 bg-gradient-to-r from-gray-100 via-gray-200 to-gray-100 animate-pulse rounded-xl" />
+					<div className="absolute inset-0 flex items-center justify-center">
+						<MealImagePlaceholder mealType={mealType} />
+					</div>
 				)}
-				<img
-					src={imageError ? fallbackSvg : (imageUrl || fallbackSvg)}
-					alt={meal.title}
-					className={`w-full h-full object-cover transition-opacity duration-500 ${imageLoaded || imageError || !imageUrl ? 'opacity-100' : 'opacity-0'}`}
-					onLoad={() => setImageLoaded(true)}
-					onError={handleImageError}
-				/>
+				{/* Real image — crossfades in once loaded */}
+				{imageUrl && !imageError && (
+					<img
+						src={imageUrl}
+						alt={meal.title}
+						className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+						onLoad={() => setImageLoaded(true)}
+						onError={handleImageError}
+					/>
+				)}
+				{/* Error fallback — emoji SVG */}
+				{imageError && (
+					<img src={fallbackSvg} alt={meal.title} className="w-full h-full object-cover" />
+				)}
 			</div>
 
 			{/* Content */}
