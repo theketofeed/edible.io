@@ -63,9 +63,11 @@ DIET RULE: ${dietRule}${forbiddenNote}
 GROCERY LIST (use ONLY these + basic pantry staples like salt, pepper, oil, garlic):
 ${itemsList}
 
-CRITICAL: Only use ingredients from the list above. Do NOT add salmon, chickpeas, feta, mushrooms, or any ingredient not listed.
-
-Give each recipe an appetizing and appealing name that sounds delicious but not overly ridiculous or pretentious. For example, instead of "Roasted Chicken with Green Bean and Onion", use "Herb-Roasted Chicken with Garlic Green Beans". Instead of "Oatmeal with Peanut Butter", use "Creamy Peanut Butter Oat Porridge". Make it sound like a great meal without using absurd 5-star restaurant flowery words.
+CRITICAL CULINARY RULES:
+1. Create COHESIVE, REALISTIC meals. Do NOT just throw random ingredients together (e.g., no "Apple and Egg Breakfast" or "Banana Chicken"). If the ingredients don't naturally go together, rely heavily on the pantry staples to bridge them or separate them (e.g., eat the apple as a side).
+2. Only use ingredients from the list above + pantry staples. Do NOT add salmon, chickpeas, feta, mushrooms, or any ingredient not listed.
+3. Give each recipe an appetizing, standard culinary name. Instead of "Roasted Chicken with Green Bean and Onion", use "Herb-Roasted Chicken with Garlic Green Beans". Instead of "Oatmeal with Peanut Butter", use "Creamy Peanut Butter Oat Porridge". Make it sound delicious without using absurd 5-star restaurant flowery words.
+4. Meals must make sense for their time of day (Breakfast, Lunch, Dinner).
 
 Return ONLY valid JSON (no markdown, no commentary):
 {

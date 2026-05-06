@@ -63,13 +63,13 @@ const NutritionBadges = memo(function NutritionBadges({ nutrition }: {
 				{nutrition.calories} kcal
 			</span>
 			<span className="bg-gray-50 text-gray-500 rounded-full px-3 py-1 text-[11px] font-bold border border-gray-100/50">
-				{nutrition.carbs} C
+				{nutrition.carbs}g carbs
 			</span>
 			<span className="bg-gray-50 text-gray-500 rounded-full px-3 py-1 text-[11px] font-bold border border-gray-100/50">
-				{nutrition.protein} P
+				{nutrition.protein}g protein
 			</span>
 			<span className="bg-gray-50 text-gray-500 rounded-full px-3 py-1 text-[11px] font-bold border border-gray-100/50">
-				{nutrition.fat} F
+				{nutrition.fat}g fat
 			</span>
 		</div>
 	)
@@ -198,7 +198,7 @@ useEffect(() => {
 
 				{/* Macros — all on one line */}
 				<p className="text-[11px] text-gray-400 font-bold tracking-tight uppercase">
-				<span className="text-gray-900">{cal}</span> kcal &nbsp;·&nbsp; <span className="text-gray-900">{c}</span> carbs &nbsp;·&nbsp; <span className="text-gray-900">{p}</span> protein
+				<span className="text-gray-900">{cal}</span> kcal &nbsp;·&nbsp; <span className="text-gray-900">{c}g</span> carbs &nbsp;·&nbsp; <span className="text-gray-900">{p}g</span> protein
 				</p>
 			</div>
 

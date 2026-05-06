@@ -103,7 +103,7 @@ app.post('/api/claude', async (req, res) => {
 				'anthropic-version': '2023-06-01'
 			},
 			body: JSON.stringify({
-				model: 'claude-3-5-sonnet-20241022',
+				model: 'claude-haiku-4-5-20251001',
 				max_tokens: 4096,
 				system: 'You output JSON only. No code fences. No commentary.',
 				messages: [{ role: 'user', content: prompt }],
@@ -374,14 +374,72 @@ function getImageCacheKey(title) {
 	return title.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().replace(/\s+/g, '-').slice(0, 80)
 }
 
+// ─── Food Query Sanitizer ──────────────────────────────────────────────────
+// Strips cooking adjectives/techniques that confuse general image search
+// and extracts core food terms for better search accuracy.
+const NOISE_WORDS = new Set([
+	// Cooking techniques
+	'baked', 'grilled', 'roasted', 'pan-seared', 'seared', 'sauteed', 'sautéed',
+	'fried', 'deep-fried', 'braised', 'steamed', 'poached', 'smoked', 'charred',
+	'broiled', 'blanched', 'caramelized', 'glazed', 'marinated', 'stuffed',
+	'slow-cooked', 'pressure-cooked', 'air-fried', 'stir-fried',
+	// Descriptive adjectives that don't help image search
+	'homemade', 'classic', 'traditional', 'rustic', 'simple', 'easy', 'quick',
+	'healthy', 'hearty', 'light', 'fresh', 'creamy', 'crispy', 'crunchy',
+	'tender', 'juicy', 'savory', 'zesty', 'tangy', 'spicy', 'mild', 'bold',
+	'rich', 'decadent', 'delicious', 'flavorful', 'aromatic', 'fragrant',
+	'golden', 'perfect', 'ultimate', 'best', 'amazing', 'favorite',
+	// Preparation descriptors
+	'herb-crusted', 'crusted', 'seasoned', 'infused', 'topped', 'loaded',
+	'drizzled', 'tossed', 'whipped', 'mashed', 'diced', 'sliced', 'chopped',
+	// Filler words
+	'with', 'and', 'in', 'on', 'a', 'the', 'style', 'inspired',
+])
+
+function sanitizeFoodQuery(mealTitle) {
+	// 1. Remove parenthetical notes like "(Keto-Friendly)" or "(serves 4)"
+	let cleaned = mealTitle.replace(/\([^)]*\)/g, '').trim()
+
+	// 2. Split into words and filter out noise
+	const words = cleaned.split(/[\s-]+/).filter(w => {
+		const lower = w.toLowerCase().replace(/[^a-z]/g, '')
+		return lower.length > 1 && !NOISE_WORDS.has(lower) && !NOISE_WORDS.has(w.toLowerCase())
+	})
+
+	// 3. If we stripped too much, fall back to the original (minus parentheticals)
+	const result = words.length >= 1 ? words.join(' ') : cleaned
+
+	return result.trim()
+}
+
+// Check if a Pexels photo alt text / URL is food-related
+const FOOD_INDICATORS = /\b(food|dish|meal|plate|bowl|cook|recipe|eat|cuisine|salad|soup|steak|chicken|fish|pasta|rice|bread|cake|dessert|fruit|vegetable|meat|seafood|sandwich|burger|pizza|taco|sushi|curry|noodle|breakfast|lunch|dinner|appetizer|snack|sauce|grill|roast|bake|fry|serve|kitchen|restaurant|dining|delicious|tasty|yummy|homemade|ingredient)\b/i
+
+function isProbablyFoodPhoto(photo) {
+	// Check alt text
+	if (photo.alt && FOOD_INDICATORS.test(photo.alt)) return true
+	// Check URL path for food-related terms
+	if (photo.url && FOOD_INDICATORS.test(photo.url)) return true
+	// Check image URL
+	if (photo.src?.original && FOOD_INDICATORS.test(photo.src.original)) return true
+	// If alt text is very short or generic, it's uncertain — allow it if no red flags
+	const NON_FOOD = /\b(book|cover|page|author|library|shelf|reading|laptop|computer|phone|screen|office|desk|building|car|vehicle|fashion|model|portrait|selfie|abstract|pattern|texture|landscape|mountain|ocean|beach|city|skyline|person|people|crowd|sport|gym)\b/i
+	if (photo.alt && NON_FOOD.test(photo.alt)) return false
+	// No strong signal either way — accept it (Pexels food searches are usually correct)
+	return true
+}
+
 async function fetchPexelsImage(mealTitle) {
 	const pexelsKey = process.env.VITE_PEXELS_API_KEY || process.env.PEXELS_API_KEY
 	if (!pexelsKey) return null
 
 	try {
-		console.log(`[MealImages] 📸 Pexels search: "${mealTitle}"`)
-		const query = encodeURIComponent(mealTitle)
-		const searchUrl = `https://api.pexels.com/v1/search?query=${query}&per_page=1`
+		// Sanitize the query and append food context for Pexels
+		const foodQuery = sanitizeFoodQuery(mealTitle)
+		const searchTerm = `${foodQuery} food dish`
+		console.log(`[MealImages] 📸 Pexels search: "${mealTitle}" → query: "${searchTerm}"`)
+		const query = encodeURIComponent(searchTerm)
+		const searchUrl = `https://api.pexels.com/v1/search?query=${query}&per_page=5`
 
 		const pexelsRes = await fetch(searchUrl, {
 			headers: { 'Authorization': pexelsKey },
@@ -390,10 +448,13 @@ async function fetchPexelsImage(mealTitle) {
 
 		if (pexelsRes.ok) {
 			const data = await pexelsRes.json()
-			const photo = data?.photos?.[0]
-			if (photo?.src?.large) {
-				const imageUrl = photo.src.large
-				console.log(`[MealImages] ✅ Pexels found image for: "${mealTitle}"`)
+			const photos = data?.photos || []
+
+			// Pick the first photo that passes food-relevance checks
+			const foodPhoto = photos.find(p => p?.src?.large && isProbablyFoodPhoto(p))
+			if (foodPhoto) {
+				const imageUrl = foodPhoto.src.large
+				console.log(`[MealImages] ✅ Pexels found food image for: "${mealTitle}" (alt: "${foodPhoto.alt || 'n/a'}")`)
 
 				const imgRes = await fetch(imageUrl, { signal: AbortSignal.timeout(8000) })
 				if (imgRes.ok) {
@@ -405,7 +466,7 @@ async function fetchPexelsImage(mealTitle) {
 					}
 				}
 			} else {
-				console.log(`[MealImages] Pexels returned no results for: "${mealTitle}"`)
+				console.log(`[MealImages] Pexels returned no food-relevant results for: "${mealTitle}" (${photos.length} total results filtered out)`)
 			}
 		} else {
 			console.warn(`[MealImages] Pexels search failed (${pexelsRes.status})`)
@@ -443,9 +504,11 @@ app.post('/api/generate-meal-image', aiLimiter, async (req, res) => {
 	// ── Step 1: Spoonacular complexSearch ────────────────────────────────────
 	if (spoonacularKey && spoonacularKey !== 'your_key_here') {
 		try {
-			console.log(`[MealImages] 🔍 Spoonacular search: "${mealTitle}"`)
-			const query = encodeURIComponent(mealTitle)
-			const spoonUrl = `https://api.spoonacular.com/recipes/complexSearch?query=${query}&number=1&apiKey=${spoonacularKey}`
+			// Sanitize the query for better Spoonacular matches
+			const foodQuery = sanitizeFoodQuery(mealTitle)
+			console.log(`[MealImages] 🔍 Spoonacular search: "${mealTitle}" → query: "${foodQuery}"`)
+			const query = encodeURIComponent(foodQuery)
+			const spoonUrl = `https://api.spoonacular.com/recipes/complexSearch?query=${query}&number=3&apiKey=${spoonacularKey}`
 
 			const spoonRes = await fetch(spoonUrl, {
 				signal: AbortSignal.timeout(8000),
@@ -454,7 +517,8 @@ app.post('/api/generate-meal-image', aiLimiter, async (req, res) => {
 
 			if (spoonRes.ok) {
 				const data = await spoonRes.json()
-				const recipe = data?.results?.[0]
+				// Pick the first result with a valid image
+				const recipe = (data?.results || []).find(r => r?.image)
 				if (recipe?.image) {
 					let imageUrl = recipe.image
 					if (!imageUrl.startsWith('http')) {

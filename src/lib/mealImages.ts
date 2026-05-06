@@ -130,14 +130,10 @@ async function generateWithHuggingFace(mealTitle: string): Promise<string | null
  * Returns a food image URL for a meal title.
  *
  * Strategy:
- * 1. Session memory cache → instant
- * 2. Category fallback    → instant (shown immediately while real image loads)
- * 3. Backend fetch        → Spoonacular real food photo (8s timeout), then
- *                           Pollinations AI generation (45s timeout)
- *                           Result replaces the fallback in cache.
- *
- * The backend fetch runs in the background — components get a fallback instantly
- * and the upgraded image appears on next render after the backend responds.
+ * 1. Session memory cache → instant (if previously fetched)
+ * 2. Backend fetch        → Spoonacular real food photo → Pexels fallback
+ *                           Returns null while loading so the SVG meal-type
+ *                           placeholder stays visible until a real photo arrives.
  *
  * Setup: Add SPOONACULAR_API_KEY to .env.local (free at spoonacular.com/food-api)
  */
@@ -153,27 +149,25 @@ export async function fetchMealImage(mealTitle: string): Promise<string | null> 
     return cached
   }
 
-  // 2. Set category fallback immediately so the image slot is never empty
-  const fallback = getCategoryFallback(mealTitle)
-  sessionCache.set(key, fallback)
-  console.log(`[MealImages] Using fallback for: "${mealTitle}" (will upgrade to AI if available)`)
+  // 2. Fetch real food image from backend (Spoonacular → Pexels)
+  //    Returns null immediately — the calling component shows an SVG placeholder
+  //    until this resolves. Once resolved, the URL is cached for future use.
+  console.log(`[MealImages] Fetching real image for: "${mealTitle}" (SVG placeholder shown until ready)`)
 
-  // 3. Fire AI generation in background — updates cache when done
-  //    (next render cycle or page navigation will use the upgraded URL)
-  generateWithHuggingFace(mealTitle)
-    .then(aiUrl => {
-      if (aiUrl) {
-        sessionCache.set(key, aiUrl)
-        console.log(`[MealImages] ✅ Upgraded cache with AI image for: "${mealTitle}"`)
-      } else {
-        console.log(`[MealImages] AI generation unavailable for: "${mealTitle}" — using fallback`)
-      }
-    })
-    .catch(err => {
-      console.error(`[MealImages] Unexpected error generating image for "${mealTitle}":`, err)
-    })
+  try {
+    const aiUrl = await generateWithHuggingFace(mealTitle)
+    if (aiUrl) {
+      sessionCache.set(key, aiUrl)
+      console.log(`[MealImages] ✅ Got real food image for: "${mealTitle}"`)
+      return aiUrl
+    }
+  } catch (err) {
+    console.error(`[MealImages] Unexpected error generating image for "${mealTitle}":`, err)
+  }
 
-  return fallback
+  // No image available — component will keep showing the SVG placeholder
+  console.log(`[MealImages] No image available for: "${mealTitle}" — SVG placeholder will persist`)
+  return null
 }
 
 /**

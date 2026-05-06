@@ -870,9 +870,9 @@ function RecipeCard({ r, hidden, onHide }: { r: Recipe, hidden: boolean, onHide:
           <span style={{ fontSize: 11, fontWeight: 800, color: C.txt }}>{r.cal > 0 ? r.cal : '--'} <span style={{color:C.faint, fontWeight:600}}>kcal</span></span>
           {r.rawMeal?.nutrition && (
             <>
-              <span style={{ fontSize: 11, fontWeight: 800, color: C.txt }}>{r.rawMeal.nutrition.carbs || 0} <span style={{color:C.faint, fontWeight:600}}>C</span></span>
-              <span style={{ fontSize: 11, fontWeight: 800, color: C.txt }}>{r.rawMeal.nutrition.protein || 0} <span style={{color:C.faint, fontWeight:600}}>P</span></span>
-              <span style={{ fontSize: 11, fontWeight: 800, color: C.txt }}>{r.rawMeal.nutrition.fat || 0} <span style={{color:C.faint, fontWeight:600}}>F</span></span>
+              <span style={{ fontSize: 11, fontWeight: 800, color: C.txt }}>{r.rawMeal.nutrition.carbs || 0}<span style={{color:C.faint, fontWeight:600}}>g C</span></span>
+              <span style={{ fontSize: 11, fontWeight: 800, color: C.txt }}>{r.rawMeal.nutrition.protein || 0}<span style={{color:C.faint, fontWeight:600}}>g P</span></span>
+              <span style={{ fontSize: 11, fontWeight: 800, color: C.txt }}>{r.rawMeal.nutrition.fat || 0}<span style={{color:C.faint, fontWeight:600}}>g F</span></span>
             </>
           )}
         </div>

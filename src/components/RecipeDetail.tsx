@@ -14,6 +14,7 @@ import { saveSavedRecipe, deleteSavedRecipe, getUserSavedRecipes } from '../lib/
 import { supabase } from '../lib/supabase'
 import Tooltip from './Tooltip'
 import { downloadElementAsPDF } from '../utils/pdfHelper'
+import MealImagePlaceholder from './MealImagePlaceholder'
 import logo from '../assets/Transparent logo.png'
 
 interface RecipeDetailProps {
@@ -657,21 +658,7 @@ Made with Edible.io`
                 >
                     {/* Food Image Hero */}
                     <div className="h-[200px] md:h-[300px] bg-purple-100 flex items-center justify-center relative group">
-                        {isImageLoading ? (
-                            <div className="absolute inset-0 bg-gradient-to-br from-purple-100 via-purple-50 to-lavender-100 flex items-center justify-center overflow-hidden">
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shimmer" />
-                                <div className="relative flex flex-col items-center gap-3">
-                                    <svg className="w-16 h-16 md:w-20 md:h-20 text-purple-300 animate-pulse" viewBox="0 0 64 64" fill="none">
-                                        <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="3" fill="none" opacity="0.3" />
-                                        <path d="M20 40 Q32 20 44 40" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" />
-                                        <circle cx="32" cy="36" r="4" fill="currentColor" opacity="0.5" />
-                                        <circle cx="22" cy="28" r="3" fill="currentColor" opacity="0.4" />
-                                        <circle cx="42" cy="28" r="3" fill="currentColor" opacity="0.4" />
-                                    </svg>
-                                    <span className="text-purple-300 text-sm font-medium">Loading image...</span>
-                                </div>
-                            </div>
-                        ) : recipeImage ? (
+                        {recipeImage ? (
                             <>
                                 <img
                                     src={recipeImage}
@@ -693,18 +680,23 @@ Made with Edible.io`
                                 </div>
                             </>
                         ) : (
-                            <div className="absolute inset-0 bg-gradient-to-br from-purple-500 via-purple-400 to-lavender-400 flex items-center justify-center">
-                                <div className="absolute inset-0 bg-black/10"></div>
-                                <div className="relative flex flex-col items-center gap-3">
-                                    <div className="absolute inset-0 blur-3xl bg-white/20 rounded-full animate-pulse"></div>
-                                    <svg className="w-20 h-20 md:w-28 md:h-28 text-white/40 relative z-10" viewBox="0 0 64 64" fill="none">
-                                        <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="3" fill="none" opacity="0.5" />
-                                        <path d="M20 40 Q32 20 44 40" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" />
-                                        <circle cx="32" cy="36" r="4" fill="currentColor" opacity="0.7" />
-                                        <circle cx="22" cy="28" r="3" fill="currentColor" opacity="0.6" />
-                                        <circle cx="42" cy="28" r="3" fill="currentColor" opacity="0.6" />
-                                    </svg>
+                            <div className={`absolute inset-0 flex items-center justify-center ${
+                                mealType === 'Breakfast' ? 'bg-gradient-to-br from-amber-50 via-amber-100/80 to-orange-50' :
+                                mealType === 'Lunch' ? 'bg-gradient-to-br from-emerald-50 via-green-100/80 to-teal-50' :
+                                'bg-gradient-to-br from-purple-50 via-violet-100/80 to-lavender-50'
+                            }`}>
+                                <div className="w-28 h-28 md:w-36 md:h-36 opacity-80">
+                                    <MealImagePlaceholder mealType={mealType} />
                                 </div>
+                                {isImageLoading && (
+                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
+                                        <span className={`text-xs font-medium px-3 py-1 rounded-full backdrop-blur-sm ${
+                                            mealType === 'Breakfast' ? 'text-amber-500/70 bg-amber-100/50' :
+                                            mealType === 'Lunch' ? 'text-emerald-500/70 bg-emerald-100/50' :
+                                            'text-purple-400/70 bg-purple-100/50'
+                                        }`}>Finding the perfect photo…</span>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
