@@ -19,7 +19,7 @@ export const downloadElementAsPDF = async (element: HTMLElement, options: PDFOpt
             scrollY: 0,
             scrollX: 0
         },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' as const },
         pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
     };
 
@@ -44,7 +44,7 @@ export const getElementAsPDFBlob = async (element: HTMLElement, filename: string
             letterRendering: true,
             windowWidth: 800
         },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' as const }
     };
 
     try {
