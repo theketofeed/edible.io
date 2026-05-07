@@ -33,6 +33,8 @@ import ReceiptConfirmation from './components/ReceiptConfirmation'
 import { parseReceiptWithGemini, ParsedItem } from './services/receiptParser'
 import EdibleDashboard from './pages/dashboard'
 import PaymentSuccess from './pages/PaymentSuccess'
+import Privacy from './pages/Privacy'
+import Terms from './pages/Terms'
 
 function MainContent() {
 	const navigate = useNavigate()
@@ -431,6 +433,8 @@ function MainContent() {
 				} />
 				<Route path="/dashboard" element={<EdibleDashboard />} />
 				<Route path="/payment-success" element={<PaymentSuccess />} />
+				<Route path="/privacy" element={<Privacy />} />
+				<Route path="/terms" element={<Terms />} />
 			</Routes>
 
 			<Footer />
