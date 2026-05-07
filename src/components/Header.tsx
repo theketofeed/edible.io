@@ -1,6 +1,6 @@
 import { memo, useCallback, useState } from 'react'
 import { House, Sparkles, CreditCard, MessageCircleQuestion, ArrowUpRight, Menu, X } from 'lucide-react'
-import logo from '../assets/Transparent logo.png'
+import logo from '../assets/favicon.png'
 import { useAuth } from '../context/AuthContext'
 import UserMenu from './Usermenu'
 

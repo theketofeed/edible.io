@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { Mail, Lock, Eye, EyeOff, ArrowRight, X } from 'lucide-react'
-import logo from '../assets/Transparent logo.png'
+import logo from '../assets/favicon.png'
 
 interface AuthModalProps {
     isOpen: boolean

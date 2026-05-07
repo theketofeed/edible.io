@@ -9,7 +9,7 @@ import {
   Scale, Leaf, Dumbbell, Wheat, Sprout,
   Camera, PencilLine
 } from "lucide-react"
-import logo from "../assets/Transparent logo.png"
+import logo from "../assets/favicon.png"
 import { useAuth } from "../context/AuthContext"
 import { getUserMealPlans, getProfile, deleteMealPlan, getUserSavedRecipes } from "../lib/db"
 import { fetchMealImage } from "../lib/mealImages"

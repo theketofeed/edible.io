@@ -7,7 +7,7 @@ import { fetchMealImage, sessionCache, titleToKey } from '../lib/mealImages'
 import { useAuth } from '../context/AuthContext'
 import { usePlan } from '../hooks/usePlan'
 import { saveMealPlan } from '../lib/db'
-import logo from '../assets/Transparent logo.png'
+import logo from '../assets/favicon.png'
 import BulkDownloadButton from './BulkDownloadButton'
 import MealImagePlaceholder from './MealImagePlaceholder'
 

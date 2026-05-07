@@ -15,7 +15,7 @@ import { supabase } from '../lib/supabase'
 import Tooltip from './Tooltip'
 import { downloadElementAsPDF } from '../utils/pdfHelper'
 import MealImagePlaceholder from './MealImagePlaceholder'
-import logo from '../assets/Transparent logo.png'
+import logo from '../assets/favicon.png'
 
 interface RecipeDetailProps {
     meal?: Meal

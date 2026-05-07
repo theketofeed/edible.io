@@ -1,6 +1,6 @@
 import { memo } from 'react'
 import { Twitter, Instagram, Facebook } from 'lucide-react'
-import logo from '../assets/Transparent logo.png'
+import logo from '../assets/favicon.png'
 
 const Footer = memo(function Footer() {
 	const currentYear = new Date().getFullYear()

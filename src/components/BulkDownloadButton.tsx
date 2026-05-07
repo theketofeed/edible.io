@@ -6,7 +6,7 @@ import type { MealPlanResult, Meal } from '../utils/types'
 import { getElementAsPDFBlob } from '../utils/pdfHelper'
 import { createPortal } from 'react-dom'
 import { Clock, ChefHat, Timer } from 'lucide-react'
-import logo from '../assets/Transparent logo.png'
+import logo from '../assets/favicon.png'
 import { usePlan } from '../hooks/usePlan'
 
 interface Props {

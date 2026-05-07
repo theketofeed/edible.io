@@ -3,7 +3,7 @@ import { ArrowUp, AlertCircle, ArrowLeft, Lock, ArrowUpRight } from 'lucide-reac
 import { motion, AnimatePresence } from 'framer-motion'
 import { BrowserRouter as Router, Routes, Route, useNavigate, useParams, useLocation } from 'react-router-dom'
 import Header from './components/Header'
-import logo from './assets/Transparent logo.png'
+import logo from './assets/favicon.png'
 import HeroSection from './components/HeroSection'
 import UploadArea from './components/UploadArea'
 import DietSelector from './components/DietSelector'
