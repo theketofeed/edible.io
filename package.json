@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
+    "@sentry/react": "^10.52.0",
     "@supabase/supabase-js": "^2.99.2",
     "@types/tesseract.js": "^0.0.2",
     "concurrently": "^9.2.1",
