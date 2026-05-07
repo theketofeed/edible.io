@@ -1,3 +1,6 @@
+import { Link } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
+
 export default function Terms() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-16">
@@ -44,6 +47,16 @@ export default function Terms() {
           <h2 className="text-xl font-bold text-gray-900 mb-3">8. Contact</h2>
           <p className="text-gray-600">Questions? Email us at <a href="mailto:theketofeed.ceo@gmail.com" className="text-purple-600 hover:underline">theketofeed.ceo@gmail.com</a></p>
         </section>
+      </div>
+
+      <div className="mt-12 pt-8 border-t border-gray-100">
+        <Link 
+          to="/" 
+          className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-all duration-300 shadow-lg shadow-purple-200 active:scale-95"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Back to homepage
+        </Link>
       </div>
     </div>
   )
