@@ -7,20 +7,20 @@ import { AuthProvider } from './context/AuthContext'
 import './index.css'
 
 Sentry.init({
-  dsn: 'your_dsn_here',
-  environment: 'production',
-  tracesSampleRate: 0.1,
+	dsn: 'https://709a7c45faedbcee5c9f943425dd44bc@o4511351278403584.ingest.de.sentry.io/4511351286530128',
+	environment: 'production',
+	tracesSampleRate: 0.1,
 })
 
 posthog.init('phc_AXP8PV69MvddHZnRbyuItedeuFZ9n9lznYo0uotTbsq', {
-  api_host: 'https://eu.i.posthog.com',
-  capture_pageview: true
+	api_host: 'https://eu.i.posthog.com',
+	capture_pageview: true
 })
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
-  </React.StrictMode>
+	<React.StrictMode>
+		<AuthProvider>
+			<App />
+		</AuthProvider>
+	</React.StrictMode>
 )
