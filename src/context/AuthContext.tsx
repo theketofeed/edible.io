@@ -121,16 +121,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         fetchProfile(session.user.id) // non-blocking
 
         // Send welcome email only on brand-new signups
-        // (created_at === last_sign_in_at means they've never signed in before)
-        if (event === 'SIGNED_IN' && session?.user?.created_at === session?.user?.last_sign_in_at) {
-          fetch(`${import.meta.env.VITE_BACKEND_URL}/api/send-welcome`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: session.user.email,
-              name: session.user.user_metadata?.full_name
-            })
-          }).catch((err) => console.warn('[AuthContext] Welcome email failed:', err))
+        if (event === 'SIGNED_IN') {
+          const createdAt = new Date(session.user.created_at).getTime()
+          const lastSignIn = new Date(session.user.last_sign_in_at ?? '').getTime()
+          const isNewUser = Math.abs(createdAt - lastSignIn) < 5000 // within 5 seconds = new signup
+          if (isNewUser) {
+            fetch(`${import.meta.env.VITE_BACKEND_URL}/api/send-welcome`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email: session.user.email,
+                name: session.user.user_metadata?.full_name
+              })
+            }).catch((err) => console.warn('[AuthContext] Welcome email failed:', err))
+          }
         }
       } else {
         setProfile(null)
