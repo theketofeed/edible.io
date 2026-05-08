@@ -35,7 +35,7 @@ const C = {
 
 type DietKey = "All" | "Balanced" | "Keto" | "Vegan" | "High-Protein" | "Mediterranean" | "Vegetarian" | "Paleo"
 type UserData = { name: string; email: string; joined: string; avatarUrl?: string }
-const DEFAULT_USER_DATA: UserData = { name: "User", email: "user@edible.io", joined: "2026" }
+const DEFAULT_USER_DATA: UserData = { name: "User", email: "user@edible.pro", joined: "2026" }
 const DIET: Record<DietKey, { icon: React.ElementType; col: string; bg: string }> = {
   All: { icon: Sparkles, col: C.purple, bg: "#F5F3FF" },
   Balanced: { icon: Scale, col: "#16a34a", bg: "#F0FDF4" },
@@ -229,11 +229,11 @@ function Sidebar({ active, onNav, userData }: SidebarProps) {
           <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
             <img
               src={logo}
-              alt="Edible.io"
+              alt="Edible"
               style={{ width: 32, height: 32, objectFit: "contain" }}
             />
             <span style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", fontSize: 16, fontWeight: 800, color: C.txt }}>
-              Edible<span style={{ color: C.accent }}>.io</span>
+              Edible
             </span>
           </div>
         </div>

@@ -38,9 +38,9 @@ const Header = memo(function Header({ onAuthClick, onOpenProfile }: HeaderProps)
 
 					{/* Logo */}
 					<div className="flex items-center gap-2 cursor-pointer flex-shrink-0" onClick={() => window.scrollTo(0, 0)}>
-						<img src={logo} alt="Edible.io" className="w-7 h-7 sm:w-8 sm:h-8 object-contain" />
+						<img src={logo} alt="Edible" className="w-7 h-7 sm:w-8 sm:h-8 object-contain" />
 						<span className="text-[17px] sm:text-xl font-bold text-gray-900 tracking-tight">
-							Edible<span className="text-[#C6A0F6]">.io</span>
+							Edible
 						</span>
 					</div>
 

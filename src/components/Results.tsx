@@ -447,9 +447,9 @@ const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result
 			<div ref={ref} className="w-full print-content">
 				<div className="print-only text-center mb-12">
 					<div className="inline-flex items-center gap-2 mb-4">
-						<img src={logo} alt="Edible.io" className="w-10 h-10 object-contain" />
+						<img src={logo} alt="Edible" className="w-10 h-10 object-contain" />
 						<h1 className="text-4xl font-black text-gray-900 tracking-tight">
-							Edible<span className="text-[#C6A0F6]">.io</span>
+							Edible
 						</h1>
 					</div>
 					<h2 className="text-2xl font-bold text-gray-800 mb-2">{title}</h2>

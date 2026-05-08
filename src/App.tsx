@@ -344,9 +344,9 @@ function MainContent() {
 												animate={{ scale: [1, 1.05, 1] }}
 												transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
 											/>
-											<h3 className="text-2xl font-black text-gray-900 mb-2">edible is taking a breather</h3>
+											<h3 className="text-2xl font-black text-gray-900 mb-2">Edible is taking a breather</h3>
 											<p className="text-gray-600 mb-8 leading-relaxed">
-												edible is experiencing high demand right now. This usually fixes itself in a few seconds — give it another try!
+												Edible is experiencing high demand right now. This usually fixes itself in a few seconds — give it another try!
 											</p>
 											<button
 												onClick={handleGenerate}

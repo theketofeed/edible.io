@@ -9,13 +9,13 @@ export default function Terms() {
       
       <div className="space-y-8">
         <section>
-          <h2 className="text-xl font-bold text-gray-900 mb-3">1. Using Edible.io</h2>
-          <p className="text-gray-600">By using Edible.io you agree to these terms. You must be at least 13 years old to use this service. You are responsible for keeping your account credentials secure.</p>
+          <h2 className="text-xl font-bold text-gray-900 mb-3">1. Using Edible</h2>
+          <p className="text-gray-600">By using Edible you agree to these terms. You must be at least 13 years old to use this service. You are responsible for keeping your account credentials secure.</p>
         </section>
 
         <section>
           <h2 className="text-xl font-bold text-gray-900 mb-3">2. What we provide</h2>
-          <p className="text-gray-600">Edible.io provides AI-generated meal plans based on your grocery items. Meal plans are suggestions only — we are not nutritionists and nothing on this platform constitutes dietary or medical advice. Always consult a professional for specific dietary needs.</p>
+          <p className="text-gray-600">Edible provides AI-generated meal plans based on your grocery items. Meal plans are suggestions only — we are not nutritionists and nothing on this platform constitutes dietary or medical advice. Always consult a professional for specific dietary needs.</p>
         </section>
 
         <section>
@@ -30,17 +30,17 @@ export default function Terms() {
 
         <section>
           <h2 className="text-xl font-bold text-gray-900 mb-3">5. Your content</h2>
-          <p className="text-gray-600">You own the data you upload. By using Edible.io you grant us permission to process your grocery data to generate meal plans. We don't claim ownership of your content.</p>
+          <p className="text-gray-600">You own the data you upload. By using Edible you grant us permission to process your grocery data to generate meal plans. We don't claim ownership of your content.</p>
         </section>
 
         <section>
           <h2 className="text-xl font-bold text-gray-900 mb-3">6. Limitations</h2>
-          <p className="text-gray-600">Edible.io is provided as-is. We're not liable for any damages arising from use of the service. We may update or discontinue features at any time.</p>
+          <p className="text-gray-600">Edible is provided as-is. We're not liable for any damages arising from use of the service. We may update or discontinue features at any time.</p>
         </section>
 
         <section>
           <h2 className="text-xl font-bold text-gray-900 mb-3">7. Changes to these terms</h2>
-          <p className="text-gray-600">We may update these terms from time to time. Continued use of Edible.io after changes means you accept the new terms.</p>
+          <p className="text-gray-600">We may update these terms from time to time. Continued use of Edible after changes means you accept the new terms.</p>
         </section>
 
         <section>

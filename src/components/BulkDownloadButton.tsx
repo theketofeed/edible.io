@@ -109,7 +109,7 @@ export default function BulkDownloadButton({ result, showToast, onUpgradeRequire
                     <div className="pdf-avoid-break mb-12">
                         <div className="flex items-end justify-between border-b-2 border-purple-100 pb-6 mb-8 w-full">
                                 <div>
-                                    <h2 className="text-2xl font-black tracking-tight leading-none flex whitespace-nowrap items-baseline">Edible<span className="text-purple-500">.io</span></h2>
+                                    <h2 className="text-2xl font-black tracking-tight leading-none flex whitespace-nowrap items-baseline">Edible</h2>
                                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Personalized AI Chef</p>
                                 </div>
                             <div className="text-right">
@@ -226,7 +226,7 @@ export default function BulkDownloadButton({ result, showToast, onUpgradeRequire
                     </div>
                     <div className="mt-16 pt-8 border-t border-gray-100 text-center">
                         <p className="text-sm text-gray-400 font-medium italic">
-                            Made with love by Edible.io — Your Personal AI Chef
+                            Made with love by Edible — Your Personal AI Chef
                         </p>
                     </div>
                 </div>,

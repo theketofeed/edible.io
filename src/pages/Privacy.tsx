@@ -10,7 +10,7 @@ export default function Privacy() {
       <div className="prose prose-gray max-w-none space-y-8">
         <section>
           <h2 className="text-xl font-bold text-gray-900 mb-3">1. Who we are</h2>
-          <p className="text-gray-600">Edible.io is an AI-powered meal planning app that turns your grocery receipts into personalized meal plans.</p>
+          <p className="text-gray-600">Edible is an AI-powered meal planning app that turns your grocery receipts into personalized meal plans.</p>
         </section>
 
         <section>
