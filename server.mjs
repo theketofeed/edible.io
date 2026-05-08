@@ -1,3 +1,4 @@
+import { Resend } from 'resend'
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
@@ -8,6 +9,7 @@ import crypto from 'crypto'
 import rateLimit from 'express-rate-limit'
 
 dotenv.config({ path: '.env.local' })
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -347,8 +349,27 @@ app.post('/api/webhooks/dodo', async (req, res) => {
         dodo_subscription_id: event.data.subscription_id || null
       }).eq('id', userId)
 
-      if (error) console.error('[Webhook] ❌ Supabase error:', error)
-      else console.log(`[Webhook] ✅ User ${userId} upgraded to ${plan}`)
+      if (error) {
+        console.error('[Webhook] ❌ Supabase error:', error)
+      } else {
+        console.log(`[Webhook] ✅ User ${userId} upgraded to ${plan}`)
+        
+        // Send welcome email
+        const userEmail = event.data.customer?.email
+        if (userEmail) {
+          try {
+            await resend.emails.send({
+              from: 'Edible.io <onboarding@resend.dev>',
+              to: userEmail,
+              subject: 'Welcome to Edible Pro 🎉',
+              html: `<p>Hey! You're now on Edible Pro. Enjoy unlimited meal plans.</p>`
+            })
+            console.log(`[Webhook] 📧 Welcome email sent to ${userEmail}`)
+          } catch (emailErr) {
+            console.error('[Webhook] ❌ Failed to send welcome email:', emailErr.message)
+          }
+        }
+      }
     }
 
     if (event.type === 'subscription.cancelled' || event.type === 'subscription.expired') {
@@ -572,6 +593,30 @@ app.post('/api/generate-meal-image', aiLimiter, async (req, res) => {
 		error: 'Image generation unavailable',
 		details: 'Spoonacular and Pexels both failed.'
 	})
+})
+
+// ─── Welcome Email ──────────────────────────────────────────────────────────
+app.post('/api/send-welcome', async (req, res) => {
+  const { email, name } = req.body
+  if (!email) return res.status(400).json({ error: 'Missing email' })
+  try {
+    await resend.emails.send({
+      from: 'Edible.io <onboarding@resend.dev>',
+      to: email,
+      subject: 'Welcome to Edible.io 🥗',
+      html: `
+        <h2>Hey ${name || 'there'}!</h2>
+        <p>Welcome to Edible.io — you're all set to start turning your grocery receipts into personalized meal plans.</p>
+        <p><a href="https://edible-io.vercel.app">Generate your first meal plan →</a></p>
+        <p>Questions? Just reply to this email.</p>
+      `
+    })
+    console.log(`[Welcome Email] 📧 Sent to ${email}`)
+    res.json({ success: true })
+  } catch (err) {
+    console.error('[Welcome Email] ❌ Failed:', err.message)
+    res.status(500).json({ error: err.message })
+  }
 })
 
 // ─── Health check ──────────────────────────────────────────────────────────

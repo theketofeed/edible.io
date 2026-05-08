@@ -119,6 +119,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (session?.user) {
         fetchProfile(session.user.id) // non-blocking
+
+        // Send welcome email only on brand-new signups
+        if (event === 'SIGNED_UP') {
+          fetch(`${import.meta.env.VITE_BACKEND_URL}/api/send-welcome`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: session.user.email,
+              name: session.user.user_metadata?.full_name
+            })
+          }).catch((err) => console.warn('[AuthContext] Welcome email failed:', err))
+        }
       } else {
         setProfile(null)
       }
