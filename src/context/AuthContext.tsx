@@ -121,7 +121,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         fetchProfile(session.user.id) // non-blocking
 
         // Send welcome email only on brand-new signups
-        if (event === 'SIGNED_UP') {
+        // (created_at === last_sign_in_at means they've never signed in before)
+        if (event === 'SIGNED_IN' && session?.user?.created_at === session?.user?.last_sign_in_at) {
           fetch(`${import.meta.env.VITE_BACKEND_URL}/api/send-welcome`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
