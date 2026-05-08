@@ -46,6 +46,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isInitialized, setIsInitialized] = useState(false)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const fetchingRef = useRef(false)
+  const welcomeSentRef = useRef(false)
 
   const fetchProfile = async (userId: string): Promise<UserProfile> => {
     // Return cached immediately
@@ -125,7 +126,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           const createdAt = new Date(session.user.created_at).getTime()
           const lastSignIn = new Date(session.user.last_sign_in_at ?? '').getTime()
           const isNewUser = Math.abs(createdAt - lastSignIn) < 5000 // within 5 seconds = new signup
-          if (isNewUser) {
+          if (isNewUser && !welcomeSentRef.current) {
+            welcomeSentRef.current = true
             fetch(`${import.meta.env.VITE_BACKEND_URL}/api/send-welcome`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },

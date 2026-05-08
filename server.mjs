@@ -604,12 +604,46 @@ app.post('/api/send-welcome', async (req, res) => {
       from: 'Edible.io <onboarding@resend.dev>',
       to: email,
       subject: 'Welcome to Edible.io 🥗',
-      html: `
-        <h2>Hey ${name || 'there'}!</h2>
-        <p>Welcome to Edible.io — you're all set to start turning your grocery receipts into personalized meal plans.</p>
-        <p><a href="https://edible-io.vercel.app">Generate your first meal plan →</a></p>
-        <p>Questions? Just reply to this email.</p>
-      `
+      html: `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+  
+  <!-- Header -->
+  <div style="background: linear-gradient(135deg, #7c3aed, #a855f7); padding: 40px 32px; text-align: center; border-radius: 12px 12px 0 0;">
+    <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">Edible.io</h1>
+    <p style="color: #e9d5ff; margin: 8px 0 0; font-size: 15px;">AI-powered meal planning</p>
+  </div>
+
+  <!-- Body -->
+  <div style="padding: 40px 32px; background: #fafafa;">
+    <h2 style="color: #1a1a1a; font-size: 22px; margin: 0 0 16px;">Welcome, ${name || 'there'}! 👋</h2>
+    <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 0 0 16px;">
+      You're all set on Edible.io. Just upload a photo of your grocery receipt and we'll turn it into a full personalized meal plan in seconds.
+    </p>
+    <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 0 0 32px;">
+      You get <strong style="color: #7c3aed;">4 free meal plans</strong> per month to get started. No credit card needed.
+    </p>
+
+    <!-- CTA Button -->
+    <div style="text-align: center; margin: 0 0 32px;">
+      <a href="https://edible-io.vercel.app" style="background: linear-gradient(135deg, #7c3aed, #a855f7); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600; display: inline-block;">
+        Generate your first meal plan →
+      </a>
+    </div>
+
+    <!-- Divider -->
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 0 0 24px;" />
+
+    <p style="color: #999; font-size: 13px; line-height: 1.5; margin: 0;">
+      Questions? Just reply to this email — we're happy to help.<br/>
+      You're receiving this because you signed up at Edible.io.
+    </p>
+  </div>
+
+  <!-- Footer -->
+  <div style="padding: 20px 32px; text-align: center; border-radius: 0 0 12px 12px; background: #f3f4f6;">
+    <p style="color: #9ca3af; font-size: 12px; margin: 0;">© 2026 Edible.io · All rights reserved</p>
+  </div>
+
+</div>`
     })
     console.log(`[Welcome Email] 📧 Sent to ${email}`)
     res.json({ success: true })
