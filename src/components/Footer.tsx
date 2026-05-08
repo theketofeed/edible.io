@@ -16,9 +16,9 @@ const Footer = memo(function Footer() {
 					<div className="max-w-xs">
 						{/* Logo + Wordmark */}
 						<div className="flex items-center gap-2.5 mb-3">
-							<img src={logo} alt="Edible.io" className="w-10 h-10 object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
+							<img src={logo} alt="Edible" className="w-10 h-10 object-contain" style={{ filter: 'brightness(0) invert(1)' }} />
 							<span className="text-xl font-bold text-white">
-								Edible<span className="text-[#C6A0F6]">.io</span>
+								Edible
 							</span>
 						</div>
 						<p className="text-gray-400 text-sm leading-relaxed mt-2">
@@ -90,7 +90,7 @@ const Footer = memo(function Footer() {
 				{/* Bottom Strip */}
 				<div className="border-t border-gray-800 py-5 md:py-6">
 					<div className="flex flex-col md:flex-row items-center justify-between gap-2 md:gap-3">
-						<p className="text-gray-500 text-xs">© {currentYear} Edible.io. All rights reserved.</p>
+						<p className="text-gray-500 text-xs">© {currentYear} Edible. All rights reserved.</p>
 						<p className="text-gray-500 text-xs">Made with ❤️ for home cooks everywhere.</p>
 					</div>
 				</div>
