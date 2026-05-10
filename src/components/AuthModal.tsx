@@ -46,6 +46,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
     const handleGoogleSignIn = async () => {
         setStatus('loading')
+        localStorage.setItem('edible_google_signup_time', Date.now().toString())
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: { redirectTo: window.location.origin },
@@ -75,6 +76,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             if (mode === 'signup') {
                 const { error } = await supabase.auth.signUp({ email, password })
                 if (error) throw error
+                localStorage.setItem('edible_welcome_pending', email)
                 setStatus('success')
                 setMessage('Almost there! Check your email to confirm your account.')
                 return
