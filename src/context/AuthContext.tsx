@@ -122,18 +122,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         // Send welcome email only on brand-new signups
         if (event === 'SIGNED_IN') {
-          const createdAt = new Date(session.user.created_at).getTime()
-          const lastSignIn = new Date(session.user.last_sign_in_at ?? '').getTime()
-          const isNewUser = Math.abs(createdAt - lastSignIn) < 5000 // within 5 seconds = new signup
+          const accountAgeMs = Date.now() - new Date(session.user.created_at).getTime()
+          const isNewUser = accountAgeMs < 60000 // created within last 60 seconds
           if (isNewUser) {
-            fetch(`${import.meta.env.VITE_BACKEND_URL}/api/send-welcome`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                email: session.user.email,
-                name: session.user.user_metadata?.full_name
-              })
-            }).catch((err) => console.warn('[AuthContext] Welcome email failed:', err))
+            setTimeout(() => {
+              fetch(`${import.meta.env.VITE_BACKEND_URL}/api/send-welcome`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  email: session.user.email,
+                  name: session.user.user_metadata?.full_name
+                })
+              }).catch((err) => console.warn('[AuthContext] Welcome email failed:', err))
+            }, 3000) // 3 second delay after signup
           }
         }
       } else {

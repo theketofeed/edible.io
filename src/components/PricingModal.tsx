@@ -47,12 +47,12 @@ export default function PricingModal({ isOpen, onClose, trigger }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-6 md:p-12 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-12 overflow-y-auto"
       style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div
-        className="relative w-full max-w-xl bg-white rounded-[32px] overflow-hidden my-auto"
+        className="relative w-full max-w-xl bg-white rounded-[24px] md:rounded-[32px] overflow-hidden my-auto"
         style={{ boxShadow: '0 32px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.04)' }}
       >
         <button
@@ -87,7 +87,7 @@ export default function PricingModal({ isOpen, onClose, trigger }: Props) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 px-6 pb-8 pt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-6 md:px-8 pb-8 pt-4">
           {/* Pro */}
           <div className="rounded-2xl border-2 border-gray-100 p-5 flex flex-col hover:border-purple-200 transition-colors">
             <div className="flex items-center gap-2 mb-3">
