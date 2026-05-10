@@ -158,13 +158,12 @@ function MealImage({ name, type, size = 42 }: { name: string; type: string; size
   )
 }
 
-const WEEK = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-const getDates = () => {
-  const today = new Date()
-  const dow = today.getDay() // 0=Sun
-  const monday = new Date(today)
-  monday.setDate(today.getDate() - ((dow + 6) % 7))
-  return Array.from({ length: 7 }, (_, i) => { const d = new Date(monday); d.setDate(monday.getDate() + i); return d.getDate() })
+const getDates = (startDate: Date) => {
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(startDate)
+    d.setDate(startDate.getDate() + i)
+    return d.getDate()
+  })
 }
 const getToday = () => { const d = new Date().getDay(); return (d + 6) % 7 }
 
@@ -485,7 +484,15 @@ interface MealPlannerProps { plans: Plan[] }
 function MealPlanner({ plans, selectedPlanId }: MealPlannerProps & { selectedPlanId: string | null }) {
   const navigate = useNavigate()
   const todayIdx = getToday()
-  const currentDates = getDates()
+  const selectedPlan = plans.find(p => p.id === selectedPlanId) || plans[0] || null
+  const startDate = selectedPlan?.date ? new Date(selectedPlan.date) : new Date()
+  const endDate = new Date(startDate)
+  endDate.setDate(startDate.getDate() + 6)
+  const weekLabel = `${startDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}–${endDate.toLocaleDateString('en-US', { day: 'numeric' })}, ${endDate.getFullYear()}`
+  const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const startDow = startDate.getDay()
+  const WEEK = Array.from({ length: 7 }, (_, i) => DAY_NAMES[(startDow + i) % 7])
+  const currentDates = getDates(startDate)
   const [day, setDay] = useState(todayIdx)
   const planner = buildPlannerFromPlans(plans, selectedPlanId)
   const meals = planner[day] || []
@@ -495,15 +502,6 @@ function MealPlanner({ plans, selectedPlanId }: MealPlannerProps & { selectedPla
   const r = 52, cx = 70, cy = 70, circ = 2 * Math.PI * r
   const dash = Math.min(consumed / target, 1) * circ
 
-  // Dynamic week label
-  const now = new Date()
-  const dow = now.getDay()
-  const monday = new Date(now)
-  monday.setDate(now.getDate() - ((dow + 6) % 7))
-  const sunday = new Date(monday)
-  sunday.setDate(monday.getDate() + 6)
-  const weekLabel = `${monday.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}–${sunday.toLocaleDateString('en-US', { day: 'numeric' })}, ${sunday.getFullYear()}`
-
   return (
     <div>
       <div style={{ marginBottom: 22 }}>
@@ -511,15 +509,17 @@ function MealPlanner({ plans, selectedPlanId }: MealPlannerProps & { selectedPla
         <p style={{ color: C.muted, fontSize: 13, marginTop: 3 }}>Week of {weekLabel}</p>
       </div>
       <div style={{
-        background: "#FAF5FF", borderRadius: 999, padding: "10px 8px",
-        border: `1px solid rgba(198,160,246,0.25)`, marginBottom: 18, display: "flex", gap: 8
+        background: "#FAF5FF", borderRadius: 20, padding: "10px 8px",
+        border: `1px solid rgba(198,160,246,0.25)`, marginBottom: 18, display: "flex", gap: 6,
+        overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none",
+        WebkitOverflowScrolling: "touch"
       }}>
         {WEEK.map((d, i) => {
           const sel = i === day, isToday = i === todayIdx, has = (planner[i] || []).length > 0
           return (
             <button key={d} onClick={() => setDay(i)} style={{
-              flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
-              padding: "10px 4px", borderRadius: 999, border: sel ? "none" : `1px solid ${C.cardBdr}`,
+              flex: "1 0 auto", minWidth: "46px", display: "flex", flexDirection: "column", alignItems: "center",
+              padding: "10px 4px", borderRadius: 16, border: sel ? "none" : `1px solid ${C.cardBdr}`,
               cursor: "pointer", background: sel ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : "rgba(198,160,246,0.06)",
               transition: "all .15s", boxShadow: sel ? `0 10px 28px rgba(198,160,246,0.28)` : "none"
             }}>

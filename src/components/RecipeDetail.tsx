@@ -659,25 +659,13 @@ Made with Edible`
                     {/* Food Image Hero */}
                     <div className="h-[200px] md:h-[300px] bg-purple-100 flex items-center justify-center relative group">
                         {recipeImage ? (
-                            <>
+                                <>
                                 <img
                                     src={recipeImage}
                                     alt={safeMeal.title}
                                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
-
-                                {/* Photo Attribution */}
-                                <div className="absolute bottom-4 right-4 z-10">
-                                    <a
-                                        href="https://unsplash.com/?utm_source=Edible&utm_medium=referral"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-[10px] md:text-xs text-white/80 hover:text-white bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-full transition-all border border-white/10"
-                                    >
-                                        Photo from <span className="font-bold underline">Unsplash</span>
-                                    </a>
-                                </div>
                             </>
                         ) : (
                             <div className={`absolute inset-0 flex items-center justify-center ${
