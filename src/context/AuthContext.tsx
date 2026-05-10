@@ -123,19 +123,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         // Send welcome email only on brand-new signups
         if (event === 'SIGNED_IN') {
-          const createdAt = new Date(session.user.created_at).getTime()
-          const lastSignIn = new Date(session.user.last_sign_in_at ?? '').getTime()
-          const isNewUser = Math.abs(createdAt - lastSignIn) < 5000 // within 5 seconds = new signup
-          if (isNewUser && !welcomeSentRef.current) {
+          // Check localStorage flag set at signup time (email/password flow)
+          const pendingEmail = localStorage.getItem('edible_welcome_pending')
+          const googleSignupTime = localStorage.getItem('edible_google_signup_time')
+
+          let shouldSend = false
+
+          if (pendingEmail && pendingEmail === session.user.email) {
+            // Email/password signup — flag was set when they registered
+            localStorage.removeItem('edible_welcome_pending')
+            shouldSend = true
+          } else if (googleSignupTime) {
+            // Google OAuth — check if this is a brand-new account (created within last 120 seconds)
+            const signupTime = parseInt(googleSignupTime)
+            const accountAge = Date.now() - new Date(session.user.created_at).getTime()
+            localStorage.removeItem('edible_google_signup_time')
+            shouldSend = accountAge < 120000 // account created within last 2 minutes
+          }
+
+          if (shouldSend && !welcomeSentRef.current) {
             welcomeSentRef.current = true
-            fetch(`${import.meta.env.VITE_BACKEND_URL}/api/send-welcome`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                email: session.user.email,
-                name: session.user.user_metadata?.full_name
-              })
-            }).catch((err) => console.warn('[AuthContext] Welcome email failed:', err))
+            setTimeout(() => {
+              fetch(`${import.meta.env.VITE_BACKEND_URL}/api/send-welcome`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  email: session.user.email,
+                  name: session.user.user_metadata?.full_name
+                })
+              }).catch((err) => console.warn('[AuthContext] Welcome email failed:', err))
+            }, 2000)
           }
         }
       } else {
