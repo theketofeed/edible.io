@@ -49,7 +49,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         localStorage.setItem('edible_google_signup_time', Date.now().toString())
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
-            options: { redirectTo: window.location.origin },
+            options: { redirectTo: 'https://www.tryediblee.com' },
         })
         if (error) {
             setStatus('error')

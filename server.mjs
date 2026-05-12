@@ -359,7 +359,7 @@ app.post('/api/webhooks/dodo', async (req, res) => {
         if (userEmail) {
           try {
             await resend.emails.send({
-              from: 'Edible <onboarding@resend.dev>',
+              from: 'Edible <hello@tryediblee.com>',
               to: userEmail,
               subject: 'Welcome to Edible Pro 🎉',
               html: `<p>Hey! You're now on Edible Pro. Enjoy unlimited meal plans.</p>`
@@ -601,7 +601,7 @@ app.post('/api/send-welcome', async (req, res) => {
   if (!email) return res.status(400).json({ error: 'Missing email' })
   try {
     await resend.emails.send({
-      from: 'Edible <onboarding@resend.dev>',
+      from: 'Edible <hello@tryediblee.com>',
       to: email,
       subject: 'Welcome to Edible 🥗',
       html: `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
@@ -624,7 +624,7 @@ app.post('/api/send-welcome', async (req, res) => {
 
     <!-- CTA Button -->
     <div style="text-align: center; margin: 0 0 32px;">
-      <a href="https://edible-io.vercel.app" style="background: linear-gradient(135deg, #7c3aed, #a855f7); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600; display: inline-block;">
+      <a href="https://www.tryediblee.com" style="background: linear-gradient(135deg, #7c3aed, #a855f7); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600; display: inline-block;">
         Generate your first meal plan →
       </a>
     </div>
