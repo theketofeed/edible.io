@@ -359,7 +359,7 @@ app.post('/api/webhooks/dodo', async (req, res) => {
         if (userEmail) {
           try {
             await resend.emails.send({
-              from: 'Edible <onboarding@resend.dev>',
+              from: 'Edible <hello@tryediblee.com>',
               to: userEmail,
               subject: 'Welcome to Edible Pro 🎉',
               html: `<p>Hey! You're now on Edible Pro. Enjoy unlimited meal plans.</p>`
@@ -601,13 +601,13 @@ app.post('/api/send-welcome', async (req, res) => {
   if (!email) return res.status(400).json({ error: 'Missing email' })
   try {
     await resend.emails.send({
-      from: 'Edible <onboarding@resend.dev>',
+      from: 'Edible <hello@tryediblee.com>',
       to: email,
       subject: 'Welcome to Edible 🥗',
       html: `
         <h2>Hey ${name || 'there'}!</h2>
         <p>Welcome to Edible — you're all set to start turning your grocery receipts into personalized meal plans.</p>
-        <p><a href="https://edible-io.vercel.app">Generate your first meal plan →</a></p>
+        <p><a href="https://www.tryediblee.com">Generate your first meal plan →</a></p>
         <p>Questions? Just reply to this email.</p>
       `
     })
