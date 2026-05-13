@@ -76,6 +76,14 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             if (mode === 'signup') {
                 const { error } = await supabase.auth.signUp({ email, password })
                 if (error) throw error
+
+                // Send welcome email immediately — don't wait for SIGNED_IN event
+                fetch(`${import.meta.env.VITE_BACKEND_URL}/api/send-welcome`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ email, name: '' })
+                }).catch((err) => console.warn('[AuthModal] Welcome email failed:', err))
+
                 localStorage.setItem('edible_welcome_pending', email)
                 setStatus('success')
                 setMessage('Almost there! Check your email to confirm your account.')
