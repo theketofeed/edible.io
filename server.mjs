@@ -362,7 +362,27 @@ app.post('/api/webhooks/dodo', async (req, res) => {
               from: 'Edible <hello@tryediblee.com>',
               to: userEmail,
               subject: 'Welcome to Edible Pro 🎉',
-              html: `<p>Hey! You're now on Edible Pro. Enjoy unlimited meal plans.</p>`
+              reply_to: 'hello@tryediblee.com',
+              headers: {
+                'X-Entity-Ref-ID': crypto.randomUUID(),
+              },
+              html: `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+  <!-- Header -->
+  <div style="background: linear-gradient(135deg, #7c3aed, #a855f7); padding: 40px 32px; text-align: center; border-radius: 12px 12px 0 0;">
+    <div style="display: inline-flex; align-items: center; gap: 12px; justify-content: center;">
+      <img src="https://www.tryediblee.com/logo.png" alt="Edible logo" width="48" height="48" style="border-radius: 10px; display: block;" />
+      <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; line-height: 1;">Edible</h1>
+    </div>
+    <p style="color: #e9d5ff; margin: 10px 0 0; font-size: 15px;">AI-powered meal planning</p>
+  </div>
+  <!-- Body -->
+  <div style="padding: 40px 32px; background: #fafafa;">
+    <h2 style="color: #1a1a1a; font-size: 22px; margin: 0 0 16px;">Welcome to Edible Pro 🎉</h2>
+    <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 0 0 16px;">
+      Hey! You're now on Edible Pro. Enjoy unlimited meal plans.
+    </p>
+  </div>
+</div>`
             })
             console.log(`[Webhook] 📧 Welcome email sent to ${userEmail}`)
           } catch (emailErr) {
@@ -604,12 +624,19 @@ app.post('/api/send-welcome', async (req, res) => {
       from: 'Edible <hello@tryediblee.com>',
       to: email,
       subject: 'Welcome to Edible 🥗',
+      reply_to: 'hello@tryediblee.com',
+      headers: {
+        'X-Entity-Ref-ID': crypto.randomUUID(),
+      },
       html: `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
   
   <!-- Header -->
   <div style="background: linear-gradient(135deg, #7c3aed, #a855f7); padding: 40px 32px; text-align: center; border-radius: 12px 12px 0 0;">
-    <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">Edible</h1>
-    <p style="color: #e9d5ff; margin: 8px 0 0; font-size: 15px;">AI-powered meal planning</p>
+    <div style="display: inline-flex; align-items: center; gap: 12px; justify-content: center;">
+      <img src="https://www.tryediblee.com/logo.png" alt="Edible logo" width="48" height="48" style="border-radius: 10px; display: block;" />
+      <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; line-height: 1;">Edible</h1>
+    </div>
+    <p style="color: #e9d5ff; margin: 10px 0 0; font-size: 15px;">AI-powered meal planning</p>
   </div>
 
   <!-- Body -->
