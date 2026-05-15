@@ -253,6 +253,7 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
 ${mealType} - ${dayName}
 
  Prep: ${safeMeal.prepTime} min | Cook: ${safeMeal.cookTime} min | Total: ${safeMeal.totalTime} min
+ ⚡ Difficulty: ${difficulty.label} · ${safeMeal.totalTime} min · ${instructionSteps.length} steps
 
  INGREDIENTS
 ${safeMeal.ingredients.map((ing, i) => `${i + 1}. ${ing}`).join('\n')}

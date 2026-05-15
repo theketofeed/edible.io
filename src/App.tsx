@@ -423,7 +423,10 @@ function MainContent() {
 						fallback={(error, reset) => <RecipeErrorFallback reset={reset} />}
 					>
 						<RecipeWrapper onBack={() => {
-							if (window.history.length > 2) {
+							const fromDashboard = window.history.state?.usr?.fromDashboard
+							if (fromDashboard) {
+								navigate('/dashboard')
+							} else if (window.history.length > 2) {
 								navigate(-1)
 							} else {
 								navigate('/')
