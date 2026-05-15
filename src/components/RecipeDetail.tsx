@@ -84,10 +84,10 @@ const RecipeDetailSkeleton = ({ onBack, backLabel }: { onBack: () => void, backL
     </div>
 )
 
-function getDifficulty(steps: number, totalTime: number): { label: 'Easy' | 'Medium' | 'Hard'; color: string; bg: string; dot: string } {
-  if (totalTime <= 20 && steps <= 4) return { label: 'Easy', color: '#15803d', bg: '#f0fdf4', dot: '#22c55e' }
-  if (totalTime <= 40 && steps <= 7) return { label: 'Medium', color: '#b45309', bg: '#fefce8', dot: '#f59e0b' }
-  return { label: 'Hard', color: '#b91c1c', bg: '#fef2f2', dot: '#ef4444' }
+function getDifficulty(steps: number, totalTime: number): { label: 'Easy' | 'Medium' | 'Hard'; color: string; bg: string; border: string; bar: string } {
+  if (totalTime <= 20 && steps <= 4) return { label: 'Easy', color: '#15803d', bg: '#f0fdf4', border: '#bbf7d0', bar: '#22c55e' }
+  if (totalTime <= 40 && steps <= 7) return { label: 'Medium', color: '#b45309', bg: '#fefce8', border: '#fde68a', bar: '#f59e0b' }
+  return { label: 'Hard', color: '#b91c1c', bg: '#fef2f2', border: '#fecaca', bar: '#ef4444' }
 }
 
 export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabel, showToast }: RecipeDetailProps) {
@@ -784,22 +784,36 @@ Made with Edible`
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.22, duration: 0.4 }}
-                    className="mb-8 md:mb-12"
+                    className="bg-white rounded-[2rem] md:rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.03)] p-8 md:p-12 mb-8 md:mb-12 border border-gray-50/50"
                 >
-                    <div
-                        className="rounded-2xl px-6 py-4 flex items-center gap-4 border"
-                        style={{ background: difficulty.bg, borderColor: difficulty.dot + '40' }}
-                    >
-                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: difficulty.dot, flexShrink: 0, boxShadow: `0 0 8px ${difficulty.dot}` }} />
-                        <div>
-                            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: difficulty.color }}>Difficulty</p>
-                            <p className="text-lg font-bold" style={{ color: difficulty.color }}>{difficulty.label}</p>
+                    <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-8 flex items-center gap-4">
+                        <div className="w-1.5 h-8 rounded-full shadow-sm" style={{ background: difficulty.bar }}></div>
+                        Difficulty
+                    </h2>
+                    <div className="flex items-center gap-4">
+                        <div
+                            className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 border"
+                            style={{ background: difficulty.bg, borderColor: difficulty.border }}
+                        >
+                            <ChefHat className="w-5 h-5" style={{ color: difficulty.color }} />
                         </div>
-                        <div className="ml-auto flex gap-1">
-                            {['Easy', 'Medium', 'Hard'].map((lvl, i) => {
-                                const filled = ['Easy', 'Medium', 'Hard'].indexOf(difficulty.label) >= i
-                                return <div key={lvl} style={{ width: 28, height: 6, borderRadius: 999, background: filled ? difficulty.dot : difficulty.dot + '25' }} />
-                            })}
+                        <div className="flex-1">
+                            <div className="flex justify-between items-baseline mb-2.5">
+                                <span className="text-base font-bold" style={{ color: difficulty.color }}>{difficulty.label}</span>
+                                <span className="text-xs text-gray-400">{safeMeal.totalTime} min · {instructionSteps.length} steps</span>
+                            </div>
+                            <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+                                {['Easy', 'Medium', 'Hard'].map((lvl, i) => {
+                                    const filled = ['Easy', 'Medium', 'Hard'].indexOf(difficulty.label) >= i
+                                    return (
+                                        <div
+                                            key={lvl}
+                                            className="h-1.5 rounded-full"
+                                            style={{ background: filled ? difficulty.bar : 'rgba(0,0,0,0.08)' }}
+                                        />
+                                    )
+                                })}
+                            </div>
                         </div>
                     </div>
                 </motion.div>
