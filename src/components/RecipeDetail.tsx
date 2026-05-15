@@ -84,6 +84,12 @@ const RecipeDetailSkeleton = ({ onBack, backLabel }: { onBack: () => void, backL
     </div>
 )
 
+function getDifficulty(steps: number, totalTime: number): { label: 'Easy' | 'Medium' | 'Hard'; color: string; bg: string; dot: string } {
+  if (totalTime <= 20 && steps <= 4) return { label: 'Easy', color: '#15803d', bg: '#f0fdf4', dot: '#22c55e' }
+  if (totalTime <= 40 && steps <= 7) return { label: 'Medium', color: '#b45309', bg: '#fefce8', dot: '#f59e0b' }
+  return { label: 'Hard', color: '#b91c1c', bg: '#fef2f2', dot: '#ef4444' }
+}
+
 export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabel, showToast }: RecipeDetailProps) {
     const { user } = useAuth()
     const { canSeeChefTips, checkRecipeLimit } = usePlan()
@@ -98,6 +104,7 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
     const [pricingTrigger, setPricingTrigger] = useState('')
     const [isShareMenuOpen, setIsShareMenuOpen] = useState(false)
     const [isDownloading, setIsDownloading] = useState(false)
+    const [pdfImageDataUrl, setPdfImageDataUrl] = useState<string | null>(null)
     const pdfRef = useRef<HTMLDivElement>(null)
 
     // Defensive checks for required properties
@@ -231,6 +238,8 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
         return safeMeal?.instructions || []
     }, [safeMeal])
 
+    const difficulty = getDifficulty(instructionSteps.length, safeMeal.totalTime)
+
     const handleShare = () => {
         setIsShareMenuOpen(!isShareMenuOpen)
     }
@@ -282,6 +291,23 @@ Made with Edible`
         showToast?.('info', 'Preparing your PDF...')
         
         try {
+            // Convert recipe image to base64 to avoid CORS issues in html2canvas
+            let imageDataUrl: string | null = null
+            if (recipeImage) {
+              try {
+                const response = await fetch(recipeImage)
+                const blob = await response.blob()
+                imageDataUrl = await new Promise<string>((resolve) => {
+                  const reader = new FileReader()
+                  reader.onloadend = () => resolve(reader.result as string)
+                  reader.readAsDataURL(blob)
+                })
+              } catch {
+                console.warn('[PDF] Could not convert image to base64, skipping')
+              }
+            }
+            setPdfImageDataUrl(imageDataUrl)
+
             // Add helper class for capture
             const el = pdfRef.current
             el.classList.add('pdf-export-mode')
@@ -754,6 +780,30 @@ Made with Edible`
                     </motion.div>
                 )}
 
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.22, duration: 0.4 }}
+                    className="mb-8 md:mb-12"
+                >
+                    <div
+                        className="rounded-2xl px-6 py-4 flex items-center gap-4 border"
+                        style={{ background: difficulty.bg, borderColor: difficulty.dot + '40' }}
+                    >
+                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: difficulty.dot, flexShrink: 0, boxShadow: `0 0 8px ${difficulty.dot}` }} />
+                        <div>
+                            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: difficulty.color }}>Difficulty</p>
+                            <p className="text-lg font-bold" style={{ color: difficulty.color }}>{difficulty.label}</p>
+                        </div>
+                        <div className="ml-auto flex gap-1">
+                            {['Easy', 'Medium', 'Hard'].map((lvl, i) => {
+                                const filled = ['Easy', 'Medium', 'Hard'].indexOf(difficulty.label) >= i
+                                return <div key={lvl} style={{ width: 28, height: 6, borderRadius: 999, background: filled ? difficulty.dot : difficulty.dot + '25' }} />
+                            })}
+                        </div>
+                    </div>
+                </motion.div>
+
                 {/* Tips Section */}
                 {tipsContent}
 
@@ -803,9 +853,9 @@ Made with Edible`
                         {safeMeal.title}
                     </h1>
 
-                    {recipeImage && (
+                    {(pdfImageDataUrl || recipeImage) && (
                         <div className="mb-8 rounded-[2rem] overflow-hidden h-[350px] border border-gray-100 shadow-sm">
-                            <img src={recipeImage} alt={safeMeal.title} className="w-full h-full object-cover" />
+                            <img src={pdfImageDataUrl || recipeImage!} alt={safeMeal.title} className="w-full h-full object-cover" />
                         </div>
                     )}
                 </div>

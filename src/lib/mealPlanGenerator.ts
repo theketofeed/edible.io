@@ -70,6 +70,7 @@ CRITICAL CULINARY RULES:
 4. Meals must make sense for their time of day (Breakfast, Lunch, Dinner).
 
 Return ONLY valid JSON (no markdown, no commentary):
+If ingredients are insufficient to create a meaningful meal for a slot, use null for that slot instead of a placeholder name. Never output a meal named literally 'Lunch', 'Dinner', or 'Breakfast' — these are placeholders and are not acceptable meal names.
 {
   "totalDays": ${days},
   "days": [
@@ -93,7 +94,8 @@ Return ONLY valid JSON (no markdown, no commentary):
 
 Requirements per recipe:
 - 4-7 detailed instruction steps (last step always "ENJOY!❤️")
-- 1-2 chef tips that reference actual ingredients used
+- Every ingredient MUST include a specific quantity and unit (e.g. '2 large eggs', '1 tbsp olive oil', '200g chicken breast', '1/2 tsp paprika'). Never list a bare ingredient name without a measurement.
+- Chef tips must be specific to the exact technique used in THIS recipe. Never use generic freshness advice like 'use fresh X for best flavor'. Instead give technique tips like timing, temperature, texture cues, or common mistakes to avoid for this specific dish.
 - Realistic nutrition data
 - Use ingredients creatively — combine them with pantry staples`
 }

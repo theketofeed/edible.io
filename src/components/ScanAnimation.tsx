@@ -1,6 +1,6 @@
 import { memo } from 'react'
 
-export const ScanAnimation = memo(function ScanAnimation() {
+export const ScanAnimation = memo(function ScanAnimation({ sourceType = 'receipt' }: { sourceType?: 'receipt' | 'list' }) {
   return (
     <div className="relative w-full max-w-sm mx-auto h-72">
       <style>{`
@@ -128,7 +128,7 @@ export const ScanAnimation = memo(function ScanAnimation() {
       {/* Status indicator */}
       <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-2 text-sm text-gray-600">
         <div className="w-2 h-2 rounded-full bg-lavender animate-pulse" />
-        <span>Analyzing receipt...</span>
+        <span>{sourceType === 'list' ? 'Edible is analyzing your list...' : 'Edible is analyzing your receipt...'}</span>
       </div>
     </div>
   )

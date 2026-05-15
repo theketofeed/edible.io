@@ -165,7 +165,16 @@ const getDates = (startDate: Date) => {
     return d.getDate()
   })
 }
-const getToday = () => { const d = new Date().getDay(); return (d + 6) % 7 }
+const getToday = (startDate?: Date) => {
+  if (!startDate) return 0
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const start = new Date(startDate)
+  start.setHours(0, 0, 0, 0)
+  const diffDays = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+  if (diffDays < 0 || diffDays > 6) return 0 // outside plan range, default to day 0
+  return diffDays
+}
 
 const MBG: Record<string, string> = {
   Breakfast: "#FEF3C7",
@@ -286,7 +295,9 @@ interface OverviewProps { plans: Plan[]; onNav: (id: NavId) => void; userData: U
 function Overview({ plans, onNav, userData, onSelectPlan, selectedPlanId }: OverviewProps & { onSelectPlan: (id: string) => void; selectedPlanId: string | null }) {
   const totalDays = plans.reduce((a, p) => a + p.days.length, 0)
   const totalMeals = totalDays * 3
-  const todayIdx = getToday()
+  const selectedPlan = plans.find(p => p.id === selectedPlanId) || plans[0] || null
+  const planStartDate = selectedPlan?.date ? new Date(selectedPlan.date) : new Date()
+  const todayIdx = getToday(planStartDate)
   const planner = buildPlannerFromPlans(plans, selectedPlanId)
   const todayMeals = planner[todayIdx] || []
   const consumed = todayMeals.reduce((a, m) => a + m.cal, 0)
@@ -483,9 +494,9 @@ interface MealPlannerProps { plans: Plan[] }
 
 function MealPlanner({ plans, selectedPlanId }: MealPlannerProps & { selectedPlanId: string | null }) {
   const navigate = useNavigate()
-  const todayIdx = getToday()
   const selectedPlan = plans.find(p => p.id === selectedPlanId) || plans[0] || null
   const startDate = selectedPlan?.date ? new Date(selectedPlan.date) : new Date()
+  const todayIdx = getToday(startDate)
   const endDate = new Date(startDate)
   endDate.setDate(startDate.getDate() + 6)
   const weekLabel = `${startDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}–${endDate.toLocaleDateString('en-US', { day: 'numeric' })}, ${endDate.getFullYear()}`

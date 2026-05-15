@@ -296,7 +296,7 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 				{uploadState === 'processing' && (
 					<div className="flex flex-col items-center gap-4 py-6 animate-fadeInScale">
 						<Loader2 className="w-12 h-12 text-lavender animate-spin" />
-						<p className="text-sm text-black/70 font-medium">Analyzing your receipt...</p>
+						<p className="text-sm text-black/70 font-medium">{manualText.trim() ? 'Edible is analyzing your list...' : 'Edible is analyzing your receipt...'}</p>
 					</div>
 				)}
 
