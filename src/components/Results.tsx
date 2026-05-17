@@ -251,8 +251,8 @@ const DayCard = memo(function DayCard({
 					{/* Meal Cards - Full width, stacked vertically */}
 					<div className="space-y-3 w-full">
 						<MealCard meal={day.Breakfast} mealType="Breakfast" dayIndex={index} onNavigate={onNavigate} />
-						<MealCard meal={day.Lunch} mealType="Lunch" dayIndex={index} onNavigate={onNavigate} />
-						<MealCard meal={day.Dinner} mealType="Dinner" dayIndex={index} onNavigate={onNavigate} />
+						{day.Lunch && <MealCard meal={day.Lunch} mealType="Lunch" dayIndex={index} onNavigate={onNavigate} />}
+						{day.Dinner && <MealCard meal={day.Dinner} mealType="Dinner" dayIndex={index} onNavigate={onNavigate} />}
 					</div>
 				</div>
 			</div>

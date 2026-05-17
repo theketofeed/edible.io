@@ -482,6 +482,17 @@ function RecipeWrapper({ onBack, result, showToast }: {
 }) {
 	const { dayIndex, mealType } = useParams<{ dayIndex: string, mealType: string }>()
 	const location = useLocation()
+	const navigate = useNavigate()
+
+	const handleBack = () => {
+		if (location.state?.fromDashboard) {
+			navigate('/dashboard')
+		} else if (window.history.length > 2) {
+			navigate(-1)
+		} else {
+			navigate('/')
+		}
+	}
 
 	const parsedDayIndex = useMemo(() => parseInt(dayIndex || '0'), [dayIndex])
 	const isValidMealType = mealType === 'Breakfast' || mealType === 'Lunch' || mealType === 'Dinner'
@@ -524,7 +535,7 @@ function RecipeWrapper({ onBack, result, showToast }: {
 			meal={meal}
 			mealType={(mealType as any) || 'Breakfast'}
 			dayName={`Day ${parsedDayIndex + 1}`}
-			onBack={onBack}
+			onBack={handleBack}
 			backLabel={location.state?.fromDashboard ? "Back to Dashboard" : "Back to Meal Plan"}
 			showToast={showToast}
 		/>

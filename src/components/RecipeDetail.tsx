@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Clock, ChefHat, Timer, ArrowLeft, CheckCircle2, Circle, Share2, Zap, Download, Heart, Lightbulb, Crown, FileText, Link2, Check } from 'lucide-react'
+import { Clock, ChefHat, Timer, ArrowLeft, CheckCircle2, Circle, Share2, Zap, Download, Heart, Lightbulb, Crown, FileText, Check } from 'lucide-react'
 import type { Meal } from '../utils/types'
 import Tabs, { Tab } from './Tabs'
 import NutritionBadges from './NutritionBadges'
@@ -274,16 +274,7 @@ Made with Edible`
         }
     }
 
-    const copyRecipeLink = async () => {
-        try {
-            await navigator.clipboard.writeText(window.location.href)
-            showToast?.('success', 'Recipe link copied!')
-            setIsShareMenuOpen(false)
-        } catch (err) {
-            console.error('Copy error:', err)
-            showToast?.('error', 'Failed to copy link.')
-        }
-    }
+
 
     const handleDownloadPDF = async () => {
         if (!pdfRef.current || !safeMeal) return
@@ -652,19 +643,7 @@ Made with Edible`
                                                         <p className="text-[11px] text-gray-400 font-medium tracking-tight">Full layout with ingredients</p>
                                                     </div>
                                                 </button>
-                                                
-                                                <button
-                                                    onClick={copyRecipeLink}
-                                                    className="flex items-center gap-3.5 p-3 hover:bg-emerald-50 rounded-xl transition-all group text-left"
-                                                >
-                                                    <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300">
-                                                        <Link2 className="w-5 h-5" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-[14px] font-bold text-gray-900 leading-none mb-1">Copy Link</p>
-                                                        <p className="text-[11px] text-gray-400 font-medium tracking-tight">Direct URL to this recipe</p>
-                                                    </div>
-                                                </button>
+
                                             </motion.div>
                                         </>
                                     )}

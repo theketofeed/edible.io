@@ -159,12 +159,40 @@ function coerceDaysStructure(raw: any): { totalDays: number; days: DayMeals[] } 
   const rawDays = Array.isArray(raw.days) ? raw.days : []
   const fallbackNames = ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7']
 
-  const days: DayMeals[] = rawDays.slice(0, 7).map((d: any, idx: number) => ({
-    day: d?.day || fallbackNames[idx],
-    Breakfast: coerceMeal(d?.Breakfast, 'Breakfast', `Day ${idx + 1} Breakfast`),
-    Lunch: coerceMeal(d?.Lunch, 'Lunch', `Day ${idx + 1} Lunch`),
-    Dinner: coerceMeal(d?.Dinner, 'Dinner', `Day ${idx + 1} Dinner`),
-  }))
+  const PLACEHOLDER_NAMES = ['breakfast', 'lunch', 'dinner']
+
+  function isValidMeal(meal: any): boolean {
+    if (!meal || typeof meal !== 'object' || !meal.title) return false
+    const titleLower = String(meal.title).trim().toLowerCase()
+    if (PLACEHOLDER_NAMES.includes(titleLower)) return false
+    if ((meal.nutrition?.calories ?? 0) === 0 && (meal.ingredients?.length ?? 0) === 0) return false
+    return true
+  }
+
+  const days: DayMeals[] = []
+
+  for (let idx = 0; idx < Math.min(rawDays.length, 7); idx++) {
+    const d = rawDays[idx]
+
+    const breakfast = isValidMeal(d?.Breakfast) ? coerceMeal(d.Breakfast, 'Breakfast') : null
+    const lunch = isValidMeal(d?.Lunch) ? coerceMeal(d.Lunch, 'Lunch') : null
+    const dinner = isValidMeal(d?.Dinner) ? coerceMeal(d.Dinner, 'Dinner') : null
+
+    // If breakfast itself is invalid, stop here
+    if (!breakfast) break
+
+    const dayMeals: DayMeals = {
+      day: d?.day || fallbackNames[idx],
+      Breakfast: breakfast,
+      Lunch: lunch ?? undefined,
+      Dinner: lunch && dinner ? dinner : undefined,
+    }
+
+    days.push(dayMeals)
+
+    // Stop generating further days if lunch or dinner ran out
+    if (!lunch || !dinner) break
+  }
 
   return {
     totalDays: Math.max(1, days.length),
@@ -174,12 +202,12 @@ function coerceDaysStructure(raw: any): { totalDays: number; days: DayMeals[] } 
 
 // ─── Validation ───────────────────────────────────────────────────────────────
 function validatePlan(plan: { days: DayMeals[] }, allowedItems: string[]): boolean {
-  const forbidden = PANTRY_STAPLES // always allowed
   let violations = 0
 
   for (const day of plan.days) {
     for (const mealType of ['Breakfast', 'Lunch', 'Dinner'] as const) {
       const meal = day[mealType]
+      if (!meal) continue
       for (const ingredient of meal.ingredients) {
         const lower = ingredient.toLowerCase()
         const isAllowed =
@@ -332,19 +360,7 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
     // If still invalid, continue anyway — better than nothing
   }
 
-  // Pad days if needed
-  if (effectiveDays > result.days.length) {
-    const fallbackNames = ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7']
-    while (result.days.length < effectiveDays) {
-      const idx = result.days.length
-      result.days.push({
-        day: fallbackNames[idx] || `Day ${idx + 1}`,
-        Breakfast: coerceMeal(null, 'Breakfast'),
-        Lunch: coerceMeal(null, 'Lunch'),
-        Dinner: coerceMeal(null, 'Dinner'),
-      })
-    }
-  }
+
 
   console.log('[Generator] ✅ Done —', result.days.length, 'days generated')
 

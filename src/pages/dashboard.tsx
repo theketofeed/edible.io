@@ -96,8 +96,8 @@ function buildPlannerFromPlans(plans: Plan[], selectedId?: string | null): Recor
       const d = plan.days[i]
       planner[i] = [
         { type: "Breakfast", name: d.B.name, cal: d.B.cal, time: d.B.rawMeal?.totalTime || 0, rawMeal: d.B.rawMeal },
-        { type: "Lunch", name: d.L.name, cal: d.L.cal, time: d.L.rawMeal?.totalTime || 0, rawMeal: d.L.rawMeal },
-        { type: "Dinner", name: d.D.name, cal: d.D.cal, time: d.D.rawMeal?.totalTime || 0, rawMeal: d.D.rawMeal },
+        ...(d.L.name !== 'N/A' ? [{ type: "Lunch", name: d.L.name, cal: d.L.cal, time: d.L.rawMeal?.totalTime || 0, rawMeal: d.L.rawMeal }] : []),
+        ...(d.D.name !== 'N/A' ? [{ type: "Dinner", name: d.D.name, cal: d.D.cal, time: d.D.rawMeal?.totalTime || 0, rawMeal: d.D.rawMeal }] : []),
       ]
     } else {
       planner[i] = []

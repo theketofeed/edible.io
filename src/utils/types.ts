@@ -22,8 +22,8 @@ export interface Meal {
 export interface DayMeals {
 	day: string
 	Breakfast: Meal
-	Lunch: Meal
-	Dinner: Meal
+	Lunch?: Meal
+	Dinner?: Meal
 }
 
 export interface MealPlanResult {
