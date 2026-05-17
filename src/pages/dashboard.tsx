@@ -52,6 +52,7 @@ type PlanDay = { day: string; B: MealSlot; L: MealSlot; D: MealSlot }
 type Plan = { id: string; title: string; diet: DietKey; date: string; days: PlanDay[] }
 
 type Recipe = { id: string; title: string; type: string; time: number; cal: number; rawMeal?: Meal }
+type CustomMeal = { id: string; name: string; type: string; cal: number; time: number; rawMeal?: Meal }
 
 // Helper: extract unique recipes from user's saved plans
 function extractRecipesFromPlans(plans: Plan[]): Recipe[] {
@@ -70,6 +71,19 @@ function extractRecipesFromPlans(plans: Plan[]): Recipe[] {
     }
   }
   return recipes
+}
+
+function loadCustomMeals(planId: string, dayIdx: number): CustomMeal[] {
+  try {
+    const raw = localStorage.getItem(`edible_custom_meals_${planId}_${dayIdx}`)
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+function persistCustomMeals(planId: string, dayIdx: number, meals: CustomMeal[]): void {
+  try {
+    localStorage.setItem(`edible_custom_meals_${planId}_${dayIdx}`, JSON.stringify(meals))
+  } catch {}
 }
 
 // Helper: calculate macros from a list of meals
@@ -489,10 +503,107 @@ function Overview({ plans, onNav, userData, onSelectPlan, selectedPlanId }: Over
   )
 }
 
-// ─── Meal Planner ─────────────────────────────────────────────────────────────
-interface MealPlannerProps { plans: Plan[] }
+// ─── Add Meal Modal ───────────────────────────────────────────────────────────
+interface AddMealModalProps {
+  dayLabel: string
+  savedRecipes: Recipe[]; onAdd: (meal: CustomMeal) => void; onClose: () => void
+}
 
-function MealPlanner({ plans, selectedPlanId }: MealPlannerProps & { selectedPlanId: string | null }) {
+function AddMealModal({ dayLabel, savedRecipes, onAdd, onClose }: AddMealModalProps) {
+  const [search, setSearch] = useState('')
+  const [filter, setFilter] = useState('All')
+
+  const filtered = savedRecipes.filter(r => {
+    const matchSearch = r.title.toLowerCase().includes(search.toLowerCase())
+    const matchType = filter === 'All' || r.type === filter
+    return matchSearch && matchType
+  })
+
+  const hasRecipes = savedRecipes.length > 0
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(17,24,39,0.52)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, backdropFilter: 'blur(8px)', padding: '0 16px' }} onClick={onClose}>
+      <div style={{ background: C.white, borderRadius: 24, width: '100%', maxWidth: 460, boxShadow: '0 32px 80px rgba(0,0,0,0.22)', overflow: 'hidden', maxHeight: '88vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
+        <div style={{ padding: '22px 24px 16px', flexShrink: 0, borderBottom: `1px solid ${C.cardBdr}` }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <p style={{ fontSize: 17, fontWeight: 800, color: C.txt, letterSpacing: '-0.02em' }}>Add from Saved Recipes</p>
+              <p style={{ fontSize: 12, color: C.faint, marginTop: 3 }}>Adding to {dayLabel}</p>
+            </div>
+            <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 999, background: '#F3F4F6', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginLeft: 12 }}>
+              <X size={14} style={{ color: C.muted }} />
+            </button>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: '16px 24px 24px', overflowY: 'auto', flex: 1 }}>
+          {!hasRecipes ? (
+            <div style={{ textAlign: 'center', padding: '48px 0' }}>
+              <div style={{ width: 56, height: 56, borderRadius: 18, background: '#FFF1F2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                <Heart size={24} style={{ color: '#f87171' }} />
+              </div>
+              <p style={{ color: C.txt, fontSize: 14, fontWeight: 700, marginBottom: 6 }}>No saved recipes yet</p>
+              <p style={{ color: C.muted, fontSize: 13, lineHeight: 1.5 }}>Open any recipe from a meal plan<br/>and tap the ♡ to save it here.</p>
+            </div>
+          ) : (
+            <>
+              {/* Search */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#F9F8F6', borderRadius: 12, padding: '9px 14px', marginBottom: 12, border: `1px solid ${C.cardBdr}` }}>
+                <Search size={13} style={{ color: C.faint, flexShrink: 0 }} />
+                <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search your saved recipes…" autoFocus
+                  style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: 13, color: C.txt, width: '100%', fontFamily: "'Plus Jakarta Sans',sans-serif" }} />
+                {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.faint, padding: 0, display: 'flex' }}><X size={11} /></button>}
+              </div>
+              {/* Type filter */}
+              <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+                {['All', 'Breakfast', 'Lunch', 'Dinner'].map(f => {
+                  const on = filter === f
+                  return (
+                    <button key={f} onClick={() => setFilter(f)} style={{ padding: '5px 14px', borderRadius: 999, border: 'none', cursor: 'pointer', fontSize: 11.5, fontWeight: on ? 700 : 500, background: on ? C.accentDark : '#F3F4F6', color: on ? 'white' : C.muted, fontFamily: "'Plus Jakarta Sans',sans-serif", transition: 'all .15s', boxShadow: on ? '0 4px 10px rgba(181,141,245,0.3)' : 'none' }}>{f}</button>
+                  )
+                })}
+              </div>
+              {/* Recipe list */}
+              {filtered.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '28px 0', color: C.faint, fontSize: 13 }}>No recipes match "{search || filter}"</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {filtered.map(r => (
+                    <div key={r.id}
+                      onClick={() => { onAdd({ id: `cm_${Date.now()}`, name: r.title, type: r.type, cal: r.cal, time: r.time, rawMeal: r.rawMeal }); onClose() }}
+                      style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '11px 14px', borderRadius: 14, border: `1px solid ${C.cardBdr}`, cursor: 'pointer', background: C.white, transition: 'all .15s' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.accent; (e.currentTarget as HTMLElement).style.background = '#FAF5FF'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = C.cardBdr; (e.currentTarget as HTMLElement).style.background = C.white; (e.currentTarget as HTMLElement).style.transform = '' }}>
+                      <MealImage name={r.title} type={r.type} size={42} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: 13.5, fontWeight: 700, color: C.txt, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.title}</p>
+                        <p style={{ fontSize: 11, color: C.faint, marginTop: 2 }}>
+                          <span style={{ fontWeight: 700, color: MCOL[r.type] || C.purple }}>{r.type}</span>
+                          {r.cal > 0 ? ` · ${r.cal} kcal` : ''}{r.time > 0 ? ` · ${r.time} min` : ''}
+                        </p>
+                      </div>
+                      <div style={{ width: 28, height: 28, borderRadius: 999, background: 'rgba(198,160,246,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <Plus size={14} style={{ color: C.accentDark }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Meal Planner ─────────────────────────────────────────────────────────────
+interface MealPlannerProps { plans: Plan[]; savedRecipes: Recipe[] }
+
+function MealPlanner({ plans, selectedPlanId, savedRecipes }: MealPlannerProps & { selectedPlanId: string | null }) {
   const navigate = useNavigate()
   const selectedPlan = plans.find(p => p.id === selectedPlanId) || plans[0] || null
   const startDate = selectedPlan?.date ? new Date(selectedPlan.date) : new Date()
@@ -505,13 +616,35 @@ function MealPlanner({ plans, selectedPlanId }: MealPlannerProps & { selectedPla
   const WEEK = Array.from({ length: 7 }, (_, i) => DAY_NAMES[(startDow + i) % 7])
   const currentDates = getDates(startDate)
   const [day, setDay] = useState(todayIdx)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [extraMeals, setExtraMeals] = useState<CustomMeal[]>([])
   const planner = buildPlannerFromPlans(plans, selectedPlanId)
-  const meals = planner[day] || []
-  const consumed = meals.reduce((a, m) => a + m.cal, 0)
+  const planMeals = planner[day] || []
+
+  // Load custom meals from localStorage whenever day or plan changes
+  useEffect(() => {
+    const planId = selectedPlan?.id || 'none'
+    setExtraMeals(loadCustomMeals(planId, day))
+  }, [day, selectedPlan?.id])
+
+  const allMeals = [
+    ...planMeals,
+    ...extraMeals.map(m => ({ type: m.type, name: m.name, cal: m.cal, time: m.time, rawMeal: m.rawMeal }))
+  ]
+  const consumed = allMeals.reduce((a, m) => a + m.cal, 0)
   const target = 1800
-  const macros = calcMacros(meals)
+  const macros = calcMacros(allMeals)
   const r = 52, cx = 70, cy = 70, circ = 2 * Math.PI * r
   const dash = Math.min(consumed / target, 1) * circ
+
+  const handleAddMeal = (meal: CustomMeal) => {
+    const planId = selectedPlan?.id || 'none'
+    const updated = [...extraMeals, meal]
+    persistCustomMeals(planId, day, updated)
+    setExtraMeals(updated)
+  }
+
+  const dayLabel = `${WEEK[day]}, ${currentDates[day]}`
 
   return (
     <div>
@@ -526,7 +659,10 @@ function MealPlanner({ plans, selectedPlanId }: MealPlannerProps & { selectedPla
         WebkitOverflowScrolling: "touch"
       }}>
         {WEEK.map((d, i) => {
-          const sel = i === day, isToday = i === todayIdx, has = (planner[i] || []).length > 0
+          const sel = i === day, isToday = i === todayIdx
+          const hasPlan = (planner[i] || []).length > 0
+          const hasCustom = loadCustomMeals(selectedPlan?.id || 'none', i).length > 0
+          const has = hasPlan || hasCustom
           return (
             <button key={d} onClick={() => setDay(i)} style={{
               flex: "1 0 auto", minWidth: "46px", display: "flex", flexDirection: "column", alignItems: "center",
@@ -534,19 +670,9 @@ function MealPlanner({ plans, selectedPlanId }: MealPlannerProps & { selectedPla
               cursor: "pointer", background: sel ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : "rgba(198,160,246,0.06)",
               transition: "all .15s", boxShadow: sel ? `0 10px 28px rgba(198,160,246,0.28)` : "none"
             }}>
-              <span style={{
-                fontSize: 10, fontWeight: 500, marginBottom: 4,
-                color: sel ? "rgba(255,255,255,0.78)" : C.faint
-              }}>{d}</span>
-              <span style={{
-                fontWeight: 700, fontSize: 15,
-                color: sel ? "white" : isToday ? C.accent : C.txt
-              }}>{currentDates[i]}</span>
-              <div style={{
-                width: 18, height: 6, borderRadius: 999, marginTop: 6,
-                background: has ? (sel ? "rgba(255,255,255,0.65)" : "rgba(198,160,246,0.55)") : "transparent",
-                border: has && !sel ? "1px solid rgba(198,160,246,0.30)" : "none"
-              }} />
+              <span style={{ fontSize: 10, fontWeight: 500, marginBottom: 4, color: sel ? "rgba(255,255,255,0.78)" : C.faint }}>{d}</span>
+              <span style={{ fontWeight: 700, fontSize: 15, color: sel ? "white" : isToday ? C.accent : C.txt }}>{currentDates[i]}</span>
+              <div style={{ width: 18, height: 6, borderRadius: 999, marginTop: 6, background: has ? (sel ? "rgba(255,255,255,0.65)" : "rgba(198,160,246,0.55)") : "transparent", border: has && !sel ? "1px solid rgba(198,160,246,0.30)" : "none" }} />
             </button>
           )
         })}
@@ -557,48 +683,67 @@ function MealPlanner({ plans, selectedPlanId }: MealPlannerProps & { selectedPla
             <p style={{ fontWeight: 700, fontSize: 14, color: C.txt }}>
               {WEEK[day]}, {new Date().toLocaleDateString('en-US', { month: 'long' })} {currentDates[day]}{day === todayIdx ? " · Today" : ""}
             </p>
-            <button style={{
-              display: "flex", alignItems: "center", gap: 5, background: C.accent,
-              color: "white", border: "none", borderRadius: 8, padding: "6px 12px",
-              fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Plus Jakarta Sans',sans-serif"
-            }}>
+            <button onClick={() => setShowAddModal(true)} style={{
+              display: "flex", alignItems: "center", gap: 5, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`,
+              color: "white", border: "none", borderRadius: 8, padding: "6px 14px",
+              fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Plus Jakarta Sans',sans-serif",
+              boxShadow: "0 4px 14px rgba(198,160,246,0.4)", transition: "all .15s"
+            }}
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)"}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = ""}
+            >
               <Plus size={12} /> Add Meal
             </button>
           </div>
-          {meals.length > 0 ? meals.map((m, i) => {
+          {allMeals.length > 0 ? allMeals.map((m, i) => {
+            const isExtra = i >= planMeals.length
             return (
-              <div key={i} onClick={() => { if (m.rawMeal) navigate(`/recipe/${day}/${m.type}`, { state: { meal: m.rawMeal, fromDashboard: true } }) }}
+              <div key={i}
                 style={{
-                  background: C.white, borderRadius: 16, padding: "14px 18px", cursor: m.rawMeal ? "pointer" : "default",
-                  boxShadow: "0 2px 12px rgba(0,0,0,0.02)", display: "flex", gap: 12, alignItems: "center", marginBottom: 10, transition: "all .2s ease"
-                }}
-                onMouseEnter={e => { if (m.rawMeal) (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)" }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "" }}>
-                <MealImage name={m.name} type={m.type} />
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 11.5, fontWeight: 700, color: MCOL[m.type], marginBottom: 2 }}>{m.type}</p>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: C.txt, marginBottom: 3 }}>{m.name}</p>
-                  <p style={{ fontSize: 11, color: C.faint, fontWeight: 500 }}>{m.cal} kcal · {m.time} min</p>
+                  background: C.white, borderRadius: 16, padding: "14px 18px",
+                  boxShadow: "0 2px 12px rgba(0,0,0,0.02)", display: "flex", gap: 12, alignItems: "center", marginBottom: 10, transition: "all .2s ease",
+                  position: "relative"
+                }}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center', flex: 1, cursor: m.rawMeal ? 'pointer' : 'default', minWidth: 0 }}
+                  onClick={() => { if (m.rawMeal) navigate(`/recipe/${day}/${m.type}`, { state: { meal: m.rawMeal, fromDashboard: true } }) }}
+                  onMouseEnter={e => { if (m.rawMeal) (e.currentTarget as HTMLElement).style.opacity = '0.85' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}>
+                  <MealImage name={m.name} type={m.type} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 11.5, fontWeight: 700, color: MCOL[m.type] || C.purple, marginBottom: 2 }}>{m.type}</p>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: C.txt, marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.name}</p>
+                    <p style={{ fontSize: 11, color: C.faint, fontWeight: 500 }}>{m.cal > 0 ? `${m.cal} kcal` : '-- kcal'} · {m.time > 0 ? `${m.time} min` : '--'}</p>
+                  </div>
+                  {m.rawMeal && !isExtra && <ChevronRight size={16} style={{ color: C.faint, flexShrink: 0 }} />}
                 </div>
-                {m.rawMeal && <ChevronRight size={16} style={{ color: C.faint }} />}
+                {isExtra && (
+                  <button
+                    onClick={() => {
+                      const planId = selectedPlan?.id || 'none'
+                      const extraIdx = i - planMeals.length
+                      const updated = extraMeals.filter((_, ei) => ei !== extraIdx)
+                      persistCustomMeals(planId, day, updated)
+                      setExtraMeals(updated)
+                    }}
+                    title="Remove meal"
+                    style={{ width: 26, height: 26, borderRadius: 999, background: '#FEF2F2', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background .15s' }}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = '#FECACA'}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = '#FEF2F2'}>
+                    <X size={12} style={{ color: C.red }} />
+                  </button>
+                )}
               </div>
             )
           }) : (
-            <div style={{
-              background: C.white, borderRadius: 18, padding: 40,
-              border: `2px dashed rgba(0,0,0,0.05)`, textAlign: "center"
-            }}>
+            <div style={{ background: C.white, borderRadius: 18, padding: 40, border: `2px dashed rgba(0,0,0,0.05)`, textAlign: "center" }}>
               <Utensils size={34} style={{ color: C.purple, marginBottom: 10 }} />
               <p style={{ fontWeight: 700, color: C.txt, marginBottom: 6 }}>No meals planned</p>
-              <p style={{ fontSize: 13, color: C.muted }}>Generate a plan and assign it to this day</p>
+              <p style={{ fontSize: 13, color: C.muted }}>Add from your saved recipes, or generate a new plan</p>
             </div>
           )}
         </div>
         <div>
-          <div style={{
-            background: C.white, borderRadius: 20, padding: 20,
-            boxShadow: "0 4px 20px rgba(0,0,0,0.03)", marginBottom: 12, textAlign: "center"
-          }}>
+          <div style={{ background: C.white, borderRadius: 20, padding: 20, boxShadow: "0 4px 20px rgba(0,0,0,0.03)", marginBottom: 12, textAlign: "center" }}>
             <p style={{ fontWeight: 700, fontSize: 13, color: C.txt, marginBottom: 12 }}>Calories</p>
             <svg width={140} height={140} style={{ display: "block", margin: "0 auto" }}>
               <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F3F4F6" strokeWidth={12} />
@@ -629,9 +774,19 @@ function MealPlanner({ plans, selectedPlanId }: MealPlannerProps & { selectedPla
           </div>
         </div>
       </div>
+
+      {showAddModal && (
+        <AddMealModal
+          dayLabel={dayLabel}
+          savedRecipes={savedRecipes}
+          onAdd={handleAddMeal}
+          onClose={() => setShowAddModal(false)}
+        />
+      )}
     </div>
   )
 }
+
 
 // ─── Saved Plans ──────────────────────────────────────────────────────────────
 interface SavedPlansProps { 
@@ -1541,7 +1696,20 @@ export default function EdibleDashboard() {
                       selectedPlanId={selectedPlanId} 
                     />
                   )}
-                  {view === "planner" && <MealPlanner plans={plans} selectedPlanId={selectedPlanId} />}
+                  {view === "planner" && (
+                    <MealPlanner
+                      plans={plans}
+                      selectedPlanId={selectedPlanId}
+                      savedRecipes={savedRecipes.map(sr => ({
+                        id: sr.id,
+                        title: sr.recipe_title,
+                        type: sr.meal_type,
+                        time: sr.recipe_data?.totalTime || 0,
+                        cal: sr.recipe_data?.nutrition?.calories || 0,
+                        rawMeal: sr.recipe_data
+                      }))}
+                    />
+                  )}
                   {view === "plans" && (
                     <SavedPlans 
                       plans={plans} 
