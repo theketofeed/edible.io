@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import {
   LayoutDashboard, Calendar, BookmarkCheck, Heart, Sparkles,
@@ -7,9 +7,11 @@ import {
   ClipboardList, CalendarDays, Utensils,
   Sunrise, Sun, Moon,
   Scale, Leaf, Dumbbell, Wheat, Sprout,
-  Camera, PencilLine
+  Camera, PencilLine,
+  Zap, TrendingUp
 } from "lucide-react"
 import logo from "../assets/favicon.png"
+import { usePlan } from '../hooks/usePlan'
 import { useAuth } from "../context/AuthContext"
 import { getUserMealPlans, getProfile, deleteMealPlan, getUserSavedRecipes } from "../lib/db"
 import { fetchMealImage } from "../lib/mealImages"
@@ -199,6 +201,204 @@ const MBG: Record<string, string> = {
 const MCOL: Record<string, string> = { Breakfast: "#92400E", Lunch: "#065F46", Dinner: C.purple }
 const MICON: Record<string, React.ElementType> = { Breakfast: Sunrise, Lunch: Sun, Dinner: Moon }
 
+function NotificationBell({ plans, onNav }: { plans: Plan[]; onNav: (id: NavId) => void }) {
+  const [open, setOpen] = useState(false)
+  const bellRef = useRef<HTMLDivElement>(null)
+  const { plan, generationsUsed, generationsRemaining, FREE_GENERATION_LIMIT, maxSavedPlans } = usePlan()
+  const isPro = plan === 'pro' || plan === 'founding'
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (bellRef.current && !bellRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    if (open) document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [open])
+
+  const selectedPlan = plans[0] || null
+  const planStartDate = selectedPlan?.date ? new Date(selectedPlan.date) : null
+
+  // Compute day index within current plan (0-6)
+  const planDayIdx = planStartDate ? (() => {
+    const today = new Date(); today.setHours(0,0,0,0)
+    const start = new Date(planStartDate); start.setHours(0,0,0,0)
+    return Math.floor((today.getTime() - start.getTime()) / 86400000)
+  })() : -1
+
+  type Nudge = { id: string; icon: string; title: string; body: string; action?: { label: string; nav: NavId }; urgent?: boolean }
+
+  const nudges: Nudge[] = []
+
+  // 1. Plan expiring soon (day 5, 6, or 7)
+  if (planStartDate && planDayIdx >= 4 && planDayIdx <= 6) {
+    const daysLeft = 6 - planDayIdx
+    nudges.push({
+      id: 'plan_expiring',
+      icon: '📅',
+      title: 'Plan ending soon',
+      body: daysLeft === 0 ? 'Your current meal plan ends today.' : `Your meal plan ends in ${daysLeft} day${daysLeft > 1 ? 's' : ''}.`,
+      action: { label: 'Generate new plan', nav: 'generate' },
+      urgent: true,
+    })
+  }
+
+  // 2. Generation limit warning (used 3 of 4)
+  if (!isPro && generationsUsed >= FREE_GENERATION_LIMIT - 1 && generationsRemaining > 0) {
+    nudges.push({
+      id: 'gen_limit',
+      icon: '⚡',
+      title: '1 generation left',
+      body: "You've used 3 of 4 free generations this month.",
+      action: { label: 'Upgrade to Pro', nav: 'generate' },
+      urgent: true,
+    })
+  }
+
+  // 3. Generations used up
+  if (!isPro && generationsRemaining === 0) {
+    nudges.push({
+      id: 'gen_limit_full',
+      icon: '🚫',
+      title: 'Generation limit reached',
+      body: "You've used all 4 free generations this month. Upgrade for unlimited.",
+      action: { label: 'Upgrade to Pro', nav: 'generate' },
+      urgent: true,
+    })
+  }
+
+  // 4. Saved plans limit warning (3 of 4)
+  if (!isPro && plans.length >= maxSavedPlans - 1 && plans.length < maxSavedPlans) {
+    nudges.push({
+      id: 'plans_limit',
+      icon: '📋',
+      title: '1 plan slot left',
+      body: `You've saved ${plans.length} of ${maxSavedPlans} free plan slots.`,
+      action: { label: 'Upgrade to Pro', nav: 'plans' },
+    })
+  }
+
+  // 5. No plan yet — new user nudge
+  if (plans.length === 0) {
+    nudges.push({
+      id: 'no_plan',
+      icon: '✨',
+      title: 'No meal plan yet',
+      body: 'Upload a grocery receipt and get a full week of meals in seconds.',
+      action: { label: 'Generate your first plan', nav: 'generate' },
+    })
+  }
+
+  // 6. Today's calorie summary (only if they have a plan with today's meals)
+  if (plans.length > 0 && planDayIdx >= 0 && planDayIdx <= 6) {
+    const planner = buildPlannerFromPlans(plans, plans[0]?.id)
+    const todayMeals = planner[planDayIdx] || []
+    const consumed = todayMeals.reduce((a, m) => a + m.cal, 0)
+    if (consumed > 0) {
+      const macros = calcMacros(todayMeals)
+      const macroSummary = `${macros.p}g protein · ${macros.c}g carbs · ${macros.f}g fat`
+      nudges.push({
+        id: 'calories',
+        icon: '🔥',
+        title: `${consumed} kcal planned today`,
+        body: `Across ${todayMeals.length} meal${todayMeals.length !== 1 ? 's' : ''} — ${macroSummary}.`,
+      })
+    }
+  }
+
+  // 7. Milestone — first plan saved
+  if (plans.length === 1) {
+    nudges.push({
+      id: 'milestone_first',
+      icon: '🎉',
+      title: 'First plan saved!',
+      body: 'You\'re all set. Come back each day to track your meals.',
+    })
+  }
+
+  const hasUrgent = nudges.some(n => n.urgent)
+  const displayNudges = nudges.slice(0, 4)
+
+  return (
+    <div ref={bellRef} style={{ position: 'relative' }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: 34, height: 34, borderRadius: 10, background: open ? C.accent : C.white,
+          border: `1px solid ${open ? C.accent : C.cardBdr}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', position: 'relative', transition: 'all .15s',
+          flexShrink: 0,
+        }}
+      >
+        <Bell size={14} style={{ color: open ? 'white' : C.muted }} />
+        {hasUrgent && !open && (
+          <span style={{
+            position: 'absolute', top: 6, right: 6, width: 7, height: 7,
+            borderRadius: '50%', background: '#ef4444', border: '1.5px solid white',
+          }} />
+        )}
+      </button>
+
+      {open && (
+          <div style={{
+            position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+            width: 320, background: C.white, borderRadius: 18,
+            border: `1px solid ${C.cardBdr}`, boxShadow: '0 16px 48px rgba(0,0,0,0.12)',
+            zIndex: 50, overflow: 'hidden',
+          }}>
+            {/* Header */}
+            <div style={{ padding: '14px 16px 10px', borderBottom: `1px solid ${C.cardBdr}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <p style={{ fontSize: 13, fontWeight: 800, color: C.txt }}>Notifications</p>
+              <span style={{ fontSize: 11, color: C.faint, fontWeight: 600 }}>{displayNudges.length} update{displayNudges.length !== 1 ? 's' : ''}</span>
+            </div>
+
+            {/* Nudges */}
+            <div style={{ maxHeight: 380, overflowY: 'auto' }}>
+              {displayNudges.length === 0 ? (
+                <div style={{ padding: '32px 16px', textAlign: 'center' }}>
+                  <p style={{ fontSize: 24, marginBottom: 8 }}>✅</p>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: C.txt, marginBottom: 4 }}>All caught up!</p>
+                  <p style={{ fontSize: 12, color: C.faint }}>No updates right now.</p>
+                </div>
+              ) : displayNudges.map((n, i) => (
+                <div key={n.id} style={{
+                  padding: '12px 16px',
+                  borderBottom: i < displayNudges.length - 1 ? `1px solid ${C.cardBdr}` : 'none',
+                  background: n.urgent ? 'rgba(239,68,68,0.03)' : 'transparent',
+                }}>
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                    <span style={{
+                      width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+                      background: n.urgent ? '#FEF2F2' : '#F9F8F6',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
+                    }}>{n.icon}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 12.5, fontWeight: 700, color: n.urgent ? '#b91c1c' : C.txt, marginBottom: 2 }}>{n.title}</p>
+                      <p style={{ fontSize: 11.5, color: C.muted, lineHeight: 1.4 }}>{n.body}</p>
+                      {n.action && (
+                        <button
+                          onClick={() => { onNav(n.action!.nav); setOpen(false) }}
+                          style={{
+                            marginTop: 8, fontSize: 11, fontWeight: 700, color: 'white',
+                            background: n.urgent ? '#ef4444' : C.accentDark,
+                            border: 'none', borderRadius: 6, padding: '4px 10px',
+                            cursor: 'pointer', fontFamily: "'Plus Jakarta Sans',sans-serif",
+                          }}
+                        >{n.action.label}</button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 type NavId = "overview" | "planner" | "plans" | "recipes" | "generate" | "profile" | "logout"
 interface SidebarProps { active: string; onNav: (id: NavId) => void; userData: UserData }
@@ -315,10 +515,9 @@ function Overview({ plans, onNav, userData, onSelectPlan, selectedPlanId }: Over
   const planner = buildPlannerFromPlans(plans, selectedPlanId)
   const todayMeals = planner[todayIdx] || []
   const consumed = todayMeals.reduce((a, m) => a + m.cal, 0)
-  const target = 1800
   const macros = calcMacros(todayMeals)
   const r = 44, cx = 60, cy = 60, circ = 2 * Math.PI * r
-  const dash = Math.min(consumed / target, 1) * circ
+  const dash = circ
   const now = new Date()
   const weekday = now.toLocaleDateString("en-US", { weekday: "long" })
   const monthDay = now.toLocaleDateString("en-US", { month: "long", day: "numeric" })
@@ -417,27 +616,26 @@ function Overview({ plans, onNav, userData, onSelectPlan, selectedPlanId }: Over
             <svg width={120} height={120}>
               <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F3F4F6" strokeWidth={10} />
               <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.accent} strokeWidth={10}
-                strokeDasharray={`${dash} ${circ}`} strokeDashoffset={circ / 4} strokeLinecap="round" />
-              <text x={cx} y={cy - 6} textAnchor="middle"
-                style={{ fontSize: 18, fontWeight: 800, fill: C.txt, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{consumed}</text>
-              <text x={cx} y={cy + 12} textAnchor="middle"
-                style={{ fontSize: 10, fill: C.faint, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>kcal</text>
+                strokeDasharray={`${dash} ${circ}`} strokeDashoffset={0} strokeLinecap="round" />
+              <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle"
+                style={{ fontSize: 20, fontWeight: 800, fill: C.txt, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{consumed}</text>
             </svg>
             <div>
               <p style={{ fontSize: 22, fontWeight: 800, color: C.txt, lineHeight: 1 }}>{consumed}</p>
-              <p style={{ fontSize: 11, color: C.faint, marginTop: 2 }}>of {target} target</p>
-              <p style={{ fontSize: 12, color: C.green, fontWeight: 700, marginTop: 6 }}>{target - consumed} remaining</p>
-              {[{ l: "P", v: macros.p, max: 120, c: "#ef4444" }, { l: "C", v: macros.c, max: 250, c: "#f59e0b" }, { l: "F", v: macros.f, max: 80, c: C.purple }].map((m, i) => (
-                <div key={i} style={{ marginTop: 8 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                    <span style={{ fontSize: 10, color: C.muted }}>{m.l}</span>
-                    <span style={{ fontSize: 10, color: C.faint }}>{m.v}g</span>
-                  </div>
-                  <div style={{ height: 4, background: "#F3F4F6", borderRadius: 999 }}>
-                    <div style={{ height: "100%", width: `${(m.v / m.max) * 100}%`, background: m.c, borderRadius: 999 }} />
-                  </div>
-                </div>
-              ))}
+              <p style={{ fontSize: 11, color: C.faint, marginTop: 2 }}>kcal total</p>
+              <p style={{ fontSize: 12, color: C.muted, fontWeight: 700, marginTop: 6 }}>across {todayMeals.length} meal{todayMeals.length !== 1 ? 's' : ''}</p>
+              <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
+                {[{ l: "P", v: macros.p, c: "#ef4444" }, { l: "C", v: macros.c, c: "#f59e0b" }, { l: "F", v: macros.f, c: C.purple }].map((m, i) => (
+                  <span key={i} style={{
+                    display: "inline-flex", alignItems: "center", gap: 5,
+                    fontSize: 11, fontWeight: 700, color: C.txt, background: "#F3F4F6",
+                    padding: "4px 10px", borderRadius: 999
+                  }}>
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: m.c }} />
+                    {m.v}g {m.l}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -632,10 +830,9 @@ function MealPlanner({ plans, selectedPlanId, savedRecipes }: MealPlannerProps &
     ...extraMeals.map(m => ({ type: m.type, name: m.name, cal: m.cal, time: m.time, rawMeal: m.rawMeal }))
   ]
   const consumed = allMeals.reduce((a, m) => a + m.cal, 0)
-  const target = 1800
   const macros = calcMacros(allMeals)
   const r = 52, cx = 70, cy = 70, circ = 2 * Math.PI * r
-  const dash = Math.min(consumed / target, 1) * circ
+  const dash = circ
 
   const handleAddMeal = (meal: CustomMeal) => {
     const planId = selectedPlan?.id || 'none'
@@ -748,29 +945,28 @@ function MealPlanner({ plans, selectedPlanId, savedRecipes }: MealPlannerProps &
             <svg width={140} height={140} style={{ display: "block", margin: "0 auto" }}>
               <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F3F4F6" strokeWidth={12} />
               <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.accent} strokeWidth={12}
-                strokeDasharray={`${dash} ${circ}`} strokeDashoffset={circ / 4} strokeLinecap="round" />
-              <text x={cx} y={cy - 8} textAnchor="middle"
-                style={{ fontSize: 22, fontWeight: 700, fill: C.txt, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{consumed}</text>
-              <text x={cx} y={cy + 12} textAnchor="middle"
-                style={{ fontSize: 10, fill: C.faint, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>of {target}</text>
+                strokeDasharray={`${dash} ${circ}`} strokeDashoffset={0} strokeLinecap="round" />
+              <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle"
+                style={{ fontSize: 26, fontWeight: 800, fill: C.txt, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{consumed}</text>
             </svg>
-            <p style={{ fontSize: 12, color: consumed >= target ? C.green : C.muted, fontWeight: 600, marginTop: 6 }}>
-              {consumed >= target ? "Target reached!" : `${target - consumed} kcal remaining`}
+            <p style={{ fontSize: 12, color: C.muted, fontWeight: 600, marginTop: 6 }}>
+              across {allMeals.length} meal{allMeals.length !== 1 ? 's' : ''}
             </p>
           </div>
           <div style={{ background: C.white, borderRadius: 20, padding: "16px 20px", boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}>
             <p style={{ fontWeight: 700, fontSize: 13, color: C.txt, marginBottom: 12 }}>Macros</p>
-            {[{ l: "Protein", v: macros.p, max: 120, c: "#ef4444" }, { l: "Carbs", v: macros.c, max: 250, c: "#f59e0b" }, { l: "Fat", v: macros.f, max: 80, c: C.purple }].map((m, i) => (
-              <div key={i} style={{ marginBottom: i < 2 ? 10 : 0 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: C.txt }}>{m.l}</span>
-                  <span style={{ fontSize: 11, color: C.faint }}>{m.v}/{m.max}g</span>
-                </div>
-                <div style={{ height: 5, background: "#F3F4F6", borderRadius: 999 }}>
-                  <div style={{ height: "100%", width: `${(m.v / m.max) * 100}%`, background: m.c, borderRadius: 999 }} />
-                </div>
-              </div>
-            ))}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
+              {[{ l: "Protein", v: macros.p, c: "#ef4444" }, { l: "Carbs", v: macros.c, c: "#f59e0b" }, { l: "Fat", v: macros.f, c: C.purple }].map((m, i) => (
+                <span key={i} style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  fontSize: 11.5, fontWeight: 700, color: C.txt, background: "#F3F4F6",
+                  padding: "5px 12px", borderRadius: 999
+                }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: m.c }} />
+                  {m.v}g {m.l}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -1588,6 +1784,7 @@ export default function EdibleDashboard() {
         <Sidebar active={view} onNav={go} userData={userData} />
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
           <header className="dash-header" style={{
+            position: "relative", zIndex: 50,
             height: 56, background: "rgba(245,243,239,0.92)", backdropFilter: "blur(10px)",
             borderBottom: "1px solid #EDE9E2", display: "flex", alignItems: "center",
             padding: "0 24px", gap: 12, flexShrink: 0
@@ -1669,13 +1866,7 @@ export default function EdibleDashboard() {
               )}
             </div>
             <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
-              <button style={{
-                width: 34, height: 34, borderRadius: 10, background: C.white,
-                border: `1px solid ${C.cardBdr}`, display: "flex", alignItems: "center",
-                justifyContent: "center", cursor: "pointer"
-              }}>
-                <Bell size={14} style={{ color: C.muted }} />
-              </button>
+              <NotificationBell plans={plans} onNav={go} />
               <div onClick={() => go("profile")} style={{ cursor: "pointer" }}>
                 <UserAvatar userData={userData} size={34} fontSize={14} />
               </div>

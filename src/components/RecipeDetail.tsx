@@ -233,12 +233,7 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
     }
 
 
-    // Parse instructions into distinct steps
-    const instructionSteps = useMemo(() => {
-        return safeMeal?.instructions || []
-    }, [safeMeal])
 
-    const difficulty = getDifficulty(instructionSteps.length, safeMeal.totalTime)
 
     const handleShare = () => {
         setIsShareMenuOpen(!isShareMenuOpen)
@@ -358,6 +353,9 @@ Made with Edible`
     }
 
     if (!meal || !safeMeal) return <RecipeDetailSkeleton onBack={onBack} backLabel={backLabel} />
+
+    const instructionSteps = safeMeal.instructions || []
+    const difficulty = getDifficulty(instructionSteps.length, safeMeal.totalTime)
 
 
     const tabs: Tab[] = [
