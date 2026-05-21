@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const FREE_GENERATION_LIMIT = 4
-const FREE_SAVED_PLANS_LIMIT = 3
+const FREE_SAVED_PLANS_LIMIT = 4
 const FREE_SAVED_RECIPES_LIMIT = 10
 const GUEST_LIMIT_KEY = 'edible_guest_generations'
 

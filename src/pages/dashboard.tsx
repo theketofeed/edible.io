@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import {
   LayoutDashboard, Calendar, BookmarkCheck, Heart, Sparkles,
@@ -7,16 +7,15 @@ import {
   ClipboardList, CalendarDays, Utensils,
   Sunrise, Sun, Moon,
   Scale, Leaf, Dumbbell, Wheat, Sprout,
-  Camera, PencilLine,
-  Zap, TrendingUp
+  Camera, PencilLine
 } from "lucide-react"
 import logo from "../assets/favicon.png"
-import { usePlan } from '../hooks/usePlan'
 import { useAuth } from "../context/AuthContext"
 import { getUserMealPlans, getProfile, deleteMealPlan, getUserSavedRecipes } from "../lib/db"
 import { fetchMealImage } from "../lib/mealImages"
 import type { MealPlanResult, Meal, SavedRecipe } from "../utils/types"
 import PlanBadge from "../components/PlanBadge"
+import PricingModal from '../components/PricingModal'
 
 const C = {
   white: "#FFFFFF",
@@ -201,7 +200,12 @@ const MBG: Record<string, string> = {
 const MCOL: Record<string, string> = { Breakfast: "#92400E", Lunch: "#065F46", Dinner: C.purple }
 const MICON: Record<string, React.ElementType> = { Breakfast: Sunrise, Lunch: Sun, Dinner: Moon }
 
-function NotificationBell({ plans, onNav }: { plans: Plan[]; onNav: (id: NavId) => void }) {
+
+function NotificationBell({ plans, onNav, onUpgrade }: { 
+  plans: Plan[]
+  onNav: (id: NavId) => void
+  onUpgrade: (trigger: string) => void 
+}) {
   const [open, setOpen] = useState(false)
   const bellRef = useRef<HTMLDivElement>(null)
   const { plan, generationsUsed, generationsRemaining, FREE_GENERATION_LIMIT, maxSavedPlans } = usePlan()
@@ -379,7 +383,16 @@ function NotificationBell({ plans, onNav }: { plans: Plan[]; onNav: (id: NavId) 
                       <p style={{ fontSize: 11.5, color: C.muted, lineHeight: 1.4 }}>{n.body}</p>
                       {n.action && (
                         <button
-                          onClick={() => { onNav(n.action!.nav); setOpen(false) }}
+                          onClick={() => {
+                            setOpen(false)
+                            if (n.id === 'gen_limit' || n.id === 'gen_limit_full') {
+                              onUpgrade('generation_limit')
+                            } else if (n.id === 'plans_limit') {
+                              onUpgrade('save_plan')
+                            } else {
+                              onNav(n.action!.nav)
+                            }
+                          }}
                           style={{
                             marginTop: 8, fontSize: 11, fontWeight: 700, color: 'white',
                             background: n.urgent ? '#ef4444' : C.accentDark,
@@ -515,9 +528,10 @@ function Overview({ plans, onNav, userData, onSelectPlan, selectedPlanId }: Over
   const planner = buildPlannerFromPlans(plans, selectedPlanId)
   const todayMeals = planner[todayIdx] || []
   const consumed = todayMeals.reduce((a, m) => a + m.cal, 0)
+  const target = 1800
   const macros = calcMacros(todayMeals)
   const r = 44, cx = 60, cy = 60, circ = 2 * Math.PI * r
-  const dash = circ
+  const dash = Math.min(consumed / target, 1) * circ
   const now = new Date()
   const weekday = now.toLocaleDateString("en-US", { weekday: "long" })
   const monthDay = now.toLocaleDateString("en-US", { month: "long", day: "numeric" })
@@ -616,26 +630,27 @@ function Overview({ plans, onNav, userData, onSelectPlan, selectedPlanId }: Over
             <svg width={120} height={120}>
               <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F3F4F6" strokeWidth={10} />
               <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.accent} strokeWidth={10}
-                strokeDasharray={`${dash} ${circ}`} strokeDashoffset={0} strokeLinecap="round" />
-              <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle"
-                style={{ fontSize: 20, fontWeight: 800, fill: C.txt, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{consumed}</text>
+                strokeDasharray={`${dash} ${circ}`} strokeDashoffset={circ / 4} strokeLinecap="round" />
+              <text x={cx} y={cy - 6} textAnchor="middle"
+                style={{ fontSize: 18, fontWeight: 800, fill: C.txt, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{consumed}</text>
+              <text x={cx} y={cy + 12} textAnchor="middle"
+                style={{ fontSize: 10, fill: C.faint, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>kcal</text>
             </svg>
             <div>
               <p style={{ fontSize: 22, fontWeight: 800, color: C.txt, lineHeight: 1 }}>{consumed}</p>
-              <p style={{ fontSize: 11, color: C.faint, marginTop: 2 }}>kcal total</p>
-              <p style={{ fontSize: 12, color: C.muted, fontWeight: 700, marginTop: 6 }}>across {todayMeals.length} meal{todayMeals.length !== 1 ? 's' : ''}</p>
-              <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
-                {[{ l: "P", v: macros.p, c: "#ef4444" }, { l: "C", v: macros.c, c: "#f59e0b" }, { l: "F", v: macros.f, c: C.purple }].map((m, i) => (
-                  <span key={i} style={{
-                    display: "inline-flex", alignItems: "center", gap: 5,
-                    fontSize: 11, fontWeight: 700, color: C.txt, background: "#F3F4F6",
-                    padding: "4px 10px", borderRadius: 999
-                  }}>
-                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: m.c }} />
-                    {m.v}g {m.l}
-                  </span>
-                ))}
-              </div>
+              <p style={{ fontSize: 11, color: C.faint, marginTop: 2 }}>of {target} target</p>
+              <p style={{ fontSize: 12, color: C.green, fontWeight: 700, marginTop: 6 }}>{target - consumed} remaining</p>
+              {[{ l: "P", v: macros.p, max: 120, c: "#ef4444" }, { l: "C", v: macros.c, max: 250, c: "#f59e0b" }, { l: "F", v: macros.f, max: 80, c: C.purple }].map((m, i) => (
+                <div key={i} style={{ marginTop: 8 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                    <span style={{ fontSize: 10, color: C.muted }}>{m.l}</span>
+                    <span style={{ fontSize: 10, color: C.faint }}>{m.v}g</span>
+                  </div>
+                  <div style={{ height: 4, background: "#F3F4F6", borderRadius: 999 }}>
+                    <div style={{ height: "100%", width: `${(m.v / m.max) * 100}%`, background: m.c, borderRadius: 999 }} />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -830,9 +845,10 @@ function MealPlanner({ plans, selectedPlanId, savedRecipes }: MealPlannerProps &
     ...extraMeals.map(m => ({ type: m.type, name: m.name, cal: m.cal, time: m.time, rawMeal: m.rawMeal }))
   ]
   const consumed = allMeals.reduce((a, m) => a + m.cal, 0)
+  const target = 1800
   const macros = calcMacros(allMeals)
   const r = 52, cx = 70, cy = 70, circ = 2 * Math.PI * r
-  const dash = circ
+  const dash = Math.min(consumed / target, 1) * circ
 
   const handleAddMeal = (meal: CustomMeal) => {
     const planId = selectedPlan?.id || 'none'
@@ -945,28 +961,29 @@ function MealPlanner({ plans, selectedPlanId, savedRecipes }: MealPlannerProps &
             <svg width={140} height={140} style={{ display: "block", margin: "0 auto" }}>
               <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F3F4F6" strokeWidth={12} />
               <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.accent} strokeWidth={12}
-                strokeDasharray={`${dash} ${circ}`} strokeDashoffset={0} strokeLinecap="round" />
-              <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle"
-                style={{ fontSize: 26, fontWeight: 800, fill: C.txt, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{consumed}</text>
+                strokeDasharray={`${dash} ${circ}`} strokeDashoffset={circ / 4} strokeLinecap="round" />
+              <text x={cx} y={cy - 8} textAnchor="middle"
+                style={{ fontSize: 22, fontWeight: 700, fill: C.txt, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{consumed}</text>
+              <text x={cx} y={cy + 12} textAnchor="middle"
+                style={{ fontSize: 10, fill: C.faint, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>of {target}</text>
             </svg>
-            <p style={{ fontSize: 12, color: C.muted, fontWeight: 600, marginTop: 6 }}>
-              across {allMeals.length} meal{allMeals.length !== 1 ? 's' : ''}
+            <p style={{ fontSize: 12, color: consumed >= target ? C.green : C.muted, fontWeight: 600, marginTop: 6 }}>
+              {consumed >= target ? "Target reached!" : `${target - consumed} kcal remaining`}
             </p>
           </div>
           <div style={{ background: C.white, borderRadius: 20, padding: "16px 20px", boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}>
             <p style={{ fontWeight: 700, fontSize: 13, color: C.txt, marginBottom: 12 }}>Macros</p>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
-              {[{ l: "Protein", v: macros.p, c: "#ef4444" }, { l: "Carbs", v: macros.c, c: "#f59e0b" }, { l: "Fat", v: macros.f, c: C.purple }].map((m, i) => (
-                <span key={i} style={{
-                  display: "inline-flex", alignItems: "center", gap: 6,
-                  fontSize: 11.5, fontWeight: 700, color: C.txt, background: "#F3F4F6",
-                  padding: "5px 12px", borderRadius: 999
-                }}>
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: m.c }} />
-                  {m.v}g {m.l}
-                </span>
-              ))}
-            </div>
+            {[{ l: "Protein", v: macros.p, max: 120, c: "#ef4444" }, { l: "Carbs", v: macros.c, max: 250, c: "#f59e0b" }, { l: "Fat", v: macros.f, max: 80, c: C.purple }].map((m, i) => (
+              <div key={i} style={{ marginBottom: i < 2 ? 10 : 0 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: C.txt }}>{m.l}</span>
+                  <span style={{ fontSize: 11, color: C.faint }}>{m.v}/{m.max}g</span>
+                </div>
+                <div style={{ height: 5, background: "#F3F4F6", borderRadius: 999 }}>
+                  <div style={{ height: "100%", width: `${(m.v / m.max) * 100}%`, background: m.c, borderRadius: 999 }} />
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -1577,6 +1594,8 @@ export default function EdibleDashboard() {
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
   const [savedRecipes, setSavedRecipes] = useState<SavedRecipe[]>([])
   const [isLoadingSaved, setIsLoadingSaved] = useState(true)
+  const [pricingOpen, setPricingOpen] = useState(false)
+  const [pricingTrigger, setPricingTrigger] = useState('')
 
   const handleDeletePlan = (id: string) => {
     setPlans(prev => prev.filter(p => p.id !== id))
@@ -1784,7 +1803,6 @@ export default function EdibleDashboard() {
         <Sidebar active={view} onNav={go} userData={userData} />
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
           <header className="dash-header" style={{
-            position: "relative", zIndex: 50,
             height: 56, background: "rgba(245,243,239,0.92)", backdropFilter: "blur(10px)",
             borderBottom: "1px solid #EDE9E2", display: "flex", alignItems: "center",
             padding: "0 24px", gap: 12, flexShrink: 0
@@ -1866,7 +1884,11 @@ export default function EdibleDashboard() {
               )}
             </div>
             <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
-              <NotificationBell plans={plans} onNav={go} />
+              <NotificationBell 
+                plans={plans} 
+                onNav={go} 
+                onUpgrade={(trigger) => { setPricingTrigger(trigger); setPricingOpen(true) }}
+              />
               <div onClick={() => go("profile")} style={{ cursor: "pointer" }}>
                 <UserAvatar userData={userData} size={34} fontSize={14} />
               </div>
@@ -1959,6 +1981,11 @@ export default function EdibleDashboard() {
           </div>
         </div>
       </div>
+      <PricingModal
+        isOpen={pricingOpen}
+        onClose={() => setPricingOpen(false)}
+        trigger={pricingTrigger}
+      />
     </>
   )
 }
