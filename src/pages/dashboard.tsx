@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import {
   LayoutDashboard, Calendar, BookmarkCheck, Heart, Sparkles,
@@ -16,6 +16,7 @@ import { fetchMealImage } from "../lib/mealImages"
 import type { MealPlanResult, Meal, SavedRecipe } from "../utils/types"
 import PlanBadge from "../components/PlanBadge"
 import PricingModal from '../components/PricingModal'
+import { usePlan } from '../hooks/usePlan'
 
 const C = {
   white: "#FFFFFF",
