@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
+import posthog from 'posthog-js'
 import { X, Check, Zap, Crown, Shield } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { createCheckout } from '../lib/checkout'
@@ -15,8 +16,13 @@ export default function PricingModal({ isOpen, onClose, trigger }: Props) {
   const [loading, setLoading] = useState<ProductType | null>(null)
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual')
 
+  useEffect(() => {
+    if (isOpen) posthog.capture('upgrade_modal_shown', { trigger })
+  }, [isOpen, trigger])
+
   const handleUpgrade = useCallback(async (productType: ProductType) => {
     if (!user) return
+    posthog.capture('upgrade_clicked', { trigger, plan: productType })
     setLoading(productType)
     const result = await createCheckout(productType, user.id, user.email!)
     if (result.success && result.url) {
@@ -25,7 +31,7 @@ export default function PricingModal({ isOpen, onClose, trigger }: Props) {
       alert(result.error || 'Something went wrong. Please try again.')
       setLoading(null)
     }
-  }, [user])
+  }, [user, trigger])
 
   if (!isOpen) return null
 

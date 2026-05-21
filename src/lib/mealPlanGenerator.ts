@@ -1,4 +1,5 @@
 import Tesseract from 'tesseract.js'
+import posthog from 'posthog-js'
 import type { DietType, GenerateMealPlanParams, MealPlanResult, DayMeals, Meal, OcrResult } from '../utils/types'
 import { extractGroceryItems, cleanGroceryList } from '../utils/grocery'
 
@@ -363,6 +364,8 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
 
 
   console.log('[Generator] ✅ Done —', result.days.length, 'days generated')
+
+  posthog.capture('plan_generated', { diet, days: effectiveDays, item_count: effectiveItems.length })
 
   return {
     sourceItems: items,

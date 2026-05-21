@@ -12,8 +12,11 @@ Sentry.init({
 	tracesSampleRate: 0.1,
 })
 
-posthog.init('phc_AXP8PV69MvddHZnRbyuItedeuFZ9n9lznYo0uotTbsq', {
-	api_host: 'https://eu.i.posthog.com',
+const posthogToken = import.meta.env.VITE_POSTHOG_TOKEN || 'phc_mFh66XrijHvBUpkRNTXW4oSMrL9HsQSZFQXKoHHzELpZ'
+const posthogHost = import.meta.env.VITE_POSTHOG_HOST || 'https://eu.i.posthog.com'
+
+posthog.init(posthogToken, {
+	api_host: posthogHost,
 	capture_pageview: true
 })
 

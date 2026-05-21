@@ -1,4 +1,5 @@
 import { memo } from 'react'
+import posthog from 'posthog-js'
 import { Check, Zap, Crown, Shield, Sparkles, Lock } from 'lucide-react'
 import { useState, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
@@ -19,6 +20,7 @@ const PricingSection = memo(function PricingSection({ onAuthRequired }: PricingS
       onAuthRequired?.()
       return
     }
+    posthog.capture('upgrade_clicked', { trigger: 'pricing_section', plan: productType })
     setLoading(productType)
     const result = await createCheckout(productType, user.id, user.email!)
     if (result.success && result.url) {

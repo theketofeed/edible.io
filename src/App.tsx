@@ -505,6 +505,10 @@ function RecipeWrapper({ onBack, result, showToast }: {
 		return result.days[parsedDayIndex][mealType as 'Breakfast' | 'Lunch' | 'Dinner']
 	}, [location.state?.meal, result, parsedDayIndex, mealType, isValidMealType])
 
+	useEffect(() => {
+		if (meal) posthog.capture('recipe_viewed', { title: meal.title, meal_type: mealType })
+	}, [meal, mealType])
+
 	// If the meal is missing and we don't even have a result, it might be a direct link
 	// We'll let RecipeDetail show the skeleton while it "loads" if we want, 
 	// or show an error if it's definitely an invalid request.
