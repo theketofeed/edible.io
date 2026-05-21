@@ -12,7 +12,7 @@ Sentry.init({
 	tracesSampleRate: 0.1,
 })
 
-const posthogToken = import.meta.env.VITE_POSTHOG_TOKEN || 'phc_mFh66XrijHvBUpkRNTXW4oSMrL9HsQSZFQXKoHHzELpZ'
+const posthogToken = import.meta.env.VITE_POSTHOG_TOKEN || ''
 const posthogHost = import.meta.env.VITE_POSTHOG_HOST || 'https://eu.i.posthog.com'
 
 posthog.init(posthogToken, {
