@@ -632,6 +632,10 @@ function Overview({ plans, onNav, userData, onSelectPlan, selectedPlanId }: Over
               <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F3F4F6" strokeWidth={10} />
               <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.accent} strokeWidth={10}
                 strokeDasharray={`${dash} ${circ}`} strokeDashoffset={0} strokeLinecap="round" />
+              <text x={cx} y={cy - 7} textAnchor="middle" dominantBaseline="middle"
+                style={{ fontSize: 20, fontWeight: 800, fill: C.txt, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{consumed}</text>
+              <text x={cx} y={cy + 13} textAnchor="middle" dominantBaseline="middle"
+                style={{ fontSize: 9.5, fontWeight: 600, fill: C.faint, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>kcal</text>
             </svg>
             <div>
               <p style={{ fontSize: 22, fontWeight: 800, color: C.txt, lineHeight: 1 }}>{consumed}</p>
