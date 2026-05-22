@@ -532,7 +532,7 @@ function Overview({ plans, onNav, userData, onSelectPlan, selectedPlanId }: Over
   const target = 1800
   const macros = calcMacros(todayMeals)
   const r = 44, cx = 60, cy = 60, circ = 2 * Math.PI * r
-  const dash = Math.min(consumed / target, 1) * circ
+  const dash = circ
   const now = new Date()
   const weekday = now.toLocaleDateString("en-US", { weekday: "long" })
   const monthDay = now.toLocaleDateString("en-US", { month: "long", day: "numeric" })
