@@ -158,10 +158,11 @@ function MainContent() {
 				days: effectivePlanDays,
 				onStep: (step) => setLoadingStep(step),
 			})
-			setResult(plan)
 
 			// Let the "Done" step show for 2.5s before transitioning to results
 			await new Promise(resolve => setTimeout(resolve, 2500))
+
+			setResult(plan)
 
 			posthog.capture('meal_plan_generated', { 
 			  diet, 

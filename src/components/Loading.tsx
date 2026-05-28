@@ -57,8 +57,8 @@ const Loading = memo(function Loading({ step }: { step?: number }) {
     setDisplayPct(startPct)
 
     // Creep ceiling: midpoint between this step and the next, minus a small buffer
-    const nextPct = activeStep < STEPS.length - 1 ? STEPS[activeStep + 1].pct : 98
-    const ceiling = startPct + (nextPct - startPct) * 0.75
+    const nextPct = activeStep < STEPS.length - 1 ? STEPS[activeStep + 1].pct : 100
+    const ceiling = activeStep === STEPS.length - 1 ? 100 : startPct + (nextPct - startPct) * 0.75
 
     creepRef.current = setInterval(() => {
       setDisplayPct(prev => {
