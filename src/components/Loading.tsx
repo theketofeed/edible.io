@@ -92,9 +92,14 @@ const Loading = memo(function Loading({ step }: { step?: number }) {
           0% { transform: scale(0.8); opacity: 0.4; }
           100% { transform: scale(1.6); opacity: 0; }
         }
+        @keyframes iconFade {
+          from { opacity: 0; transform: scale(0.85); }
+          to { opacity: 1; transform: scale(1); }
+        }
         .bowl-float { animation: bowlFloat 2.5s ease-in-out infinite; }
         .ripple-1 { animation: ripple 2s ease-out infinite; }
         .ripple-2 { animation: ripple 2s ease-out infinite 0.7s; }
+        .icon-fade { animation: iconFade 0.35s ease forwards; }
         .progress-fill { transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
       `}</style>
 
@@ -104,7 +109,10 @@ const Loading = memo(function Loading({ step }: { step?: number }) {
         <div className="relative flex items-center justify-center" style={{ width: 140, height: 140 }}>
           <div className="ripple-1 absolute w-32 h-32 rounded-full border-2 border-purple-200" />
           <div className="ripple-2 absolute w-32 h-32 rounded-full border-2 border-purple-100" />
-          <div className="bowl-float relative z-10 w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 shadow-2xl shadow-purple-500/30 flex items-center justify-center">
+          <div
+            key={activeStep}
+            className="bowl-float icon-fade relative z-10 w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 shadow-2xl shadow-purple-500/30 flex items-center justify-center"
+          >
             <MainIcon className="w-10 h-10 text-white" strokeWidth={1.5} />
           </div>
         </div>

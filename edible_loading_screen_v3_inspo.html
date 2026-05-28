@@ -1,0 +1,124 @@
+
+<style>
+.mock-bg { background: var(--color-background-secondary); border-radius: var(--border-radius-lg); padding: 2rem; display: flex; justify-content: center; }
+.card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: 32px; padding: 2.5rem 2rem; width: 320px; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+.icon-wrap { position: relative; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; }
+.ripple { position: absolute; width: 80px; height: 80px; border-radius: 50%; border: 1.5px solid #CECBF6; animation: ripple 2s ease-out infinite; }
+.ripple2 { animation-delay: 0.7s; }
+.orb { width: 64px; height: 64px; border-radius: 50%; background: #534AB7; display: flex; align-items: center; justify-content: center; position: relative; z-index: 2; animation: float 2.5s ease-in-out infinite; }
+.orb i { font-size: 28px; color: white; transition: opacity 0.3s; }
+.texts { text-align: center; }
+.texts h3 { font-size: 18px; font-weight: 500; color: var(--color-text-primary); margin: 0 0 4px; }
+.texts p { font-size: 13px; color: var(--color-text-secondary); margin: 0; min-height: 18px; transition: opacity 0.3s, transform 0.3s; }
+.track { width: 100%; height: 5px; background: #EEEDFE; border-radius: 999px; overflow: hidden; }
+.fill { height: 100%; background: #534AB7; border-radius: 999px; transition: width 0.7s cubic-bezier(0.4,0,0.2,1); }
+.dots { display: flex; justify-content: space-between; width: 100%; padding: 0 4px; }
+.dot { display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1; }
+.dot-circle { width: 34px; height: 34px; border-radius: 50%; border: 0.5px solid var(--color-border-tertiary); background: var(--color-background-secondary); display: flex; align-items: center; justify-content: center; transition: background 0.4s, border-color 0.4s; }
+.dot-circle i { font-size: 15px; color: var(--color-text-secondary); transition: color 0.4s; }
+.dot-label { font-size: 10px; color: var(--color-text-secondary); transition: color 0.4s; }
+.dot.active .dot-circle { background: #EEEDFE; border-color: #AFA9EC; }
+.dot.active .dot-circle i { color: #534AB7; }
+.dot.active .dot-label { color: var(--color-text-primary); font-weight: 500; }
+.dot.done .dot-circle { background: #EAF3DE; border-color: #97C459; opacity: 0.7; }
+.dot.done .dot-circle i { color: #3B6D11; }
+@keyframes ripple { 0% { transform: scale(0.9); opacity: 0.5; } 100% { transform: scale(1.7); opacity: 0; } }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes iconIn { from { opacity: 0; transform: scale(0.7); } to { opacity: 1; transform: scale(1); } }
+.icon-in { animation: iconIn 0.3s ease forwards; }
+</style>
+
+<h2 class="sr-only">Edible loading screen animation mockup with 3 steps: meals, recipes, done</h2>
+
+<div class="mock-bg">
+  <div class="card">
+    <div class="icon-wrap">
+      <div class="ripple"></div>
+      <div class="ripple ripple2"></div>
+      <div class="orb" id="orb">
+        <i class="ti ti-tools-kitchen-2 icon-in" id="orbIcon" aria-hidden="true"></i>
+      </div>
+    </div>
+
+    <div class="texts">
+      <h3>Generating your meal plan</h3>
+      <p id="msg">Building your meal combinations...</p>
+    </div>
+
+    <div class="track"><div class="fill" id="fill" style="width:20%"></div></div>
+
+    <div class="dots">
+      <div class="dot active" id="d0">
+        <div class="dot-circle"><i class="ti ti-tools-kitchen-2" aria-hidden="true"></i></div>
+        <span class="dot-label">Meals</span>
+      </div>
+      <div class="dot" id="d1">
+        <div class="dot-circle"><i class="ti ti-file-description" aria-hidden="true"></i></div>
+        <span class="dot-label">Recipes</span>
+      </div>
+      <div class="dot" id="d2">
+        <div class="dot-circle"><i class="ti ti-circle-check" aria-hidden="true"></i></div>
+        <span class="dot-label">Done</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const steps = [
+  { icon: 'ti-tools-kitchen-2', msg: 'Building your meal combinations...', pct: 20 },
+  { icon: 'ti-file-description', msg: 'Writing your recipes...', pct: 65 },
+  { icon: 'ti-circle-check', msg: 'Finalising your plan...', pct: 95 },
+]
+let cur = 0
+let displayPct = 20
+let creepTimer = null
+
+function goTo(i) {
+  cur = i
+  const s = steps[i]
+  const msgEl = document.getElementById('msg')
+  const orbIcon = document.getElementById('orbIcon')
+  const orb = document.getElementById('orb')
+
+  msgEl.style.opacity = '0'
+  msgEl.style.transform = 'translateY(4px)'
+  setTimeout(() => {
+    msgEl.textContent = s.msg
+    msgEl.style.opacity = '1'
+    msgEl.style.transform = 'translateY(0)'
+  }, 250)
+
+  orbIcon.style.opacity = '0'
+  setTimeout(() => {
+    orbIcon.className = 'ti ' + s.icon + ' icon-in'
+    orbIcon.style.opacity = '1'
+  }, 200)
+
+  document.getElementById('fill').style.width = s.pct + '%'
+  displayPct = s.pct
+
+  for (let idx = 0; idx < 3; idx++) {
+    const d = document.getElementById('d' + idx)
+    d.classList.remove('active', 'done')
+    if (idx < i) d.classList.add('done')
+    else if (idx === i) d.classList.add('active')
+  }
+
+  if (creepTimer) clearInterval(creepTimer)
+  const ceiling = i < 2 ? s.pct + (steps[i+1].pct - s.pct) * 0.7 : 98
+  creepTimer = setInterval(() => {
+    if (displayPct >= ceiling) { clearInterval(creepTimer); return }
+    const rem = ceiling - displayPct
+    displayPct += Math.max(0.05, rem * 0.006)
+    document.getElementById('fill').style.width = Math.min(displayPct, ceiling).toFixed(1) + '%'
+  }, 300)
+}
+
+goTo(0)
+let step = 0
+setInterval(() => {
+  step = (step + 1) % steps.length
+  goTo(step)
+}, 2200)
+</script>
