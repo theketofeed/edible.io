@@ -56,6 +56,7 @@ function MainContent() {
 	const [planDaysSelection, setPlanDaysSelection] = useState<number | 'auto'>('auto')
 	const [sourceText, setSourceText] = useState('')
 	const [isLoading, setIsLoading] = useState(false)
+	const [loadingStep, setLoadingStep] = useState(0)
 	const [error, setError] = useState<string | null>(null)
 	const [aiUnavailable, setAiUnavailable] = useState(false)
 	const [result, setResult] = useState<MealPlanResult | null>(null)
@@ -146,10 +147,17 @@ function MainContent() {
 		}
 		setError(null)
 		setAiUnavailable(false)
+		setLoadingStep(0)
 		setIsLoading(true)
 
 		try {
-			const plan = await generateMealPlan({ items: groceryItems, diet, sourceText, days: effectivePlanDays })
+			const plan = await generateMealPlan({
+				items: groceryItems,
+				diet,
+				sourceText,
+				days: effectivePlanDays,
+				onStep: (step) => setLoadingStep(step),
+			})
 			setResult(plan)
 			posthog.capture('meal_plan_generated', { 
 			  diet, 
@@ -323,7 +331,7 @@ function MainContent() {
 													transition={{ duration: 0.4 }}
 													className="py-4 md:py-8"
 												>
-													<Loading />
+													<Loading step={loadingStep} />
 												</motion.div>
 											)}
 										</AnimatePresence>

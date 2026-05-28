@@ -39,6 +39,7 @@ export interface GenerateMealPlanParams {
 	diet: DietType
 	sourceText: string
 	days?: number
+	onStep?: (step: number) => void
 }
 
 export interface OcrResult {

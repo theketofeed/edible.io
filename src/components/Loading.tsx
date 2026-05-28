@@ -1,32 +1,72 @@
 import { memo, useEffect, useState, useRef } from 'react'
-import { Salad } from 'lucide-react'
+import { ShoppingBasket, ChefHat, FileText, CheckCircle } from 'lucide-react'
 
-const MESSAGES = [
-  "Scanning your ingredients...",
-  "Crafting your meal plan...",
-  "Adding finishing touches...",
-  "Almost ready...",
+const STEPS = [
+  {
+    icon: ShoppingBasket,
+    label: 'Scanning',
+    message: 'Scanning your ingredients...',
+    pct: 15,
+    duration: 3500,
+  },
+  {
+    icon: ChefHat,
+    label: 'Meals',
+    message: 'Building your meal combinations...',
+    pct: 50,
+    duration: 10000,
+  },
+  {
+    icon: FileText,
+    label: 'Recipes',
+    message: 'Writing your recipes...',
+    pct: 80,
+    duration: 8000,
+  },
+  {
+    icon: CheckCircle,
+    label: 'Done',
+    message: 'Finalising your plan...',
+    pct: 95,
+    duration: 99999, // holds here until generation resolves
+  },
 ]
 
-const Loading = memo(function Loading() {
-  const [msgIndex, setMsgIndex] = useState(0)
-  const [visible, setVisible] = useState(true)
+const Loading = memo(function Loading({ step }: { step?: number }) {
+  const [stepIndex, setStepIndex] = useState(0)
+  const [msgVisible, setMsgVisible] = useState(true)
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (containerRef.current) {
       containerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
-
-    const interval = setInterval(() => {
-      setVisible(false)
-      setTimeout(() => {
-        setMsgIndex(i => (i + 1) % MESSAGES.length)
-        setVisible(true)
-      }, 300)
-    }, 1800) // Faster message cycling = feels quicker
-    return () => clearInterval(interval)
   }, [])
+
+  useEffect(() => {
+    if (step !== undefined) return // controlled externally — skip timer
+    if (stepIndex >= STEPS.length - 1) return
+    const timeout = setTimeout(() => {
+      setMsgVisible(false)
+      setTimeout(() => {
+        setStepIndex(i => i + 1)
+        setMsgVisible(true)
+      }, 250)
+    }, STEPS[stepIndex].duration)
+    return () => clearTimeout(timeout)
+  }, [stepIndex, step])
+
+  // When the external step prop changes, fade the message
+  useEffect(() => {
+    if (step === undefined) return
+    setMsgVisible(false)
+    const t = setTimeout(() => setMsgVisible(true), 250)
+    return () => clearTimeout(t)
+  }, [step])
+
+  const activeStep = step ?? stepIndex
+  const current = STEPS[activeStep] ?? STEPS[STEPS.length - 1]
+  const MainIcon = current.icon
 
   return (
     <div
@@ -36,57 +76,89 @@ const Loading = memo(function Loading() {
       <style>{`
         @keyframes bowlFloat {
           0%, 100% { transform: translateY(0px) rotate(-1deg); }
-          50% { transform: translateY(-12px) rotate(1deg); }
+          50% { transform: translateY(-10px) rotate(1deg); }
         }
         @keyframes ripple {
-          0% { transform: scale(0.8); opacity: 0.5; }
+          0% { transform: scale(0.8); opacity: 0.4; }
           100% { transform: scale(1.6); opacity: 0; }
         }
         .bowl-float { animation: bowlFloat 2.5s ease-in-out infinite; }
         .ripple-1 { animation: ripple 2s ease-out infinite; }
         .ripple-2 { animation: ripple 2s ease-out infinite 0.7s; }
+        .progress-fill { transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1); }
       `}</style>
 
-      <div className="relative bg-white/70 backdrop-blur-2xl border border-white shadow-[0_32px_128px_rgba(0,0,0,0.08)] rounded-[52px] p-12 md:p-16 flex flex-col items-center gap-10 max-w-sm w-full mx-auto">
+      <div className="relative bg-white/70 backdrop-blur-2xl border border-white shadow-[0_32px_128px_rgba(0,0,0,0.08)] rounded-[52px] p-12 md:p-16 flex flex-col items-center gap-8 max-w-sm w-full mx-auto">
 
-        {/* Animated Icon */}
+        {/* Animated icon */}
         <div className="relative flex items-center justify-center" style={{ width: 140, height: 140 }}>
           <div className="ripple-1 absolute w-32 h-32 rounded-full border-2 border-purple-200" />
           <div className="ripple-2 absolute w-32 h-32 rounded-full border-2 border-purple-100" />
           <div className="bowl-float relative z-10 w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 shadow-2xl shadow-purple-500/30 flex items-center justify-center">
-            <Salad className="w-10 h-10 text-white" strokeWidth={1.5} />
+            <MainIcon className="w-10 h-10 text-white" strokeWidth={1.5} />
           </div>
         </div>
 
-        {/* Text */}
-        <div className="text-center space-y-3">
+        {/* Title + step message */}
+        <div className="text-center space-y-2 w-full">
           <h3 className="text-2xl font-black text-gray-900 tracking-tight leading-tight">
             Generating your <br /> meal plan
           </h3>
           <p
             className="text-gray-400 text-sm font-semibold h-5 transition-all duration-300"
             style={{
-              opacity: visible ? 1 : 0,
-              transform: visible ? 'translateY(0)' : 'translateY(4px)',
+              opacity: msgVisible ? 1 : 0,
+              transform: msgVisible ? 'translateY(0)' : 'translateY(4px)',
             }}
           >
-            {MESSAGES[msgIndex]}
+            {current.message}
           </p>
         </div>
 
-        {/* Progress dots */}
-        <div className="flex gap-2.5">
-          {[0, 1, 2].map(i => (
-            <div
-              key={i}
-              className="w-2.5 h-2.5 rounded-full bg-purple-500/20"
-              style={{
-                animation: 'bounce 1.2s ease-in-out infinite',
-                animationDelay: `${i * 0.15}s`,
-              }}
-            />
-          ))}
+        {/* Progress bar */}
+        <div className="w-full bg-purple-100 rounded-full h-1.5 overflow-hidden">
+          <div
+            className="progress-fill h-full rounded-full bg-gradient-to-r from-purple-500 to-purple-600"
+            style={{ width: `${current.pct}%` }}
+          />
         </div>
+
+        {/* Step dots */}
+        <div className="flex justify-between w-full px-1">
+          {STEPS.map((step, idx) => {
+            const StepIcon = step.icon
+            const isDone = idx < activeStep
+            const isActive = idx === activeStep
+            return (
+              <div key={idx} className="flex flex-col items-center gap-1.5">
+                <div
+                  className={`w-9 h-9 rounded-full flex items-center justify-center border transition-all duration-400 ${
+                    isDone
+                      ? 'bg-green-50 border-green-300'
+                      : isActive
+                      ? 'bg-purple-50 border-purple-300'
+                      : 'bg-gray-50 border-gray-200 opacity-40'
+                  }`}
+                >
+                  <StepIcon
+                    className={`w-4 h-4 transition-colors duration-400 ${
+                      isDone ? 'text-green-600' : isActive ? 'text-purple-600' : 'text-gray-400'
+                    }`}
+                    strokeWidth={1.8}
+                  />
+                </div>
+                <span
+                  className={`text-[10px] font-medium transition-colors duration-400 ${
+                    isActive ? 'text-gray-700' : 'text-gray-400'
+                  }`}
+                >
+                  {step.label}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+
       </div>
     </div>
   )
