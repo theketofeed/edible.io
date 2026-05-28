@@ -343,15 +343,16 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
   let result = await callClaude(prompt)
 
   if (!result || !result.days.length) {
+    onStep?.(1) // Groq fallback kicking in — advance bar
     result = await callGroq(prompt)
+  } else {
+    onStep?.(1) // Claude succeeded
   }
 
   // Both failed — throw so UI can show retry
   if (!result || !result.days.length) {
     throw new Error('AI_UNAVAILABLE')
   }
-
-  onStep?.(1) // Step 1 — Writing recipes
 
   // Validate ingredient usage (soft check)
   const isValid = validatePlan(result, effectiveItems)
