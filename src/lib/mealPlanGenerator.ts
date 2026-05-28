@@ -320,8 +320,6 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
 
   console.log('[Generator] Starting generation — items:', items.length, 'diet:', diet, 'days:', days)
 
-  onStep?.(0) // Step 0 — Scanning
-
   if (!items.length) {
     throw new Error('No grocery items found. Try a clearer photo.')
   }
@@ -337,7 +335,7 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
 
   console.log('[Generator] Using', effectiveItems.length, 'items for', effectiveDays, 'days')
 
-  onStep?.(1) // Step 1 — Building meal combinations
+  onStep?.(0) // Step 0 — Building meal combinations
 
   const prompt = buildPrompt(effectiveItems, diet, effectiveDays)
 
@@ -353,7 +351,7 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
     throw new Error('AI_UNAVAILABLE')
   }
 
-  onStep?.(2) // Step 2 — Writing recipes
+  onStep?.(1) // Step 1 — Writing recipes
 
   // Validate ingredient usage (soft check)
   const isValid = validatePlan(result, effectiveItems)
@@ -367,7 +365,7 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
     // If still invalid, continue anyway — better than nothing
   }
 
-  onStep?.(3) // Step 3 — Finalising
+  onStep?.(2) // Step 2 — Finalising
 
 
 

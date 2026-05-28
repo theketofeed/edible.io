@@ -1,14 +1,7 @@
 import { memo, useEffect, useState, useRef } from 'react'
-import { ShoppingBasket, ChefHat, FileText, CheckCircle } from 'lucide-react'
+import { ChefHat, FileText, CheckCircle } from 'lucide-react'
 
 const STEPS = [
-  {
-    icon: ShoppingBasket,
-    label: 'Scanning',
-    message: 'Scanning your ingredients...',
-    pct: 15,
-    duration: 3500,
-  },
   {
     icon: ChefHat,
     label: 'Meals',
