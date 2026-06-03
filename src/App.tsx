@@ -289,7 +289,7 @@ function MainContent() {
 										<HeroSection />
 									</div>
 									
-									<div id="upload-section" className={`p-5 md:p-8 mb-6 overflow-hidden relative transition-all duration-500 ${isLoading ? '' : 'card border-purple-100/50'}`}>
+									<div id="upload-section" className={`mb-6 overflow-hidden relative transition-all duration-500 ${isLoading ? 'p-0' : 'p-5 md:p-8 card border-purple-100/50'}`}>
 										<AnimatePresence mode="wait">
 											{!isLoading ? (
 												<motion.div

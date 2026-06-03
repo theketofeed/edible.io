@@ -627,21 +627,25 @@ function Overview({ plans, onNav, userData, onSelectPlan, selectedPlanId }: Over
         </div>
         <div style={{ background: C.white, borderRadius: 20, padding: "20px", boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}>
           <p style={{ fontWeight: 700, fontSize: 14, color: C.txt, marginBottom: 14 }}>Today's Calories</p>
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <svg width={120} height={120}>
-              <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F3F4F6" strokeWidth={10} />
-              <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.accent} strokeWidth={10}
-                strokeDasharray={`${dash} ${circ}`} strokeDashoffset={0} strokeLinecap="round" />
-              <text x={cx} y={cy - 7} textAnchor="middle" dominantBaseline="middle"
-                style={{ fontSize: 20, fontWeight: 800, fill: C.txt, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{consumed}</text>
-              <text x={cx} y={cy + 13} textAnchor="middle" dominantBaseline="middle"
-                style={{ fontSize: 9.5, fontWeight: 600, fill: C.faint, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>kcal</text>
-            </svg>
-            <div>
-              <p style={{ fontSize: 22, fontWeight: 800, color: C.txt, lineHeight: 1 }}>{consumed}</p>
-              <p style={{ fontSize: 11, color: C.faint, marginTop: 2 }}>kcal total</p>
-              <p style={{ fontSize: 12, color: C.muted, fontWeight: 700, marginTop: 6 }}>across {todayMeals.length} meal{todayMeals.length !== 1 ? 's' : ''}</p>
-              <div style={{ display: "flex", gap: 6, marginTop: 12, flexWrap: "wrap" }}>
+          <div className="dash-overview-calories-row">
+            <div className="dash-overview-ring-wrapper" style={{ width: 120, height: 120, flexShrink: 0 }}>
+              <svg viewBox="0 0 120 120" style={{ width: "100%", height: "100%", display: "block" }}>
+                <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F3F4F6" strokeWidth={10} />
+                <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.accent} strokeWidth={10}
+                  strokeDasharray={`${dash} ${circ}`} strokeDashoffset={0} strokeLinecap="round" />
+                <text x={cx} y={cy - 7} textAnchor="middle" dominantBaseline="middle"
+                  style={{ fontSize: 20, fontWeight: 800, fill: C.txt, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{consumed}</text>
+                <text x={cx} y={cy + 13} textAnchor="middle" dominantBaseline="middle"
+                  style={{ fontSize: 9.5, fontWeight: 600, fill: C.faint, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>kcal</text>
+              </svg>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                <p style={{ margin: 0, padding: 0, fontSize: 22, fontWeight: 800, color: C.txt, lineHeight: 1.1 }}>{consumed}</p>
+                <p style={{ margin: 0, padding: 0, fontSize: 11, color: C.faint, fontWeight: 500, lineHeight: 1 }}>kcal total</p>
+              </div>
+              <p style={{ margin: 0, padding: 0, fontSize: 12, color: C.muted, fontWeight: 700, lineHeight: 1.2 }}>across {todayMeals.length} meal{todayMeals.length !== 1 ? 's' : ''}</p>
+              <div className="macro-badges-container" style={{ display: "flex", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
                 {[{ l: "Protein", v: macros.p, c: "#ef4444" }, { l: "Carbs", v: macros.c, c: "#f59e0b" }, { l: "Fat", v: macros.f, c: C.purple }].map((m, i) => (
                   <span key={i} style={{
                     display: "inline-flex", alignItems: "center", gap: 5,
@@ -867,24 +871,20 @@ function MealPlanner({ plans, selectedPlanId, savedRecipes }: MealPlannerProps &
         <h1 style={{ fontSize: 24, fontWeight: 800, color: C.txt }}>Meal Planner</h1>
         <p style={{ color: C.muted, fontSize: 13, marginTop: 3 }}>Week of {weekLabel}</p>
       </div>
-      <div style={{
-        background: "#FAF5FF", borderRadius: 20, padding: "10px 8px",
-        border: `1px solid rgba(198,160,246,0.25)`, marginBottom: 18, display: "flex", gap: 6,
-        overflowX: "auto", scrollbarWidth: "none", msOverflowStyle: "none",
-        WebkitOverflowScrolling: "touch"
-      }}>
+      <div className="dash-day-strip">
         {WEEK.map((d, i) => {
           const sel = i === day, isToday = i === todayIdx
           const hasPlan = (planner[i] || []).length > 0
           const hasCustom = loadCustomMeals(selectedPlan?.id || 'none', i).length > 0
           const has = hasPlan || hasCustom
           return (
-            <button key={d} onClick={() => setDay(i)} style={{
-              flex: "1 0 auto", minWidth: "46px", display: "flex", flexDirection: "column", alignItems: "center",
-              padding: "10px 4px", borderRadius: 16, border: sel ? "none" : `1px solid ${C.cardBdr}`,
-              cursor: "pointer", background: sel ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : "rgba(198,160,246,0.06)",
-              transition: "all .15s", boxShadow: sel ? `0 10px 28px rgba(198,160,246,0.28)` : "none"
-            }}>
+            <button key={d} onClick={() => setDay(i)} 
+              className="dash-day-btn"
+              style={{
+                border: sel ? "none" : `1px solid ${C.cardBdr}`,
+                background: sel ? `linear-gradient(135deg,${C.accentDark},${C.accent})` : "rgba(198,160,246,0.06)",
+                boxShadow: sel ? `0 10px 28px rgba(198,160,246,0.28)` : "none"
+              }}>
               <span style={{ fontSize: 10, fontWeight: 500, marginBottom: 4, color: sel ? "rgba(255,255,255,0.78)" : C.faint }}>{d}</span>
               <span style={{ fontWeight: 700, fontSize: 15, color: sel ? "white" : isToday ? C.accent : C.txt }}>{currentDates[i]}</span>
               <div style={{ width: 18, height: 6, borderRadius: 999, marginTop: 6, background: has ? (sel ? "rgba(255,255,255,0.65)" : "rgba(198,160,246,0.55)") : "transparent", border: has && !sel ? "1px solid rgba(198,160,246,0.30)" : "none" }} />
@@ -895,15 +895,11 @@ function MealPlanner({ plans, selectedPlanId, savedRecipes }: MealPlannerProps &
       <div className="dash-planner-grid">
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <p style={{ fontWeight: 700, fontSize: 14, color: C.txt }}>
-              {WEEK[day]}, {new Date().toLocaleDateString('en-US', { month: 'long' })} {currentDates[day]}{day === todayIdx ? " · Today" : ""}
+            <p className="dash-planner-date-header">
+              {WEEK[day]}, {new Date().toLocaleDateString('en-US', { month: 'short' })} {currentDates[day]}{day === todayIdx ? " · Today" : ""}
             </p>
-            <button onClick={() => setShowAddModal(true)} style={{
-              display: "flex", alignItems: "center", gap: 5, background: `linear-gradient(135deg,${C.accentDark},${C.accent})`,
-              color: "white", border: "none", borderRadius: 8, padding: "6px 14px",
-              fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "'Plus Jakarta Sans',sans-serif",
-              boxShadow: "0 4px 14px rgba(198,160,246,0.4)", transition: "all .15s"
-            }}
+            <button onClick={() => setShowAddModal(true)}
+              className="dash-add-meal-btn"
               onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)"}
               onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = ""}
             >
@@ -958,15 +954,17 @@ function MealPlanner({ plans, selectedPlanId, savedRecipes }: MealPlannerProps &
           )}
         </div>
         <div>
-          <div style={{ background: C.white, borderRadius: 20, padding: 20, boxShadow: "0 4px 20px rgba(0,0,0,0.03)", marginBottom: 12, textAlign: "center" }}>
+          <div className="dash-planner-calories-card">
             <p style={{ fontWeight: 700, fontSize: 13, color: C.txt, marginBottom: 12 }}>Calories</p>
-            <svg width={140} height={140} style={{ display: "block", margin: "0 auto" }}>
-              <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F3F4F6" strokeWidth={12} />
-              <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.accent} strokeWidth={12}
-                strokeDasharray={`${dash} ${circ}`} strokeDashoffset={0} strokeLinecap="round" />
-              <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle"
-                style={{ fontSize: 26, fontWeight: 800, fill: C.txt, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{consumed}</text>
-            </svg>
+            <div className="dash-planner-ring-wrapper" style={{ maxWidth: 140, margin: "0 auto", width: "100%", height: "auto" }}>
+              <svg viewBox="0 0 140 140" style={{ width: "100%", height: "100%", display: "block" }}>
+                <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F3F4F6" strokeWidth={12} />
+                <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.accent} strokeWidth={12}
+                  strokeDasharray={`${dash} ${circ}`} strokeDashoffset={0} strokeLinecap="round" />
+                <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle"
+                  style={{ fontSize: 26, fontWeight: 800, fill: C.txt, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{consumed}</text>
+              </svg>
+            </div>
             <p style={{ fontSize: 12, color: C.muted, fontWeight: 600, marginTop: 6 }}>
               across {allMeals.length} meal{allMeals.length !== 1 ? 's' : ''}
             </p>
@@ -1749,6 +1747,67 @@ export default function EdibleDashboard() {
           transform:translateY(-1px);
           border-color:${C.accentDark};
         }
+        .dash-planner-calories-card {
+          background: ${C.white};
+          border-radius: 20px;
+          padding: 20px;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+          margin-bottom: 12px;
+          text-align: center;
+        }
+        .dash-overview-calories-row {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+        .dash-day-btn {
+          flex: 1 0 auto;
+          min-width: 46px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 10px 4px;
+          border-radius: 16px;
+          cursor: pointer;
+          transition: all .15s;
+        }
+        .dash-day-strip {
+          background: #FAF5FF;
+          border-radius: 20px;
+          padding: 10px 8px;
+          border: 1px solid rgba(198,160,246,0.25);
+          margin-bottom: 18px;
+          display: flex;
+          gap: 6px;
+          overflow-x: auto;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+          -webkit-overflow-scrolling: touch;
+        }
+        .dash-day-strip::-webkit-scrollbar {
+          display: none;
+        }
+        .dash-planner-date-header {
+          font-weight: 700;
+          font-size: 14px;
+          color: ${C.txt};
+        }
+        .dash-add-meal-btn {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          background: linear-gradient(135deg, ${C.accentDark}, ${C.accent});
+          color: white;
+          border: none;
+          border-radius: 8px;
+          padding: 6px 14px;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          box-shadow: 0 4px 14px rgba(198,160,246,0.4);
+          transition: all .15s;
+        }
         /* Mobile layout overrides */
         .desktop-sidebar { display: flex; }
         .mobile-bottom-nav { display: none; }
@@ -1783,6 +1842,25 @@ export default function EdibleDashboard() {
           .dash-recipe-img { width: 100% !important; height: 100px !important; border-radius: 12px !important; }
           .dash-search-input { font-size: 12px !important; padding: 6px 10px !important; }
           .dash-home-btn { font-size: 11px !important; padding: 5px 10px !important; }
+          .dash-planner-calories-card {
+            padding: 12px !important;
+          }
+        }
+        @media (max-width: 500px) {
+          .dash-overview-calories-row {
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+            gap: 12px !important;
+          }
+          .dash-overview-calories-row > div {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+          }
+          .dash-overview-calories-row .macro-badges-container {
+            justify-content: center !important;
+          }
         }
         @media (max-width: 480px) {
           .dash-stats-grid { grid-template-columns: repeat(3,1fr); gap: 6px; }
@@ -1791,6 +1869,25 @@ export default function EdibleDashboard() {
           .dash-section-title { font-size: 18px !important; }
           .dash-card-title { font-size: 13px !important; }
           .dash-card-subtitle { font-size: 11px !important; }
+          .dash-day-btn {
+            border-radius: 10px !important;
+            padding: 8px 2px !important;
+            min-width: 40px !important;
+          }
+          .dash-day-strip {
+            border-radius: 12px !important;
+            padding: 8px 6px !important;
+            margin-bottom: 12px !important;
+            gap: 4px !important;
+          }
+          .dash-planner-date-header {
+            font-size: 12px !important;
+          }
+          .dash-add-meal-btn {
+            padding: 5px 8px !important;
+            font-size: 11px !important;
+            gap: 3px !important;
+          }
         }
         @media (max-width: 380px) {
           .dash-stats-grid { grid-template-columns: repeat(3,1fr); gap: 4px; }

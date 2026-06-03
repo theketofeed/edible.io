@@ -5,19 +5,19 @@ const STEPS = [
   {
     icon: ChefHat,
     label: 'Meals',
-    message: 'Building your meal combinations...',
+    message: 'Building your meals…',
     pct: 20,
   },
   {
     icon: FileText,
     label: 'Recipes',
-    message: 'Writing your recipes...',
+    message: 'Writing recipes…',
     pct: 65,
   },
   {
     icon: CheckCircle,
     label: 'Done',
-    message: 'Finalising your plan...',
+    message: 'Finalising plan…',
     pct: 92,
   },
 ]
@@ -103,7 +103,7 @@ const Loading = memo(function Loading({ step }: { step?: number }) {
         .progress-fill { transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
       `}</style>
 
-      <div className="relative bg-white/70 backdrop-blur-2xl border border-white shadow-[0_32px_128px_rgba(0,0,0,0.08)] rounded-[52px] p-12 md:p-16 flex flex-col items-center gap-8 max-w-sm w-full mx-auto">
+      <div className="relative bg-white/70 backdrop-blur-2xl border border-white shadow-[0_32px_128px_rgba(0,0,0,0.08)] rounded-[28px] md:rounded-[52px] p-6 sm:p-10 md:p-16 flex flex-col items-center gap-8 max-w-[90vw] sm:max-w-sm w-full mx-auto">
 
         {/* Animated icon — changes with step */}
         <div className="relative flex items-center justify-center" style={{ width: 140, height: 140 }}>
@@ -119,7 +119,7 @@ const Loading = memo(function Loading({ step }: { step?: number }) {
 
         {/* Title + step message */}
         <div className="text-center space-y-2 w-full">
-          <h3 className="text-2xl font-black text-gray-900 tracking-tight leading-tight">
+          <h3 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight leading-tight">
             Generating your <br /> meal plan
           </h3>
           <p
