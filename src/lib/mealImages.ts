@@ -75,9 +75,9 @@ function getCategoryFallback(mealTitle: string): string {
   return 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&h=500&fit=crop'
 }
 
-// ─── Backend Image Proxy (Spoonacular → Pollinations) ───────────────────────
-// Backend tries Spoonacular first (real food photos), falls back to Pollinations AI.
-async function generateWithHuggingFace(mealTitle: string): Promise<string | null> {
+// ─── Backend Image Proxy (Spoonacular → Pexels fallback) ─────────────────────
+// Backend tries Spoonacular first (real food photos), falls back to Pexels API.
+async function fetchImageFromBackend(mealTitle: string): Promise<string | null> {
   const key = titleToKey(mealTitle)
   
   // Deduplicate in-flight requests
@@ -155,7 +155,7 @@ export async function fetchMealImage(mealTitle: string): Promise<string | null> 
   console.log(`[MealImages] Fetching real image for: "${mealTitle}" (SVG placeholder shown until ready)`)
 
   try {
-    const aiUrl = await generateWithHuggingFace(mealTitle)
+    const aiUrl = await fetchImageFromBackend(mealTitle)
     if (aiUrl) {
       sessionCache.set(key, aiUrl)
       console.log(`[MealImages] ✅ Got real food image for: "${mealTitle}"`)
@@ -179,7 +179,7 @@ export async function fetchMealImages(
   onProgress?: (completed: number, total: number) => void,
 ): Promise<Record<string, string>> {
   const results: Record<string, string> = {}
-  const CONCURRENCY = 2 // reduced to avoid overwhelming Pollinations
+  const CONCURRENCY = 2 // reduced to avoid overwhelming the backend
 
   for (let i = 0; i < mealTitles.length; i += CONCURRENCY) {
     const batch = mealTitles.slice(i, i + CONCURRENCY)
