@@ -532,7 +532,8 @@ function Overview({ plans, onNav, userData, onSelectPlan, selectedPlanId }: Over
   const target = 1800
   const macros = calcMacros(todayMeals)
   const r = 44, cx = 60, cy = 60, circ = 2 * Math.PI * r
-  const dash = circ
+  const pct = Math.min(consumed / target, 1)
+  const dash = circ * pct
   const now = new Date()
   const weekday = now.toLocaleDateString("en-US", { weekday: "long" })
   const monthDay = now.toLocaleDateString("en-US", { month: "long", day: "numeric" })
@@ -625,14 +626,15 @@ function Overview({ plans, onNav, userData, onSelectPlan, selectedPlanId }: Over
             )
           }) : <p style={{ fontSize: 13, color: C.faint, padding: "12px 0", textAlign: "center" }}>No meals planned today</p>}
         </div>
-        <div style={{ background: C.white, borderRadius: 20, padding: "20px", boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}>
+        <div className="dash-calories-card" style={{ background: C.white, borderRadius: 20, padding: "20px", boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}>
           <p style={{ fontWeight: 700, fontSize: 14, color: C.txt, marginBottom: 14 }}>Today's Calories</p>
           <div className="dash-overview-calories-row">
             <div className="dash-overview-ring-wrapper" style={{ width: 120, height: 120, flexShrink: 0 }}>
               <svg viewBox="0 0 120 120" style={{ width: "100%", height: "100%", display: "block" }}>
                 <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F3F4F6" strokeWidth={10} />
                 <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.accent} strokeWidth={10}
-                  strokeDasharray={`${dash} ${circ}`} strokeDashoffset={0} strokeLinecap="round" />
+                  strokeDasharray={`${dash} ${circ}`} strokeDashoffset={0} strokeLinecap="round"
+                  transform="rotate(-90 60 60)" />
                 <text x={cx} y={cy - 7} textAnchor="middle" dominantBaseline="middle"
                   style={{ fontSize: 20, fontWeight: 800, fill: C.txt, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{consumed}</text>
                 <text x={cx} y={cy + 13} textAnchor="middle" dominantBaseline="middle"
@@ -854,7 +856,8 @@ function MealPlanner({ plans, selectedPlanId, savedRecipes }: MealPlannerProps &
   const target = 1800
   const macros = calcMacros(allMeals)
   const r = 52, cx = 70, cy = 70, circ = 2 * Math.PI * r
-  const dash = circ
+  const pct = Math.min(consumed / target, 1)
+  const dash = circ * pct
 
   const handleAddMeal = (meal: CustomMeal) => {
     const planId = selectedPlan?.id || 'none'
@@ -960,7 +963,8 @@ function MealPlanner({ plans, selectedPlanId, savedRecipes }: MealPlannerProps &
               <svg viewBox="0 0 140 140" style={{ width: "100%", height: "100%", display: "block" }}>
                 <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F3F4F6" strokeWidth={12} />
                 <circle cx={cx} cy={cy} r={r} fill="none" stroke={C.accent} strokeWidth={12}
-                  strokeDasharray={`${dash} ${circ}`} strokeDashoffset={0} strokeLinecap="round" />
+                  strokeDasharray={`${dash} ${circ}`} strokeDashoffset={0} strokeLinecap="round"
+                  transform="rotate(-90 70 70)" />
                 <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle"
                   style={{ fontSize: 26, fontWeight: 800, fill: C.txt, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>{consumed}</text>
               </svg>
@@ -1842,24 +1846,30 @@ export default function EdibleDashboard() {
           .dash-recipe-img { width: 100% !important; height: 100px !important; border-radius: 12px !important; }
           .dash-search-input { font-size: 12px !important; padding: 6px 10px !important; }
           .dash-home-btn { font-size: 11px !important; padding: 5px 10px !important; }
-          .dash-planner-calories-card {
+          .dash-planner-calories-card, .dash-calories-card {
             padding: 12px !important;
           }
         }
         @media (max-width: 500px) {
           .dash-overview-calories-row {
-            flex-direction: column !important;
+            flex-direction: row !important;
             align-items: center !important;
-            text-align: center !important;
-            gap: 12px !important;
+            text-align: left !important;
+            gap: 14px !important;
+          }
+          .dash-overview-ring-wrapper {
+            width: 90px !important;
+            height: 90px !important;
+            flex-shrink: 0 !important;
           }
           .dash-overview-calories-row > div {
             display: flex;
             flex-direction: column;
-            align-items: center;
+            align-items: flex-start !important;
           }
           .dash-overview-calories-row .macro-badges-container {
-            justify-content: center !important;
+            justify-content: flex-start !important;
+            gap: 4px !important;
           }
         }
         @media (max-width: 480px) {
