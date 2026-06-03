@@ -532,8 +532,7 @@ function Overview({ plans, onNav, userData, onSelectPlan, selectedPlanId }: Over
   const target = 1800
   const macros = calcMacros(todayMeals)
   const r = 44, cx = 60, cy = 60, circ = 2 * Math.PI * r
-  const pct = Math.min(consumed / target, 1)
-  const dash = circ * pct
+  const dash = circ
   const now = new Date()
   const weekday = now.toLocaleDateString("en-US", { weekday: "long" })
   const monthDay = now.toLocaleDateString("en-US", { month: "long", day: "numeric" })
@@ -856,8 +855,7 @@ function MealPlanner({ plans, selectedPlanId, savedRecipes }: MealPlannerProps &
   const target = 1800
   const macros = calcMacros(allMeals)
   const r = 52, cx = 70, cy = 70, circ = 2 * Math.PI * r
-  const pct = Math.min(consumed / target, 1)
-  const dash = circ * pct
+  const dash = circ
 
   const handleAddMeal = (meal: CustomMeal) => {
     const planId = selectedPlan?.id || 'none'
