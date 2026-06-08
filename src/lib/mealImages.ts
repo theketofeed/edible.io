@@ -165,9 +165,11 @@ export async function fetchMealImage(mealTitle: string): Promise<string | null> 
     console.error(`[MealImages] Unexpected error generating image for "${mealTitle}":`, err)
   }
 
-  // No image available — component will keep showing the SVG placeholder
-  console.log(`[MealImages] No image available for: "${mealTitle}" — SVG placeholder will persist`)
-  return null
+  // Backend failed — use static category fallback so nothing is left broken
+  const fallback = getCategoryFallback(mealTitle)
+  console.log(`[MealImages] Using category fallback for: "${mealTitle}"`)
+  sessionCache.set(key, fallback)
+  return fallback
 }
 
 /**

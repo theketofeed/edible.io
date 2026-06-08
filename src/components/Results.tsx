@@ -96,7 +96,13 @@ useEffect(() => {
 		async function getImg() {
 			try {
 				const url = await fetchMealImage(meal.title)
-				if (!cancelled && url) setImageUrl(url)
+				if (!cancelled) {
+					if (url) {
+						setImageUrl(url)
+					} else {
+						setImageError(true)
+					}
+				}
 			} catch {
 				if (!cancelled) setImageError(true)
 			}
