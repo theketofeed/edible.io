@@ -1,5 +1,5 @@
 import { memo, useState, useCallback } from 'react'
-import { Store, PencilLine, Salad, Banknote, RefreshCw, ScanLine } from 'lucide-react'
+import { Store, PencilLine, Salad, Banknote, RefreshCw, Sparkles } from 'lucide-react'
 
 interface FAQItem {
 	question: string
@@ -8,6 +8,11 @@ interface FAQItem {
 }
 
 const FAQ_ITEMS: FAQItem[] = [
+	{
+		question: 'Is Edible free?',
+		answer: 'Edible offers 4 free meal plan generations every month. Upgrade to Pro for unlimited generations, PDF exports, and exclusive chef tips.',
+		icon: <Banknote className="w-5 h-5 text-purple-500" />
+	},
 	{
 		question: 'What stores do you support?',
 		answer: 'Edible works with any grocery receipt format. Our OCR technology reads text from supermarkets, farmers markets, specialty stores, and delivery apps. Just take a clear photo!',
@@ -24,19 +29,14 @@ const FAQ_ITEMS: FAQItem[] = [
 		icon: <Salad className="w-5 h-5 text-purple-500" />
 	},
 	{
-		question: 'Is this really free?',
-		answer: 'Edible offers 4 free meal plan generations every month. Upgrade to Pro for unlimited generations, PDF exports, and exclusive chef tips.',
-		icon: <Banknote className="w-5 h-5 text-purple-500" />
-	},
-	{
 		question: "What if I don't like a recipe?",
 		answer: "Simply regenerate your meal plan and you'll get different recipes. You can also click on individual recipes to see alternatives or manually adjust your plan.",
 		icon: <RefreshCw className="w-5 h-5 text-purple-500" />
 	},
 	{
-		question: 'How accurate is the OCR?',
-		answer: 'Our OCR captures 95%+ of items from clear receipts. For best results, use good lighting and avoid shadows. You can always manually add or remove items if needed.',
-		icon: <ScanLine className="w-5 h-5 text-purple-500" />
+		question: "What's special about Edible?",
+		answer: 'Edible is the only meal planner that works from what you already have. Every competitor gives you recipes then tells you to go buy ingredients. Edible starts from your grocery list or receipt — meaning zero food waste, zero extra shopping, meals you can actually make tonight.',
+		icon: <Sparkles className="w-5 h-5 text-purple-500" />
 	}
 ]
 
