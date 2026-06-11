@@ -42,7 +42,7 @@ const TESTIMONIALS: Testimonial[] = [
 
 const Testimonials = memo(function Testimonials() {
 	return (
-		<section className="py-12 md:py-20 bg-gray-50 overflow-hidden">
+		<section className="py-16 md:py-24 bg-gray-50 overflow-hidden">
 			<div className="max-w-7xl mx-auto px-4 mb-10 md:mb-14 text-center">
 				<div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-50 text-purple-700 text-xs font-bold uppercase tracking-wide mb-5 border border-purple-100">
 					<Heart className="w-3 h-3" fill="currentColor" />

@@ -49,7 +49,7 @@ const PricingSection = memo(function PricingSection({ onAuthRequired }: PricingS
   ]
 
   return (
-    <section id="pricing" className="py-12 md:py-20 bg-white">
+    <section id="pricing" className="py-16 md:py-24 bg-white">
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
 
         {/* Header */}

@@ -43,7 +43,7 @@ const HeroSection = memo(function HeroSection() {
 	}, [])
 
 	return (
-		<section id="home" className="mt-4 mb-10 md:mt-8 md:mb-14">
+		<section id="home" className="mt-4 mb-14 md:mt-8 md:mb-20">
 			<div className="max-w-4xl mx-auto text-center px-3 sm:px-4">
 				{/* Hero badge */}
 				<div className="relative inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-white/75 backdrop-blur-lg shadow-md border border-white/60 mb-6 sm:mb-8 transition-transform hover:scale-[1.02] cursor-default">

@@ -3,15 +3,15 @@ import { XCircle, CheckCircle, ArrowRight } from 'lucide-react'
 
 const ComparisonSection = memo(function ComparisonSection() {
     return (
-        <section className="py-8 sm:py-12 md:py-20 lg:py-24 bg-white">
+        <section className="py-12 sm:py-16 md:py-24 lg:py-28 bg-white">
             <div className="w-full max-w-5xl sm:max-w-6xl mx-auto px-4 sm:px-6 md:px-8">
                 {/* Section Header */}
                 <div className="text-center mb-6 sm:mb-8 md:mb-12 lg:mb-16">
-                    <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-black text-gray-900 mb-2 sm:mb-3 md:mb-4 leading-tight">
+                    <h2 className="text-2xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-black text-gray-900 mb-4 sm:mb-5 md:mb-6 leading-tight">
                         Stop Wasting Food, <span className="text-purple-600">Start Eating Better</span>
                     </h2>
                     <p className="text-xs sm:text-sm md:text-base lg:text-lg text-gray-600 max-w-2xl mx-auto px-2">
-                        Ditch the stress of planning and expensive waste. Let Edible organize your kitchen instantly.
+                        Ditch the stress of planning and expensive waste.
                     </p>
                 </div>
 

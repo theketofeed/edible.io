@@ -15,7 +15,7 @@ const FinalCTA = memo(function FinalCTA({ onCTAClick }: Props) {
 	}, [onCTAClick])
 
 	return (
-		<section className="py-8 md:py-12 mb-6 md:mb-8 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-50 via-white to-white">
+		<section className="py-12 md:py-16 mb-8 md:mb-12 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-50 via-white to-white">
 			<div className="max-w-4xl mx-auto px-4 text-center">
 				{/* Top Label */}
 				<div className="text-sm font-bold tracking-[0.2em] text-gray-400 uppercase mb-6 animate-fade-in">
