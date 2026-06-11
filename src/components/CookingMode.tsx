@@ -181,19 +181,19 @@ export default function CookingMode({ steps, onClose, mealTitle, storageKey }: C
     return (
         <div className="fixed inset-0 z-[100] bg-neutral-50 flex flex-col" style={{ fontFamily: 'Geist, Geist Sans, -apple-system, BlinkMacSystemFont, Inter, system-ui, sans-serif' }}>
             {/* Header */}
-            <div className="bg-white border-b border-neutral-200 px-4 py-3 flex items-center justify-between flex-shrink-0">
+            <div className="bg-white border-b border-neutral-200 px-3 sm:px-4 py-3 flex items-center justify-between flex-shrink-0 gap-2">
                 <div className="flex flex-col min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                        <span className="text-[10px] uppercase font-bold tracking-widest text-purple-500">Cooking Mode</span>
-                        <span className="text-neutral-300">|</span>
-                        <span className="text-[10px] text-neutral-400">Step {currentStepIndex + 1}/{steps.length}</span>
+                    <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                        <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-widest text-purple-500 whitespace-nowrap">Cooking</span>
+                        <span className="text-neutral-300 hidden sm:inline">|</span>
+                        <span className="text-[9px] sm:text-[10px] text-neutral-400">Step {currentStepIndex + 1}/{steps.length}</span>
                     </div>
-                    <h2 className="text-sm md:text-base font-semibold text-neutral-900 truncate pr-4">{mealTitle}</h2>
+                    <h2 className="text-xs sm:text-sm md:text-base font-semibold text-neutral-900 truncate pr-2">{mealTitle}</h2>
                 </div>
 
                 <button
                     onClick={onClose}
-                    className="p-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-500 hover:text-neutral-900 rounded-xl transition-colors flex-shrink-0"
+                    className="p-1.5 sm:p-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-500 hover:text-neutral-900 rounded-lg sm:rounded-xl transition-colors flex-shrink-0"
                     aria-label="Exit Cooking Mode"
                 >
                     <X className="w-5 h-5" />

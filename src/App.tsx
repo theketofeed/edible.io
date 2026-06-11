@@ -175,8 +175,8 @@ function MainContent() {
 
 			// Show remaining generations if on free plan
 			const { remaining: newRemaining } = checkGenerationLimit()
-			if (newRemaining <= 2 && newRemaining > 0) {
-				showToast('info', `Meal plan ready! ${newRemaining} free generation${newRemaining === 1 ? '' : 's'} left this month.`)
+			if (newRemaining <= 0) {
+				showToast('info', `Meal plan ready! You've used your free generation — start a free trial to generate more.`)
 			} else {
 				showToast('success', 'Your meal plan is ready!')
 			}

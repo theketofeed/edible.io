@@ -30,7 +30,7 @@ interface RecipeDetailProps {
 const RecipeDetailSkeleton = ({ onBack, backLabel }: { onBack: () => void, backLabel?: string }) => (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-lavender-50 pb-20 pt-[env(safe-area-inset-top)]">
         <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-purple-100">
-            <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div className="w-full max-w-xs sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
                 <button onClick={onBack} className="flex items-center gap-2 text-purple-600 font-bold min-h-[44px]">
                     <ArrowLeft className="w-5 h-5" />
                     {backLabel || "Back to Meal Plan"}
@@ -38,10 +38,10 @@ const RecipeDetailSkeleton = ({ onBack, backLabel }: { onBack: () => void, backL
             </div>
         </div>
 
-        <div className="max-w-4xl mx-auto px-4 py-8 animate-pulse">
-            <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] shadow-xl overflow-hidden mb-8 md:mb-12 border border-purple-100/50">
-                <div className="h-[200px] md:h-[300px] bg-gray-200" />
-                <div className="p-6 md:p-12">
+        <div className="w-full max-w-xs sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8 animate-pulse">
+                <div className="bg-white rounded-2xl sm:rounded-[2rem] md:rounded-[2.5rem] shadow-xl overflow-hidden mb-6 sm:mb-8 md:mb-12 border border-purple-100/50">
+                <div className="h-[160px] sm:h-[200px] md:h-[300px] bg-gray-200" />
+                <div className="p-4 sm:p-6 md:p-12">
                     <div className="flex gap-4 mb-6 md:mb-8">
                         <div className="h-4 w-16 bg-gray-100 rounded" />
                         <div className="h-6 w-24 bg-gray-100 rounded-full" />
@@ -552,7 +552,7 @@ Made with Edible`
 
             {/* Back Button */}
             <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-lg border-b border-gray-100/60 shadow-[0_4px_24px_rgba(0,0,0,0.02)] transition-all">
-                <div className="max-w-4xl mx-auto px-4 py-3.5 flex items-center justify-between">
+                <div className="w-full max-w-xs sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-2 sm:gap-4">
                     <button
                         onClick={onBack}
                         aria-label="Back to meal plan"
@@ -654,13 +654,13 @@ Made with Edible`
                 </div>
             </div>
 
-            <div id="recipe-content" className="max-w-4xl mx-auto px-4 py-6 md:py-8">
+            <div id="recipe-content" className="w-full max-w-xs sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-6 md:py-8">
                 {/* Hero Section */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1, duration: 0.4 }}
-                    className="bg-white rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.03)] overflow-hidden mb-8 md:mb-12 border border-gray-50/50"
+                    className="bg-white rounded-2xl sm:rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.03)] overflow-hidden mb-6 sm:mb-8 md:mb-12 border border-gray-50/50"
                 >
                     {/* Food Image Hero */}
                     <div className="h-[200px] md:h-[300px] bg-purple-100 flex items-center justify-center relative group">
@@ -696,9 +696,9 @@ Made with Edible`
                     </div>
 
                     {/* Meal Info */}
-                    <div className="p-6 md:p-12">
+                    <div className="p-4 sm:p-6 md:p-12">
                         {/* Day and Meal Type Badge */}
-                        <div className="flex items-center gap-4 mb-6 md:mb-8">
+                        <div className="flex items-center gap-2 sm:gap-4 mb-4 sm:mb-6 md:mb-8">
                             <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">{dayName}</span>
                             <span className="px-5 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest bg-gray-50 text-gray-500 border border-gray-100 shadow-sm">
                                 {mealType}
@@ -706,12 +706,12 @@ Made with Edible`
                         </div>
 
                         {/* Title */}
-                        <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-8 md:mb-10 leading-[1.1] tracking-tight">
+                        <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold text-gray-900 mb-6 sm:mb-8 md:mb-10 leading-[1.1] tracking-tight">
                             {safeMeal.title}
                         </h1>
 
                         {/* Time Information */}
-                        <div className="flex flex-wrap gap-6 md:gap-10">
+                        <div className="flex flex-wrap gap-4 sm:gap-6 md:gap-10">
                             <div className="flex items-center gap-3">
                                 <div className="w-12 h-12 rounded-2xl bg-[#FFF7ED] flex items-center justify-center border border-orange-100/50">
                                     <Clock className="w-5 h-5 text-orange-500" />
@@ -749,10 +749,10 @@ Made with Edible`
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2, duration: 0.4 }}
-                        className="bg-white rounded-[2rem] md:rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.03)] p-8 md:p-12 mb-8 md:mb-12 border border-gray-50/50 relative overflow-hidden"
+                        className="bg-white rounded-2xl sm:rounded-[2rem] md:rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.03)] p-5 sm:p-8 md:p-12 mb-6 sm:mb-8 md:mb-12 border border-gray-50/50 relative overflow-hidden"
                     >
                         <div className="absolute top-0 right-0 w-48 h-48 bg-purple-50 rounded-full blur-[80px] -mr-24 -mt-24"></div>
-                        <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-8 flex items-center gap-4">
+                        <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-6 sm:mb-8 flex items-center gap-4">
                             <div className="w-1.5 h-8 bg-[#C6A0F6] rounded-full shadow-[0_0_12px_rgba(198,160,246,0.5)]"></div>
                             Nutrition Guide
                         </h2>
@@ -764,9 +764,9 @@ Made with Edible`
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.22, duration: 0.4 }}
-                    className="bg-white rounded-[2rem] md:rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.03)] p-8 md:p-12 mb-8 md:mb-12 border border-gray-50/50"
+                    className="bg-white rounded-2xl sm:rounded-[2rem] md:rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.03)] p-5 sm:p-8 md:p-12 mb-6 sm:mb-8 md:mb-12 border border-gray-50/50"
                 >
-                    <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-8 flex items-center gap-4">
+                    <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-6 sm:mb-8 flex items-center gap-4">
                         <div className="w-1.5 h-8 rounded-full shadow-sm" style={{ background: difficulty.bar }}></div>
                         Difficulty
                     </h2>

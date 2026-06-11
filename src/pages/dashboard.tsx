@@ -255,7 +255,7 @@ function NotificationBell({ plans, onNav, onUpgrade }: {
       id: 'gen_limit',
       icon: '⚡',
       title: '1 generation left',
-      body: "You've used 3 of 4 free generations this month.",
+      body: "You've used your 1 free generation. Start your 7-day free trial for unlimited plans.",
       action: { label: 'Upgrade to Pro', nav: 'generate' },
       urgent: true,
     })
@@ -267,7 +267,7 @@ function NotificationBell({ plans, onNav, onUpgrade }: {
       id: 'gen_limit_full',
       icon: '🚫',
       title: 'Generation limit reached',
-      body: "You've used all 4 free generations this month. Upgrade for unlimited.",
+      body: "You've used your free generation. Start your 7-day free trial — cancel anytime.",
       action: { label: 'Upgrade to Pro', nav: 'generate' },
       urgent: true,
     })

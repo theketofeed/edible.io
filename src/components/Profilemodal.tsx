@@ -90,7 +90,7 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     <div
       ref={overlayRef}
       onClick={(e) => { if (e.target === overlayRef.current) onClose() }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 sm:p-6"
       style={{ animation: 'fadeIn 0.2s ease' }}
     >
       <style>{`
@@ -103,11 +103,11 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
         .plan-chevron { transition: transform 0.2s ease; }
       `}</style>
 
-      <div className="profile-modal w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+      <div className="profile-modal w-full max-w-sm sm:max-w-md md:max-w-2xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[85vh] sm:max-h-[90vh] flex flex-col">
 
         {/* ── Header banner ── */}
         <div
-          className="relative px-8 pt-10 pb-16 flex-shrink-0"
+          className="relative px-6 sm:px-8 pt-8 sm:pt-10 pb-12 sm:pb-16 flex-shrink-0"
           style={{ background: 'linear-gradient(135deg, #1a0533 0%, #2d0a5e 40%, #1a1060 100%)' }}
         >
           {/* Decorative circles */}
@@ -123,34 +123,34 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
           </button>
 
           {/* Avatar + name */}
-          <div className="flex items-center gap-4 relative z-10">
-            <img src={avatarUrl} alt={displayName} className="w-16 h-16 rounded-2xl object-cover border-2 border-white/20 shadow-lg bg-white" />
-            <div>
-              <h2 className="profile-heading text-2xl font-bold text-white leading-tight">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 relative z-10">
+            <img src={avatarUrl} alt={displayName} className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover border-2 border-white/20 shadow-lg bg-white flex-shrink-0" />
+            <div className="flex-1">
+              <h2 className="profile-heading text-xl sm:text-2xl font-bold text-white leading-tight">
                 Hey, {displayName} 👋
               </h2>
               <div className="mt-1.5">
                 <PlanBadge size="sm" showIcon={false} className="border border-white/10" />
               </div>
-              <p className="text-sm text-purple-200 mt-1">{user?.email}</p>
+              <p className="text-xs sm:text-sm text-purple-200 mt-1 truncate">{user?.email}</p>
             </div>
           </div>
 
           {/* Stats row */}
-          <div className="flex gap-4 mt-6 relative z-10">
-            <div className="px-4 py-2 rounded-xl bg-white/10 backdrop-blur border border-white/10">
-              <p className="text-xs text-purple-200">Meal Plans</p>
-              <p className="text-xl font-bold text-white">{plans.length}</p>
+          <div className="flex flex-wrap gap-2 sm:gap-4 mt-4 sm:mt-6 relative z-10">
+            <div className="px-3 py-2 rounded-lg sm:rounded-xl bg-white/10 backdrop-blur border border-white/10">
+              <p className="text-[10px] sm:text-xs text-purple-200">Meal Plans</p>
+              <p className="text-lg sm:text-xl font-bold text-white">{plans.length}</p>
             </div>
-            <div className="px-4 py-2 rounded-xl bg-white/10 backdrop-blur border border-white/10">
-              <p className="text-xs text-purple-200">Total Days Planned</p>
-              <p className="text-xl font-bold text-white">
+            <div className="px-3 py-2 rounded-lg sm:rounded-xl bg-white/10 backdrop-blur border border-white/10">
+              <p className="text-[10px] sm:text-xs text-purple-200">Days Planned</p>
+              <p className="text-lg sm:text-xl font-bold text-white">
                 {plans.reduce((acc, p) => acc + getDayCount(p), 0)}
               </p>
             </div>
-            <div className="px-4 py-2 rounded-xl bg-white/10 backdrop-blur border border-white/10">
-              <p className="text-xs text-purple-200">Member since</p>
-              <p className="text-xl font-bold text-white">
+            <div className="px-3 py-2 rounded-lg sm:rounded-xl bg-white/10 backdrop-blur border border-white/10">
+              <p className="text-[10px] sm:text-xs text-purple-200">Member</p>
+              <p className="text-lg sm:text-xl font-bold text-white">
                 {user?.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '—'}
               </p>
             </div>
@@ -158,7 +158,7 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
         </div>
 
         {/* ── Meal plans list ── */}
-        <div className="flex-1 overflow-y-auto px-8 pt-8 pb-6">
+        <div className="flex-1 overflow-y-auto px-6 sm:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6">
           <div className="flex items-center justify-between mb-5">
             <h3 className="profile-heading text-xl font-bold text-gray-900">Saved Meal Plans</h3>
             {plans.length > 0 && (

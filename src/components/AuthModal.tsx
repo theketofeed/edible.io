@@ -115,7 +115,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         <div
             ref={overlayRef}
             onClick={handleOverlayClick}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 sm:p-6"
             style={{ animation: 'fadeIn 0.15s ease' }}
         >
             <style>{`
@@ -131,10 +131,10 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         .float-3 { animation: float3 7s ease-in-out infinite 2s; }
       `}</style>
 
-            <div className="auth-modal relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden flex min-h-[560px]">
+            <div className="auth-modal relative w-full max-w-md sm:max-w-2xl lg:max-w-4xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col lg:flex-row min-h-[auto] sm:min-h-[560px]">
 
                 {/* ── LEFT: Form panel ── */}
-                <div className="flex-1 flex flex-col justify-center px-10 py-12 relative z-10">
+                <div className="flex-1 flex flex-col justify-center px-6 sm:px-10 py-8 sm:py-12 relative z-10">
 
                     {/* Close */}
                     <button

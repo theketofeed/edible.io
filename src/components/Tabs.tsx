@@ -46,7 +46,7 @@ export default function Tabs({ tabs, defaultTabId, className = '' }: TabsProps) 
             <div
                 role="tablist"
                 aria-label="Recipe details"
-                className="flex border-b border-gray-50 bg-white"
+                className="flex border-b border-gray-50 bg-white overflow-x-auto"
             >
                 {tabs.map((tab, index) => {
                     const isActive = activeTabId === tab.id
@@ -60,7 +60,7 @@ export default function Tabs({ tabs, defaultTabId, className = '' }: TabsProps) 
                             tabIndex={isActive ? 0 : -1}
                             onClick={() => setActiveTabId(tab.id)}
                             onKeyDown={(e) => handleKeyDown(e, index)}
-                            className={`relative flex-1 px-4 py-3.5 text-[11px] font-bold tracking-widest uppercase transition-all duration-300 outline-none
+                            className={`relative flex-1 min-w-max sm:flex-1 px-3 sm:px-4 py-2.5 sm:py-3.5 text-[10px] sm:text-[11px] font-bold tracking-widest uppercase transition-all duration-300 outline-none
 								${isActive ? 'text-gray-900 bg-white' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
                         >
                             {tab.label}
@@ -84,7 +84,7 @@ export default function Tabs({ tabs, defaultTabId, className = '' }: TabsProps) 
                 id={`panel-${activeTabId}`}
                 role="tabpanel"
                 aria-labelledby={`tab-${activeTabId}`}
-                className="p-6 md:p-8 outline-none focus-visible:ring-2 focus-visible:ring-purple-500 rounded-b-2xl"
+                className="p-4 sm:p-6 md:p-8 outline-none focus-visible:ring-2 focus-visible:ring-purple-500 rounded-b-2xl"
                 tabIndex={0}
             >
                 <AnimatePresence mode="wait">

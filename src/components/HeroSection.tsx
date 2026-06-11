@@ -43,7 +43,7 @@ const HeroSection = memo(function HeroSection() {
 	}, [])
 
 	return (
-		<section id="home" className="mt-8 mb-10 md:mt-16 md:mb-14">
+		<section id="home" className="mt-4 mb-10 md:mt-8 md:mb-14">
 			<div className="max-w-4xl mx-auto text-center px-3 sm:px-4">
 				{/* Hero badge */}
 				<div className="relative inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-white/75 backdrop-blur-lg shadow-md border border-white/60 mb-6 sm:mb-8 transition-transform hover:scale-[1.02] cursor-default">
@@ -70,14 +70,14 @@ const HeroSection = memo(function HeroSection() {
 				</p>
 
 				{/* CTA */}
-				<div className="flex justify-center mb-10 sm:mb-12 px-4">
-					<button
-						onClick={scrollToUpload}
-						className="h-12 sm:h-14 px-6 sm:px-10 rounded-full text-sm sm:text-base font-bold bg-[#C6A0F6] text-gray-900 shadow-[0_8px_24px_rgba(198,160,246,0.5)] hover:bg-[#b58df5] hover:-translate-y-1 transition-all duration-300 w-full sm:w-auto max-w-xs sm:max-w-none"
-					>
-						Try Edible for Free
-					</button>
-				</div>
+			<div className="flex justify-center mb-6 sm:mb-8 px-4">
+				<button
+					onClick={scrollToUpload}
+					className="h-12 sm:h-14 px-6 sm:px-10 rounded-full text-sm sm:text-base font-bold bg-[#C6A0F6] text-gray-900 shadow-[0_8px_24px_rgba(198,160,246,0.5)] hover:bg-[#b58df5] hover:-translate-y-1 transition-all duration-300 w-full sm:w-auto max-w-xs sm:max-w-none"
+				>
+					Try Edible for Free
+				</button>
+			</div>
 
 				{/* Social proof */}
 				<div className="flex items-center justify-center gap-3">

@@ -44,21 +44,22 @@ export default function PricingModal({ isOpen, onClose, trigger }: Props) {
   ]
 
   const triggerMessage = {
-    generation_limit: "You've used all 4 of your free meal plan generations this month. Upgrade to Pro for unlimited plans, every month.",
-    pdf_export: "PDF export is a Pro feature. Upgrade to download, print, and share beautifully formatted meal plans anytime.",
-    bulk_download_recipes: "Downloading all recipes is a Pro feature. Upgrade to export your entire meal plan as beautifully formatted PDFs — ready to print, save, or share.",
-    chef_tips: "Chef tips are a Pro feature. Unlock expert cooking techniques and insider tips to take every meal to the next level.",
-    recipe_limit: "You've hit the 10-recipe limit on the free plan. Upgrade to Pro for unlimited recipe saving so you never lose a meal you love.",
-  }[trigger || ''] || "Upgrade to Pro and unlock the full Edible experience — unlimited plans, chef tips, PDF exports, and more."
+    generation_limit: "You've used your free meal plan generation. Start your 7-day free trial to get unlimited plans every month — no commitment.",
+    pdf_export: "PDF export is a Pro feature. Start your free trial to download, print, and share beautifully formatted meal plans anytime.",
+    bulk_download_recipes: "Downloading all recipes is a Pro feature. Start your free trial to export your entire meal plan as beautifully formatted PDFs.",
+    chef_tips: "Chef tips are a Pro feature. Start your free trial to unlock expert cooking techniques on every recipe.",
+    recipe_limit: "You've hit the 10-recipe limit on the free plan. Start your free trial to save unlimited recipes.",
+    save_plan: "Create a free account and start your 7-day trial to save this meal plan and access it anytime.",
+  }[trigger || ''] || "Try Edible Pro free for 7 days — unlimited plans, chef tips, PDF exports, and more. Cancel anytime."
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-12 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-8 lg:p-12 overflow-y-auto"
       style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div
-        className="relative w-full max-w-xl bg-white rounded-[24px] md:rounded-[32px] overflow-hidden my-auto"
+        className="relative w-full max-w-sm sm:max-w-lg md:max-w-xl bg-white rounded-[24px] overflow-hidden my-auto"
         style={{ boxShadow: '0 32px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.04)' }}
       >
         <button
@@ -69,7 +70,7 @@ export default function PricingModal({ isOpen, onClose, trigger }: Props) {
           <X className="w-4 h-4 text-gray-600" />
         </button>
 
-        <div className="px-8 pt-10 pb-8 text-center" style={{ background: 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)' }}>
+        <div className="px-6 sm:px-8 pt-8 sm:pt-10 pb-6 sm:pb-8 text-center" style={{ background: 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)' }}>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-bold uppercase tracking-wide mb-4">
             <Zap className="w-3 h-3" />
             Upgrade to Pro
@@ -93,7 +94,7 @@ export default function PricingModal({ isOpen, onClose, trigger }: Props) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-6 md:px-8 pb-8 pt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 px-4 sm:px-6 md:px-8 pb-6 sm:pb-8 pt-3 sm:pt-4">
           {/* Pro */}
           <div className="rounded-2xl border-2 border-gray-100 p-5 flex flex-col hover:border-purple-200 transition-colors">
             <div className="flex items-center gap-2 mb-3">
@@ -103,10 +104,13 @@ export default function PricingModal({ isOpen, onClose, trigger }: Props) {
               <span className="font-bold text-gray-900 text-sm">Pro</span>
             </div>
             <div className="mb-1">
-              <span className="text-3xl font-black text-gray-900">{billingCycle === 'monthly' ? '$4.99' : '$3.33'}</span>
+              <span className="text-3xl font-black text-gray-900">{billingCycle === 'monthly' ? '$3.99' : '$2.50'}</span>
               <span className="text-gray-400 text-xs ml-1">/mo</span>
             </div>
-            {billingCycle === 'annual' && <p className="text-xs text-gray-400 mb-4">Billed as $40/year</p>}
+            {billingCycle === 'annual' && <>
+              <p className="text-xs text-gray-400 mb-1">Billed as $30/year</p>
+              <p className="text-xs text-purple-600 font-semibold mb-4">7-day free trial included</p>
+            </>}
             <ul className="space-y-2 mb-5 flex-1 mt-3">
               {proFeatures.map((f, i) => (
                 <li key={i} className="flex items-start gap-2 text-xs text-gray-600">
@@ -119,7 +123,7 @@ export default function PricingModal({ isOpen, onClose, trigger }: Props) {
               disabled={!!loading}
               className="w-full py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold rounded-xl transition-all disabled:opacity-60 active:scale-[0.98]"
             >
-              {loading === 'pro_monthly' || loading === 'pro_annual' ? 'Redirecting...' : billingCycle === 'annual' ? 'Get Pro — $40/yr' : 'Get Pro — $4.99/mo'}
+              {loading === 'pro_monthly' || loading === 'pro_annual' ? 'Redirecting...' : 'Start Free Trial'}
             </button>
           </div>
 
@@ -136,8 +140,7 @@ export default function PricingModal({ isOpen, onClose, trigger }: Props) {
               <span className="font-bold text-white text-sm">Founding</span>
             </div>
             <div className="mb-1 flex items-baseline gap-2">
-              <span className="text-3xl font-black text-white">$59</span>
-              <span className="text-white/40 text-xs line-through">$75</span>
+              <span className="text-3xl font-black text-white">$19</span>
             </div>
             <p className="text-yellow-400 text-xs font-semibold mb-1">Pay once. Use forever.</p>
             <p className="text-white/40 text-[10px] mb-3">Early adopter discount — limited time</p>
@@ -157,7 +160,7 @@ export default function PricingModal({ isOpen, onClose, trigger }: Props) {
               disabled={!!loading}
               className="w-full py-2.5 bg-yellow-400 hover:bg-yellow-300 text-yellow-900 text-sm font-black rounded-xl transition-all disabled:opacity-60 active:scale-[0.98]"
             >
-              {loading === 'founding' ? 'Redirecting...' : 'Claim Spot — $59'}
+              {loading === 'founding' ? 'Redirecting...' : 'Claim Spot — $19'}
             </button>
           </div>
         </div>

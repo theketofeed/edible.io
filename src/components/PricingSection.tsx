@@ -40,7 +40,7 @@ const PricingSection = memo(function PricingSection({ onAuthRequired }: PricingS
   ]
 
   const freeFeatures = [
-    { text: '4 meal plans per month', locked: false },
+    { text: '1 free meal plan generation', locked: false },
     { text: '4 saved meal plans', locked: false },
     { text: '10 saved recipes', locked: false },
     { text: 'Basic recipe view + cooking mode', locked: false },
@@ -49,7 +49,7 @@ const PricingSection = memo(function PricingSection({ onAuthRequired }: PricingS
   ]
 
   return (
-    <section id="pricing" className="py-16 md:py-28 bg-white">
+    <section id="pricing" className="py-12 md:py-20 bg-white">
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
 
         {/* Header */}
@@ -59,10 +59,10 @@ const PricingSection = memo(function PricingSection({ onAuthRequired }: PricingS
             Simple Pricing
           </div>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 mb-4 tracking-tight leading-tight">
-            Start free. Upgrade when <span className="text-purple-600">you're hooked.</span>
+            Stop planning meals from scratch.
           </h2>
           <p className="text-base sm:text-lg text-gray-500 max-w-xl mx-auto">
-            No credit card required to get started. Upgrade anytime.
+            The meal planner that starts with what you already have.
           </p>
         </div>
 
@@ -83,48 +83,11 @@ const PricingSection = memo(function PricingSection({ onAuthRequired }: PricingS
           </div>
         </div>
 
-        {/* Plan Cards — stacked on mobile, 3 cols on md+ */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 items-stretch">
-
-          {/* Free */}
-          <div className="rounded-3xl border-2 border-gray-100 p-6 sm:p-7 flex flex-col bg-white hover:border-gray-200 transition-colors">
-            <div className="mb-6">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-9 h-9 rounded-xl bg-gray-100 flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-gray-500" />
-                </div>
-                <span className="font-bold text-gray-700">Free</span>
-              </div>
-              <div className="flex items-baseline gap-1 mb-1">
-                <span className="text-4xl font-black text-gray-900">$0</span>
-                <span className="text-gray-400 text-sm">/forever</span>
-              </div>
-              <p className="text-sm text-gray-400">No credit card required</p>
-            </div>
-
-            <ul className="space-y-3 mb-8 flex-1">
-              {freeFeatures.map((f, i) => (
-                <li key={i} className={`flex items-start gap-2.5 text-sm ${f.locked ? 'text-gray-400' : 'text-gray-600'}`}>
-                  {f.locked ? (
-                    <Lock className="w-4 h-4 text-gray-300 mt-0.5 flex-shrink-0" />
-                  ) : (
-                    <Check className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                  )}
-                  {f.text}
-                </li>
-              ))}
-            </ul>
-
-            <button
-              onClick={() => document.getElementById('upload-section')?.scrollIntoView({ behavior: 'smooth' })}
-              className="w-full py-3 border-2 border-gray-200 text-gray-700 text-sm font-bold rounded-xl hover:border-gray-300 hover:bg-gray-50 transition-all"
-            >
-              Get Started Free
-            </button>
-          </div>
+        {/* Plan Cards — 2 columns */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 items-stretch max-w-3xl mx-auto">
 
           {/* Pro — highlighted */}
-          <div className="rounded-3xl p-6 sm:p-7 flex flex-col relative overflow-hidden bg-gradient-to-b from-purple-600 to-purple-700 shadow-2xl shadow-purple-500/20 md:scale-[1.02]">
+          <div className="rounded-3xl p-6 sm:p-7 flex flex-col relative overflow-hidden bg-gradient-to-b from-purple-600 to-purple-700 shadow-2xl shadow-purple-500/20">
             {/* Most Popular badge */}
             <div className="absolute -top-px left-0 right-0 flex justify-center">
               <span className="bg-yellow-400 text-yellow-900 text-[10px] font-black px-4 py-1 rounded-b-xl uppercase tracking-wide">
@@ -141,12 +104,12 @@ const PricingSection = memo(function PricingSection({ onAuthRequired }: PricingS
               </div>
               <div className="flex items-baseline gap-1 mb-1">
                 <span className="text-4xl font-black text-white">
-                  {billingCycle === 'monthly' ? '$4.99' : '$3.33'}
+                  {billingCycle === 'monthly' ? '$3.99' : '$2.50'}
                 </span>
                 <span className="text-white/60 text-sm">/mo</span>
               </div>
               {billingCycle === 'annual'
-                ? <p className="text-white/60 text-sm">Billed as $40/year</p>
+                ? <p className="text-white/60 text-sm">Billed as $30/year</p>
                 : <p className="text-white/60 text-sm">Billed monthly</p>
               }
             </div>
@@ -167,12 +130,12 @@ const PricingSection = memo(function PricingSection({ onAuthRequired }: PricingS
             >
               {loading === 'pro_monthly' || loading === 'pro_annual'
                 ? 'Redirecting...'
-                : billingCycle === 'annual' ? 'Get Pro — $40/yr' : 'Get Pro — $4.99/mo'}
+                : 'Start Free Trial'}
             </button>
           </div>
 
           {/* Founding */}
-          <div className="rounded-3xl p-6 sm:p-7 flex flex-col relative overflow-hidden sm:col-span-2 md:col-span-1" style={{ background: 'linear-gradient(135deg, #1a0533 0%, #2d0a5e 100%)' }}>
+          <div className="rounded-3xl p-6 sm:p-7 flex flex-col relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #1a0533 0%, #2d0a5e 100%)' }}>
             <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-20 pointer-events-none" style={{ background: '#C6A0F6', filter: 'blur(40px)' }} />
 
             <div className="absolute -top-px left-0 right-0 flex justify-center">
@@ -189,8 +152,7 @@ const PricingSection = memo(function PricingSection({ onAuthRequired }: PricingS
                 <span className="font-bold text-white">Founding Member</span>
               </div>
               <div className="flex items-baseline gap-2 mb-1">
-                <span className="text-4xl font-black text-white">$59</span>
-                <span className="text-white/40 text-xs line-through">$75</span>
+                <span className="text-4xl font-black text-white">$19</span>
               </div>
               <p className="text-yellow-400 text-sm font-semibold">Pay once. Use forever.</p>
               <p className="text-white/40 text-xs mt-0.5">Early adopter discount</p>
@@ -213,7 +175,7 @@ const PricingSection = memo(function PricingSection({ onAuthRequired }: PricingS
               disabled={!!loading}
               className="relative z-10 w-full py-3 bg-yellow-400 hover:bg-yellow-300 text-yellow-900 text-sm font-black rounded-xl transition-all disabled:opacity-60 active:scale-[0.98]"
             >
-              {loading === 'founding' ? 'Redirecting...' : 'Claim Spot — $59'}
+              {loading === 'founding' ? 'Redirecting...' : 'Claim Spot — $19'}
             </button>
           </div>
 

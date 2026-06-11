@@ -646,7 +646,7 @@ app.post('/api/send-welcome', async (req, res) => {
       You're all set on Edible. Just upload a photo of your grocery receipt and we'll turn it into a full personalized meal plan in seconds.
     </p>
     <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 0 0 32px;">
-      You get <strong style="color: #7c3aed;">4 free meal plans</strong> per month to get started. No credit card needed.
+      You get <strong style="color: #7c3aed;">1 free meal plan</strong> to try it out — no credit card needed. Upgrade anytime for unlimited plans.
     </p>
 
     <!-- CTA Button -->
