@@ -563,13 +563,13 @@ Made with Edible`
                         <span className="sm:hidden text-[15px]">Back</span>
                     </button>
 
-                    <div className="flex items-center gap-2">
+                    <div className="hidden sm:flex items-center gap-2">
                         <button
                             onClick={() => setIsCookingModeOpen(true)}
                             className="flex items-center gap-1.5 h-9 sm:h-10 px-3 sm:px-4 bg-[#C6A0F6] text-gray-900 rounded-full font-bold hover:shadow-[0_4px_16px_rgba(198,160,246,0.3)] hover:-translate-y-0.5 active:scale-95 transition-all duration-300 group"
                         >
                             <ChefHat className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                            <span className="text-[13px] sm:text-[14px]">Start Cooking</span>
+                            <span className="text-[13px] sm:text-[14px]">Enter Cooking Mode</span>
                         </button>
                     </div>
 
@@ -696,7 +696,7 @@ Made with Edible`
                     </div>
 
                     {/* Meal Info */}
-                    <div className="p-4 sm:p-6 md:p-12">
+                    <div className="p-5 sm:p-6 md:p-12">
                         {/* Day and Meal Type Badge */}
                         <div className="flex items-center gap-2 sm:gap-4 mb-4 sm:mb-6 md:mb-8">
                             <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">{dayName}</span>
@@ -740,6 +740,15 @@ Made with Edible`
                                 </div>
                             </div>
                         </div>
+
+                        {/* Mobile-only full-width Enter Cooking Mode button */}
+                        <button
+                            onClick={() => setIsCookingModeOpen(true)}
+                            className="sm:hidden mt-6 w-full flex items-center justify-center gap-2 h-12 bg-[#C6A0F6] text-gray-900 rounded-2xl font-bold hover:shadow-[0_4px_16px_rgba(198,160,246,0.3)] active:scale-[0.98] transition-all duration-300"
+                        >
+                            <ChefHat className="w-4 h-4" />
+                            <span className="text-[15px]">Enter Cooking Mode</span>
+                        </button>
                     </div>
                 </motion.div>
 
@@ -749,7 +758,7 @@ Made with Edible`
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2, duration: 0.4 }}
-                        className="bg-white rounded-2xl sm:rounded-[2rem] md:rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.03)] p-5 sm:p-8 md:p-12 mb-6 sm:mb-8 md:mb-12 border border-gray-50/50 relative overflow-hidden"
+                        className="bg-white rounded-2xl sm:rounded-[2rem] md:rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.03)] p-6 sm:p-8 md:p-12 mb-6 sm:mb-8 md:mb-12 border border-gray-50/50 relative overflow-hidden"
                     >
                         <div className="absolute top-0 right-0 w-48 h-48 bg-purple-50 rounded-full blur-[80px] -mr-24 -mt-24"></div>
                         <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-6 sm:mb-8 flex items-center gap-4">
@@ -764,7 +773,7 @@ Made with Edible`
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.22, duration: 0.4 }}
-                    className="bg-white rounded-2xl sm:rounded-[2rem] md:rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.03)] p-5 sm:p-8 md:p-12 mb-6 sm:mb-8 md:mb-12 border border-gray-50/50"
+                    className="bg-white rounded-2xl sm:rounded-[2rem] md:rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.03)] p-6 sm:p-8 md:p-12 mb-6 sm:mb-8 md:mb-12 border border-gray-50/50"
                 >
                     <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-6 sm:mb-8 flex items-center gap-4">
                         <div className="w-1.5 h-8 rounded-full shadow-sm" style={{ background: difficulty.bar }}></div>
