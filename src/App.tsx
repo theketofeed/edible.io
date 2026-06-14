@@ -25,7 +25,9 @@ import PricingSection from './components/PricingSection'
 import { useAuth } from './context/AuthContext'
 import { usePlan } from './hooks/usePlan'
 import { generateMealPlan } from './lib/mealPlanGenerator'
+import { createCheckout } from './lib/checkout'
 import type { DietType, MealPlanResult } from './utils/types'
+import type { ProductType } from './lib/checkout'
 import { useReactToPrint } from 'react-to-print'
 import html2pdf from 'html2pdf.js'
 import ToastContainer, { ToastKind, ToastMessage } from './components/Toast'
@@ -45,11 +47,29 @@ function MainContent() {
 	const [profileOpen, setProfileOpen] = useState(false)
 	const [pricingOpen, setPricingOpen] = useState(false)
 	const [pricingTrigger, setPricingTrigger] = useState<string>('')
+	const [pendingCheckout, setPendingCheckout] = useState<ProductType | null>(null)
 
 	// Auto-close modal when login succeeds
 	useEffect(() => {
 		if (user) setAuthOpen(false)
 	}, [user])
+
+	// Handle post-login checkout redirect
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	useEffect(() => {
+		if (user && pendingCheckout) {
+			const productType = pendingCheckout
+			setPendingCheckout(null)
+			;(async () => {
+				const result = await createCheckout(productType, user.id, user.email!)
+				if (result.success && result.url) {
+					window.location.href = result.url
+				} else {
+					showToast('error', result.error || 'Something went wrong. Please try again.')
+				}
+			})()
+		}
+	}, [user, pendingCheckout])
 
 	const [diet, setDiet] = useState<DietType>('Balanced')
 	const [groceryItems, setGroceryItems] = useState<string[]>([])
@@ -77,7 +97,14 @@ function MainContent() {
 		setToasts((prev) => prev.filter((toast) => toast.id !== id))
 	}, [])
 
+	const handleRequireAuthForCheckout = useCallback((productType: ProductType) => {
+		setPendingCheckout(productType)
+		setPricingOpen(false)
+		setAuthOpen(true)
+	}, [])
+
 	const canGenerate = useMemo(() => groceryItems.length > 0, [groceryItems])
+	const { allowed: canGenerateMore } = checkGenerationLimit()
 
 	const autoPlanDays = useMemo(() => {
 		const n = groceryItems.length
@@ -265,7 +292,7 @@ function MainContent() {
 
 			<AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
 			<ProfileModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
-			<PricingModal isOpen={pricingOpen} onClose={() => setPricingOpen(false)} trigger={pricingTrigger} />
+			<PricingModal isOpen={pricingOpen} onClose={() => setPricingOpen(false)} trigger={pricingTrigger} onRequireAuth={handleRequireAuthForCheckout} />
 
 			<ReceiptConfirmation
 				isOpen={showConfirmation}
@@ -291,7 +318,41 @@ function MainContent() {
 									
 									<div id="upload-section" className={`mb-6 overflow-hidden relative transition-all duration-500 ${isLoading ? 'p-0' : 'p-5 md:p-8 card border-purple-100/50'}`}>
 										<AnimatePresence mode="wait">
-											{!isLoading ? (
+											{isLoading ? (
+												<motion.div
+													key="loading"
+													initial={{ opacity: 0, scale: 0.95 }}
+													animate={{ opacity: 1, scale: 1 }}
+													exit={{ opacity: 0 }}
+													transition={{ duration: 0.4 }}
+													className="py-4 md:py-8"
+												>
+													<Loading step={loadingStep} />
+												</motion.div>
+											) : !canGenerateMore ? (
+												<motion.div
+													key="locked"
+													initial={{ opacity: 0 }}
+													animate={{ opacity: 1 }}
+													exit={{ opacity: 0, y: -20 }}
+													transition={{ duration: 0.3 }}
+													className="text-center py-12 px-4"
+												>
+													<div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+														<Lock className="w-7 h-7 text-purple-600" />
+													</div>
+													<h3 className="text-xl font-black text-gray-900 mb-2">You've used your free meal plan</h3>
+													<p className="text-gray-500 mb-6 max-w-sm mx-auto">
+														Start your 7-day free trial to keep turning your groceries into meal plans.
+													</p>
+													<button
+														onClick={() => { setPricingTrigger('generation_limit'); setPricingOpen(true) }}
+														className="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-all"
+													>
+														Start Free Trial
+													</button>
+												</motion.div>
+											) : (
 												<motion.div
 													key="form"
 													initial={{ opacity: 0 }}
@@ -326,17 +387,6 @@ function MainContent() {
 															Generate Plan
 														</button>
 													</div>
-												</motion.div>
-											) : (
-												<motion.div
-													key="loading"
-													initial={{ opacity: 0, scale: 0.95 }}
-													animate={{ opacity: 1, scale: 1 }}
-													exit={{ opacity: 0 }}
-													transition={{ duration: 0.4 }}
-													className="py-4 md:py-8"
-												>
-													<Loading step={loadingStep} />
 												</motion.div>
 											)}
 										</AnimatePresence>

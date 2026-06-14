@@ -112,39 +112,7 @@ export function usePlan() {
 
   // ── Check recipe limit (with cache) ────────────────────────────────────────
   const checkRecipeLimit = async (): Promise<{ allowed: boolean; count: number }> => {
-    if (isPro) return { allowed: true, count: 0 }
-    if (!isLoggedIn || !user) return { allowed: false, count: 0 }
-
-    const userId = user.id
-    const now = Date.now()
-    const cached = recipeCountCache[userId]
-
-    // Return cached value if still fresh
-    if (cached && (now - cached.timestamp) < RECIPE_CACHE_TTL) {
-      return {
-        allowed: cached.count < FREE_SAVED_RECIPES_LIMIT,
-        count: cached.count
-      }
-    }
-
-    try {
-      const { count, error } = await supabase
-        .from('saved_recipes')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId)
-
-      if (error) throw error
-      const used = count || 0
-
-      // Update cache
-      recipeCountCache[userId] = { count: used, timestamp: now }
-
-      return { allowed: used < FREE_SAVED_RECIPES_LIMIT, count: used }
-    } catch (err) {
-      console.error('[usePlan] Failed to check recipe limit:', err)
-      // On error, allow save (fail open) rather than blocking the user
-      return { allowed: true, count: 0 }
-    }
+    return { allowed: true, count: 0 }
   }
 
   const { remaining } = checkGenerationLimit()
@@ -154,11 +122,11 @@ export function usePlan() {
     isPro,
     isFounding,
     isLoggedIn,
-    canExportPDF: isPro,
-    canBulkDownloadRecipes: isPro,
-    canSeeChefTips: isPro,
-    maxSavedPlans: isPro ? Infinity : FREE_SAVED_PLANS_LIMIT,
-    maxSavedRecipes: isPro ? Infinity : FREE_SAVED_RECIPES_LIMIT,
+    canExportPDF: true,
+    canBulkDownloadRecipes: true,
+    canSeeChefTips: true,
+    maxSavedPlans: Infinity,
+    maxSavedRecipes: Infinity,
     checkGenerationLimit,
     incrementGenerationCount,
     FREE_GENERATION_LIMIT,

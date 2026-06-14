@@ -9,9 +9,10 @@ interface Props {
   isOpen: boolean
   onClose: () => void
   trigger?: string
+  onRequireAuth?: (productType: ProductType) => void
 }
 
-export default function PricingModal({ isOpen, onClose, trigger }: Props) {
+export default function PricingModal({ isOpen, onClose, trigger, onRequireAuth }: Props) {
   const { user } = useAuth()
   const [loading, setLoading] = useState<ProductType | null>(null)
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual')
@@ -21,7 +22,10 @@ export default function PricingModal({ isOpen, onClose, trigger }: Props) {
   }, [isOpen, trigger])
 
   const handleUpgrade = useCallback(async (productType: ProductType) => {
-    if (!user) return
+    if (!user) {
+      onRequireAuth?.(productType)
+      return
+    }
     posthog.capture('upgrade_clicked', { trigger, plan: productType })
     setLoading(productType)
     const result = await createCheckout(productType, user.id, user.email!)
@@ -31,7 +35,7 @@ export default function PricingModal({ isOpen, onClose, trigger }: Props) {
       alert(result.error || 'Something went wrong. Please try again.')
       setLoading(null)
     }
-  }, [user, trigger])
+  }, [user, trigger, onRequireAuth])
 
   if (!isOpen) return null
 
