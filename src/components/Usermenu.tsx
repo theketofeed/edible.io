@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react'
-import { LogOut, User, ChevronDown, LayoutDashboard, Sparkles } from 'lucide-react'
+import { LogOut, ChevronDown, LayoutDashboard, Sparkles } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -92,8 +92,8 @@ export default function UserMenu({ onOpenProfile }: UserMenuProps) {
         className="flex items-center gap-2.5 pl-2 pr-3.5 py-1.5 rounded-full bg-white border border-gray-200 shadow-sm hover:shadow-md hover:border-purple-200 transition-all duration-200"
       >
         <img src={avatarUrl} alt={displayName} className="w-7 h-7 rounded-full object-cover ring-2 ring-purple-100 bg-purple-50" />
-        <span className="text-sm font-bold text-gray-800 max-w-[160px] truncate hidden sm:block">
-          {displayName}
+        <span className="text-sm font-bold text-gray-800 max-w-[160px] truncate">
+          My Dashboard
         </span>
         <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
@@ -127,14 +127,6 @@ export default function UserMenu({ onOpenProfile }: UserMenuProps) {
             >
               <span className="menu-icon"><LayoutDashboard className="w-4 h-4" /></span>
               Dashboard
-            </button>
-
-            <button
-              className="menu-item"
-              onClick={() => { setOpen(false); navigate('/dashboard') }}
-            >
-              <span className="menu-icon"><User className="w-4 h-4" /></span>
-              Profile
             </button>
 
             <button
