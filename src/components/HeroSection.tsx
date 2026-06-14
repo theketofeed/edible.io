@@ -31,7 +31,7 @@ const HeroSection = memo(function HeroSection() {
 				{/* Headline */}
 				<h1 className="heading text-[2rem] sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-gray-900 mb-6 sm:mb-8 leading-[1.15] sm:leading-[1.1]">
 					Turn your{' '}
-					<span className="text-[#C6A0F6]">
+					<span className="text-[#7c3aed]">
 						groceries
 					</span>
 					<br className="hidden sm:block" />
