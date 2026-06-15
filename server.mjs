@@ -46,6 +46,12 @@ const aiLimiter = rateLimit({
   message: { error: 'AI rate limit reached. Please wait a moment.' }
 })
 
+const imageLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 60, // 60 image requests per minute per IP — a single plan can need 15-21 images at once
+  message: { error: 'Image rate limit reached. Please wait a moment.' }
+})
+
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
@@ -523,7 +529,7 @@ async function fetchPexelsImage(mealTitle) {
 //   1. Server-side cache      — instant response for repeated requests
 //   2. Spoonacular complexSearch — real food photos, instant, free tier (150 req/day)
 //   3. Pexels API           — beautiful stock photography fallback
-app.post('/api/generate-meal-image', aiLimiter, async (req, res) => {
+app.post('/api/generate-meal-image', imageLimiter, async (req, res) => {
 	const { mealTitle } = req.body
 
 	if (!mealTitle || typeof mealTitle !== 'string') {

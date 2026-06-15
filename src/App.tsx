@@ -57,11 +57,14 @@ function MainContent() {
 	// Handle post-login checkout redirect
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	useEffect(() => {
+		console.log('[Checkout Debug] effect fired. user:', user?.id, 'pendingCheckout:', pendingCheckout)
 		if (user && pendingCheckout) {
+			console.log('[Checkout Debug] conditions met, calling createCheckout')
 			const productType = pendingCheckout
 			setPendingCheckout(null)
 			;(async () => {
 				const result = await createCheckout(productType, user.id, user.email!)
+				console.log('[Checkout Debug] createCheckout result:', result)
 				if (result.success && result.url) {
 					window.location.href = result.url
 				} else {
@@ -98,6 +101,7 @@ function MainContent() {
 	}, [])
 
 	const handleRequireAuthForCheckout = useCallback((productType: ProductType) => {
+		console.log('[Checkout Debug] handleRequireAuthForCheckout called with:', productType)
 		setPendingCheckout(productType)
 		setPricingOpen(false)
 		setAuthOpen(true)

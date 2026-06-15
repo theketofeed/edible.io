@@ -723,107 +723,10 @@ function Overview({ plans, onNav, userData, onSelectPlan, selectedPlanId }: Over
   )
 }
 
-// ─── Add Meal Modal ───────────────────────────────────────────────────────────
-interface AddMealModalProps {
-  dayLabel: string
-  savedRecipes: Recipe[]; onAdd: (meal: CustomMeal) => void; onClose: () => void
-}
-
-function AddMealModal({ dayLabel, savedRecipes, onAdd, onClose }: AddMealModalProps) {
-  const [search, setSearch] = useState('')
-  const [filter, setFilter] = useState('All')
-
-  const filtered = savedRecipes.filter(r => {
-    const matchSearch = r.title.toLowerCase().includes(search.toLowerCase())
-    const matchType = filter === 'All' || r.type === filter
-    return matchSearch && matchType
-  })
-
-  const hasRecipes = savedRecipes.length > 0
-
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(17,24,39,0.52)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, backdropFilter: 'blur(8px)', padding: '0 16px' }} onClick={onClose}>
-      <div style={{ background: C.white, borderRadius: 24, width: '100%', maxWidth: 460, boxShadow: '0 32px 80px rgba(0,0,0,0.22)', overflow: 'hidden', maxHeight: '88vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
-
-        {/* Header */}
-        <div style={{ padding: '22px 24px 16px', flexShrink: 0, borderBottom: `1px solid ${C.cardBdr}` }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <p style={{ fontSize: 17, fontWeight: 800, color: C.txt, letterSpacing: '-0.02em' }}>Add from Saved Recipes</p>
-              <p style={{ fontSize: 12, color: C.faint, marginTop: 3 }}>Adding to {dayLabel}</p>
-            </div>
-            <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 999, background: '#F3F4F6', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginLeft: 12 }}>
-              <X size={14} style={{ color: C.muted }} />
-            </button>
-          </div>
-        </div>
-
-        {/* Body */}
-        <div style={{ padding: '16px 24px 24px', overflowY: 'auto', flex: 1 }}>
-          {!hasRecipes ? (
-            <div style={{ textAlign: 'center', padding: '48px 0' }}>
-              <div style={{ width: 56, height: 56, borderRadius: 18, background: '#FFF1F2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                <Heart size={24} style={{ color: '#f87171' }} />
-              </div>
-              <p style={{ color: C.txt, fontSize: 14, fontWeight: 700, marginBottom: 6 }}>No saved recipes yet</p>
-              <p style={{ color: C.muted, fontSize: 13, lineHeight: 1.5 }}>Open any recipe from a meal plan<br/>and tap the ♡ to save it here.</p>
-            </div>
-          ) : (
-            <>
-              {/* Search */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#F9F8F6', borderRadius: 12, padding: '9px 14px', marginBottom: 12, border: `1px solid ${C.cardBdr}` }}>
-                <Search size={13} style={{ color: C.faint, flexShrink: 0 }} />
-                <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search your saved recipes…" autoFocus
-                  style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: 13, color: C.txt, width: '100%', fontFamily: "'Plus Jakarta Sans',sans-serif" }} />
-                {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.faint, padding: 0, display: 'flex' }}><X size={11} /></button>}
-              </div>
-              {/* Type filter */}
-              <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
-                {['All', 'Breakfast', 'Lunch', 'Dinner'].map(f => {
-                  const on = filter === f
-                  return (
-                    <button key={f} onClick={() => setFilter(f)} style={{ padding: '5px 14px', borderRadius: 999, border: 'none', cursor: 'pointer', fontSize: 11.5, fontWeight: on ? 700 : 500, background: on ? C.accentDark : '#F3F4F6', color: on ? 'white' : C.muted, fontFamily: "'Plus Jakarta Sans',sans-serif", transition: 'all .15s', boxShadow: on ? '0 4px 10px rgba(181,141,245,0.3)' : 'none' }}>{f}</button>
-                  )
-                })}
-              </div>
-              {/* Recipe list */}
-              {filtered.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '28px 0', color: C.faint, fontSize: 13 }}>No recipes match "{search || filter}"</div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {filtered.map(r => (
-                    <div key={r.id}
-                      onClick={() => { onAdd({ id: `cm_${Date.now()}`, name: r.title, type: r.type, cal: r.cal, time: r.time, rawMeal: r.rawMeal }); onClose() }}
-                      style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '11px 14px', borderRadius: 14, border: `1px solid ${C.cardBdr}`, cursor: 'pointer', background: C.white, transition: 'all .15s' }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = C.accent; (e.currentTarget as HTMLElement).style.background = '#FAF5FF'; (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)' }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = C.cardBdr; (e.currentTarget as HTMLElement).style.background = C.white; (e.currentTarget as HTMLElement).style.transform = '' }}>
-                      <MealImage name={r.title} type={r.type} size={42} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: 13.5, fontWeight: 700, color: C.txt, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.title}</p>
-                        <p style={{ fontSize: 11, color: C.faint, marginTop: 2 }}>
-                          <span style={{ fontWeight: 700, color: MCOL[r.type] || C.purple }}>{r.type}</span>
-                          {r.cal > 0 ? ` · ${r.cal} kcal` : ''}{r.time > 0 ? ` · ${r.time} min` : ''}
-                        </p>
-                      </div>
-                      <div style={{ width: 28, height: 28, borderRadius: 999, background: 'rgba(198,160,246,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <Plus size={14} style={{ color: C.accentDark }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ─── Meal Planner ─────────────────────────────────────────────────────────────
-interface MealPlannerProps { plans: Plan[]; savedRecipes: Recipe[] }
+interface MealPlannerProps { plans: Plan[] }
 
-function MealPlanner({ plans, selectedPlanId, savedRecipes }: MealPlannerProps & { selectedPlanId: string | null }) {
+function MealPlanner({ plans, selectedPlanId }: MealPlannerProps & { selectedPlanId: string | null }) {
   const navigate = useNavigate()
   const selectedPlan = plans.find(p => p.id === selectedPlanId) || plans[0] || null
   const startDate = selectedPlan?.date ? new Date(selectedPlan.date) : new Date()
@@ -838,7 +741,6 @@ function MealPlanner({ plans, selectedPlanId, savedRecipes }: MealPlannerProps &
   const WEEK = Array.from({ length: 7 }, (_, i) => DAY_NAMES[(startDow + i) % 7])
   const currentDates = getDates(startDate)
   const [day, setDay] = useState(todayIdx)
-  const [showAddModal, setShowAddModal] = useState(false)
   const [extraMeals, setExtraMeals] = useState<CustomMeal[]>([])
   const planner = buildPlannerFromPlans(plans, selectedPlanId)
   const planMeals = planner[day] || []
@@ -859,14 +761,6 @@ function MealPlanner({ plans, selectedPlanId, savedRecipes }: MealPlannerProps &
   const r = 52, cx = 70, cy = 70, circ = 2 * Math.PI * r
   const dash = circ
 
-  const handleAddMeal = (meal: CustomMeal) => {
-    const planId = selectedPlan?.id || 'none'
-    const updated = [...extraMeals, meal]
-    persistCustomMeals(planId, day, updated)
-    setExtraMeals(updated)
-  }
-
-  const dayLabel = `${WEEK[day]}, ${currentDates[day]}`
 
   return (
     <div>
@@ -897,18 +791,10 @@ function MealPlanner({ plans, selectedPlanId, savedRecipes }: MealPlannerProps &
       </div>
       <div className="dash-planner-grid">
         <div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, gap: 10, flexWrap: "wrap" }}>
-            <p className="dash-planner-date-header" style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <div style={{ marginBottom: 12 }}>
+            <p className="dash-planner-date-header" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {WEEK[day]}, {new Date().toLocaleDateString('en-US', { month: 'short' })} {currentDates[day]}{day === todayIdx ? " · Today" : ""}
             </p>
-            <button onClick={() => setShowAddModal(true)}
-              className="dash-add-meal-btn"
-              style={{ flexShrink: 0 }}
-              onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)"}
-              onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = ""}
-            >
-              <Plus size={12} /> Add Meal
-            </button>
           </div>
           {allMeals.length > 0 ? allMeals.map((m, i) => {
             const isExtra = i >= planMeals.length
@@ -992,14 +878,7 @@ function MealPlanner({ plans, selectedPlanId, savedRecipes }: MealPlannerProps &
         </div>
       </div>
 
-      {showAddModal && (
-        <AddMealModal
-          dayLabel={dayLabel}
-          savedRecipes={savedRecipes}
-          onAdd={handleAddMeal}
-          onClose={() => setShowAddModal(false)}
-        />
-      )}
+
     </div>
   )
 }
@@ -2032,14 +1911,6 @@ export default function EdibleDashboard() {
                     <MealPlanner
                       plans={plans}
                       selectedPlanId={selectedPlanId}
-                      savedRecipes={savedRecipes.map(sr => ({
-                        id: sr.id,
-                        title: sr.recipe_title,
-                        type: sr.meal_type,
-                        time: sr.recipe_data?.totalTime || 0,
-                        cal: sr.recipe_data?.nutrition?.calories || 0,
-                        rawMeal: sr.recipe_data
-                      }))}
                     />
                   )}
                   {view === "plans" && (
