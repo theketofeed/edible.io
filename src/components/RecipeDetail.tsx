@@ -552,7 +552,7 @@ Made with Edible`
 
             {/* Back Button */}
             <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-lg border-b border-gray-100/60 shadow-[0_4px_24px_rgba(0,0,0,0.02)] transition-all">
-                <div className="w-full max-w-xs sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto px-1.5 sm:px-6 py-3.5 flex items-center justify-between gap-2 sm:gap-4">
+                <div className="w-full max-w-xs sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto px-3 sm:px-6 py-3.5 flex items-center justify-between gap-2 sm:gap-4">
                     <button
                         onClick={onBack}
                         aria-label="Back to meal plan"
@@ -654,7 +654,7 @@ Made with Edible`
                 </div>
             </div>
 
-            <div id="recipe-content" className="w-full max-w-xs sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto px-1.5 sm:px-6 py-4 sm:py-6 md:py-8">
+            <div id="recipe-content" className="w-full max-w-xs sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto px-3 sm:px-6 py-4 sm:py-6 md:py-8">
                 {/* Hero Section */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}

@@ -1831,7 +1831,16 @@ export default function EdibleDashboard() {
             justify-content: space-around; padding: 10px 8px 20px 8px;
             box-shadow: 0 -8px 30px rgba(0,0,0,0.03);
           }
-          .dashboard-main { padding: 14px 14px 88px 14px !important; }
+          /* On mobile: allow natural page scroll instead of viewport-clipped layout */
+          .dashboard-root { height: auto !important; min-height: 100dvh !important; overflow: visible !important; }
+          .dashboard-col { height: auto !important; overflow: visible !important; }
+          .dashboard-main { 
+            padding: 14px 12px 100px 12px !important;
+            overflow-y: visible !important;
+            overflow-x: hidden !important;
+            flex: none !important;
+            min-height: 0 !important;
+          }
           .dash-header-search { display: none; }
           .dash-stats-grid { grid-template-columns: repeat(3,1fr); gap: 8px; }
           .dash-two-col { grid-template-columns: 1fr !important; }
@@ -1905,12 +1914,12 @@ export default function EdibleDashboard() {
           .dash-stat-label { font-size: 9px !important; }
         }
       `}</style>
-      <div style={{
+      <div className="dashboard-root" style={{
         display: "flex", height: "100vh", overflow: "hidden",
         fontFamily: "'Plus Jakarta Sans',sans-serif", background: C.bg
       }}>
         <Sidebar active={view} onNav={go} userData={userData} />
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div className="dashboard-col" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
           <header className="dash-header" style={{
             position: "relative", zIndex: 50,
             height: 56, background: "rgba(245,243,239,0.92)", backdropFilter: "blur(10px)",
