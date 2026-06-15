@@ -1816,7 +1816,7 @@ export default function EdibleDashboard() {
         /* Mobile layout overrides */
         .desktop-sidebar { display: flex; }
         .mobile-bottom-nav { display: none; }
-        .dashboard-main { padding: 16px 28px 32px 28px; flex: 1; overflow-y: auto; }
+        .dashboard-main { padding: 16px 28px 32px 28px; flex: 1; overflow-y: auto; overflow-x: hidden; }
         .dash-header-search { flex: 1; max-width: 320px; min-width: 0; }
         .dash-stats-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
         .dash-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
