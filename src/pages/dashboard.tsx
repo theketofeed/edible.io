@@ -830,7 +830,9 @@ function MealPlanner({ plans, selectedPlanId, savedRecipes }: MealPlannerProps &
   const todayIdx = getToday(startDate)
   const endDate = new Date(startDate)
   endDate.setDate(startDate.getDate() + 6)
-  const weekLabel = `${startDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}–${endDate.toLocaleDateString('en-US', { day: 'numeric' })}, ${endDate.getFullYear()}`
+  const weekLabel = startDate.getMonth() === endDate.getMonth()
+    ? `${startDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}–${endDate.toLocaleDateString('en-US', { day: 'numeric' })}, ${endDate.getFullYear()}`
+    : `${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${endDate.getFullYear()}`
   const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
   const startDow = startDate.getDay()
   const WEEK = Array.from({ length: 7 }, (_, i) => DAY_NAMES[(startDow + i) % 7])
@@ -895,12 +897,13 @@ function MealPlanner({ plans, selectedPlanId, savedRecipes }: MealPlannerProps &
       </div>
       <div className="dash-planner-grid">
         <div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <p className="dash-planner-date-header">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, gap: 10, flexWrap: "wrap" }}>
+            <p className="dash-planner-date-header" style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {WEEK[day]}, {new Date().toLocaleDateString('en-US', { month: 'short' })} {currentDates[day]}{day === todayIdx ? " · Today" : ""}
             </p>
             <button onClick={() => setShowAddModal(true)}
               className="dash-add-meal-btn"
+              style={{ flexShrink: 0 }}
               onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)"}
               onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = ""}
             >
