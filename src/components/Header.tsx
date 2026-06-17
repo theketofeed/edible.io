@@ -1,5 +1,5 @@
 import { memo, useCallback, useState } from 'react'
-import { House, Sparkles, CreditCard, MessageCircleQuestion, ArrowUpRight, Menu, X } from 'lucide-react'
+import { House, Sparkles, CreditCard, MessageCircleQuestion, Menu, X } from 'lucide-react'
 import logo from '../assets/favicon.png'
 import { useAuth } from '../context/AuthContext'
 import UserMenu from './Usermenu'
@@ -63,20 +63,12 @@ const Header = memo(function Header({ onAuthClick, onOpenProfile }: HeaderProps)
 						{user ? (
 							<UserMenu onOpenProfile={onOpenProfile} />
 						) : (
-							<>
-								<button
-									onClick={onAuthClick}
-									className="text-[14px] font-semibold text-gray-600 hover:text-gray-900 transition-colors px-1 py-1"
-								>
-									Sign In
-								</button>
-								<button
-									onClick={scrollToUpload}
-									className="hidden sm:flex items-center gap-1.5 bg-[#C6A0F6] text-gray-900 font-bold text-[13px] px-4 py-2 rounded-full shadow-[0_4px_14px_rgba(198,160,246,0.4)] hover:bg-[#b58df5] transition-all whitespace-nowrap"
-								>
-									Get Started <ArrowUpRight className="w-3.5 h-3.5" />
-								</button>
-							</>
+							<button
+								onClick={onAuthClick}
+								className="text-[14px] font-semibold text-gray-600 hover:text-gray-900 transition-colors px-1 py-1"
+							>
+								Sign In
+							</button>
 						)}
 						
 						{/* Mobile Hamburger */}
@@ -93,7 +85,7 @@ const Header = memo(function Header({ onAuthClick, onOpenProfile }: HeaderProps)
 
 			{/* Mobile Menu Dropdown */}
 			{mobileMenuOpen && (
-				<div className="md:hidden fixed top-20 left-4 right-4 z-40 bg-white rounded-2xl shadow-lg border border-gray-100 p-4 animate-fadeIn">
+				<div className="md:hidden fixed top-24 left-4 right-4 z-40 bg-white rounded-2xl shadow-lg border border-gray-100 p-4 animate-fadeIn">
 					<div className="flex flex-col gap-2">
 						{navItems.map((item) => (
 							<a
@@ -106,14 +98,7 @@ const Header = memo(function Header({ onAuthClick, onOpenProfile }: HeaderProps)
 								{item.name}
 							</a>
 						))}
-						{!user && (
-							<button
-								onClick={() => { setMobileMenuOpen(false); scrollToUpload(); }}
-								className="flex items-center justify-center gap-2 mt-2 bg-[#C6A0F6] text-gray-900 font-bold text-[15px] px-4 py-3 rounded-xl shadow-[0_4px_14px_rgba(198,160,246,0.4)]"
-							>
-								Get Started <ArrowUpRight className="w-4 h-4" />
-							</button>
-						)}
+	
 					</div>
 				</div>
 			)}

@@ -1710,14 +1710,16 @@ export default function EdibleDashboard() {
             justify-content: space-around; padding: 10px 8px 20px 8px;
             box-shadow: 0 -8px 30px rgba(0,0,0,0.03);
           }
-          /* On mobile: allow natural page scroll instead of viewport-clipped layout */
-          .dashboard-root { height: auto !important; min-height: 100dvh !important; overflow: visible !important; }
-          .dashboard-col { height: auto !important; overflow: visible !important; }
+          /* On mobile: allow natural vertical scroll, but stay clipped horizontally */
+          .dashboard-root { height: auto !important; min-height: 100dvh !important; overflow-x: hidden !important; overflow-y: visible !important; width: 100% !important; }
+          .dashboard-col { height: auto !important; overflow-x: hidden !important; overflow-y: visible !important; min-width: 0 !important; width: 100% !important; }
           .dashboard-main { 
             padding: 14px 12px 100px 12px !important;
             overflow-y: visible !important;
             overflow-x: hidden !important;
-            flex: none !important;
+            flex: 1 1 auto !important;
+            min-width: 0 !important;
+            width: 100% !important;
             min-height: 0 !important;
           }
           .dash-header-search { display: none; }

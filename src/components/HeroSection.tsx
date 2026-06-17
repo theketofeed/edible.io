@@ -40,7 +40,7 @@ const HeroSection = memo(function HeroSection() {
 
 				{/* Subcopy */}
 				<p className="text-[15px] sm:text-base md:text-lg text-gray-500 mb-8 sm:mb-10 max-w-2xl mx-auto font-medium leading-relaxed px-2 sm:px-0">
-					Upload a grocery receipt or list and get a personalized, diet‑friendly plan that uses only what you bought.
+					Upload a grocery receipt or paste your grocery list and get a personalized, diet‑friendly plan that uses only what you bought.
 				</p>
 
 				{/* CTA */}

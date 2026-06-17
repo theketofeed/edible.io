@@ -371,9 +371,16 @@ function MainContent() {
 													</div>
 													<div className="border-t pt-6">
 														<div className="mb-6">
-															<label className="text-sm font-semibold text-gray-900 block mb-2">Duration</label>
+															<div className="mb-4">
+																<h2 className="text-lg md:text-2xl font-bold text-gray-900 mb-1.5">
+																	Select your plan duration
+																</h2>
+																<p className="text-sm text-gray-500 font-medium">
+																	Choose how long you want your meal plan to last
+																</p>
+															</div>
 															<select
-																className="border-2 border-gray-200 rounded-lg px-3 py-2 text-sm font-medium focus:outline-none focus:border-purple-500"
+																className="w-48 px-3.5 py-2.5 rounded-xl border-2 border-gray-200 text-sm font-semibold text-gray-900 bg-gray-50/50 hover:bg-gray-50 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200/50 transition-all cursor-pointer"
 																value={planDaysSelection}
 																onChange={(e) => setPlanDaysSelection(e.target.value === 'auto' ? 'auto' : Number(e.target.value))}
 															>

@@ -100,7 +100,7 @@ const DietSelector = memo(function DietSelector({ value, onChange, disabled }: P
 			{/* Section Header */}
 			<div className="mb-5 md:mb-6">
 				<h2 className="text-lg md:text-2xl font-bold text-gray-900 mb-1.5 md:mb-2">
-					Dietary preference
+					Select your preferred diet
 				</h2>
 				<p className="text-sm text-gray-500 font-medium">
 					We'll create meals that match your lifestyle

@@ -72,43 +72,37 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 		setOcrConfidence(undefined)
 		setErrorMessage('')
 
-		// Simulate upload progress - slower for realistic feel
 		const progressInterval = setInterval(() => {
 			setUploadProgress(prev => {
 				if (prev >= 90) {
 					clearInterval(progressInterval)
 					return 90
 				}
-				return prev + 2 // Slower increment (2% per 100ms = ~4.5s to 90%)
+				return prev + 2
 			})
 		}, 100)
 
 		try {
 			console.log('[UploadArea] Processing file with OCR.space...')
 
-			// Start OCR request
 			const ocrPromise = runOcrSpace(file)
 
-			// Wait for at least 2 seconds of "uploading" (progress bar filling)
 			await new Promise(resolve => setTimeout(resolve, 2000))
 
 			setUploadState('processing')
 			setUploadProgress(100)
 			clearInterval(progressInterval)
 
-			// Wait for at least 1.5 seconds of "processing" (analyzing animation)
 			await new Promise(resolve => setTimeout(resolve, 1500))
 
 			const { items, rawText, confidence } = await ocrPromise
 
 			console.log('[UploadArea] OCR completed. Items found:', items.length)
 
-			// Validate if document is a receipt or shopping list
 			const validation = validateReceiptOrList(rawText)
 			console.log('[UploadArea] Document validation:', validation)
 
 			if (!validation.isValid) {
-				// Document is not a valid receipt or shopping list
 				setDetectedCount(0)
 				setUploadState('error')
 				setErrorMessage(validation.reason || 'This doesn\'t appear to be a valid grocery receipt or shopping list. Please try again.')
@@ -132,8 +126,7 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 		} catch (e) {
 			console.error('[UploadArea] OCR error:', e)
 			const errMsg = e instanceof Error ? e.message : 'Something went wrong while reading your receipt.'
-			
-			// Make OCR errors more user-friendly
+
 			let friendlyMessage = errMsg
 			if (errMsg.includes('E500') || errMsg.includes('Resource Exhaustion')) {
 				friendlyMessage = 'The OCR service encountered an issue. Make sure you\'re uploading a clear receipt or list with visible text, not a blank image.'
@@ -142,7 +135,7 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 			} else if (errMsg.includes('No image')) {
 				friendlyMessage = 'No text could be detected in this image. Make sure it\'s a receipt or shopping list with clear, readable text.'
 			}
-			
+
 			setErrorMessage(friendlyMessage)
 			setUploadState('error')
 			onError(friendlyMessage)
@@ -215,208 +208,11 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 
 	return (
 		<div className="grid gap-5 sm:gap-6">
-			<div
-				onDragOver={(e) => {
-					e.preventDefault()
-					if (!disabled && uploadState === 'idle') setUploadState('dragOver')
-				}}
-				onDragLeave={() => {
-					if (uploadState === 'dragOver') setUploadState('idle')
-				}}
-				onDrop={onDrop}
-				onMouseEnter={() => {
-					if (!disabled && uploadState === 'idle') setUploadState('hover')
-				}}
-				onMouseLeave={() => {
-					if (uploadState === 'hover') setUploadState('idle')
-				}}
-				className={getDropzoneClass()}
-			>
-				{/* Idle/Hover/DragOver State */}
-				{(uploadState === 'idle' || uploadState === 'hover' || uploadState === 'dragOver') && !selectedFile && (
-					<div className="flex flex-col items-center gap-4 py-4 sm:py-6">
-						<div className="relative">
-							<FileText className="w-12 h-12 sm:w-16 sm:h-16 text-lavender" strokeWidth={1.5} />
-							<div className="absolute -bottom-1 -right-1 bg-lavender rounded-full p-1 sm:p-1.5">
-								<Upload className="w-3 h-3 sm:w-4 sm:h-4 text-white" strokeWidth={2.5} />
-							</div>
-						</div>
-						<div className="text-center space-y-2 px-2">
-							<h3 className="text-base sm:text-lg font-semibold text-black">
-								{uploadState === 'dragOver' ? 'Drop here to upload' : 'Upload your grocery receipt or shopping list'}
-							</h3>
-							<p className="text-xs sm:text-sm text-black/60">
-								We support receipts from major stores • JPG, PNG, PDF
-							</p>
-						</div>
-					<div className="flex flex-col sm:flex-row gap-3 w-full px-2 sm:px-0 sm:justify-center">
-						<button
-							type="button"
-							onClick={() => inputRef.current?.click()}
-							className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-lavender text-black font-semibold shadow-lg shadow-lavender/40 hover:shadow-lavender/50 hover:scale-105 transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
-							disabled={disabled}
-						>
-							<FileUp className="w-4 h-4" strokeWidth={2} />
-							Choose File
-						</button>
-						<button
-							type="button"
-							onClick={() => setShowCamera(true)}
-							className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-white border-2 border-lavender/40 text-black font-semibold hover:bg-lavender/5 hover:border-lavender/60 transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
-							disabled={disabled}
-						>
-							<Camera className="w-4 h-4" strokeWidth={2} />
-							Take Photo
-						</button>
-					</div>
-						<p className="text-xs text-black/50 flex items-center gap-1">
-							💡 Tip: Upload a clear photo for best results
-						</p>
-					</div>
-				)}
-
-				{/* Uploading State */}
-				{uploadState === 'uploading' && (
-					<div className="flex flex-col items-center gap-4 py-6 animate-fadeInScale">
-						<Loader2 className="w-12 h-12 text-lavender animate-spin" />
-						<div className="w-full max-w-xs space-y-2">
-							<div className="flex items-center justify-between text-sm">
-								<span className="text-black/70 font-medium">{selectedFile?.name}</span>
-								<span className="text-lavender font-semibold">{uploadProgress}%</span>
-							</div>
-							<div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-								<div
-									className="h-full bg-gradient-to-r from-lavender to-purple-400 transition-all duration-300 animate-progressPulse"
-									style={{ width: `${uploadProgress}%` }}
-								/>
-							</div>
-						</div>
-						<p className="text-sm text-black/60">Uploading...</p>
-					</div>
-				)}
-
-				{/* Processing State */}
-				{uploadState === 'processing' && (
-					<div className="flex flex-col items-center gap-4 py-6 animate-fadeInScale">
-						<Loader2 className="w-12 h-12 text-lavender animate-spin" />
-						<p className="text-sm text-black/70 font-medium">{manualText.trim() ? 'Edible is analyzing your list...' : 'Edible is analyzing your receipt...'}</p>
-					</div>
-				)}
-
-				{/* Success State */}
-				{uploadState === 'success' && selectedFile && (
-					<div className="space-y-4 animate-slideUp">
-						<div className="flex items-start gap-3 p-4 bg-success border border-success rounded-lg">
-							<CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
-							<div className="flex-1 min-w-0">
-								<p className="text-sm font-semibold text-success mb-1">Receipt uploaded successfully</p>
-								<div className="flex items-center gap-2 text-sm text-black/70">
-									{getFileIcon(selectedFile)}
-									<span className="font-medium truncate">{selectedFile.name}</span>
-									<span className="text-black/50">•</span>
-									<span className="text-black/50">{formatFileSize(selectedFile.size)}</span>
-								</div>
-								{typeof ocrConfidence === 'number' && (
-									<p className="text-xs text-black/50 mt-1">
-										OCR confidence: {Math.round(ocrConfidence)}%
-									</p>
-								)}
-							</div>
-							<button
-								type="button"
-								className="text-black/40 hover:text-black/70 transition-colors"
-								onClick={clearFile}
-								aria-label="Remove file"
-							>
-								<X className="w-4 h-4" />
-							</button>
-						</div>
-
-						{/* Image Preview */}
-						{filePreview && (
-							<div className="flex justify-center">
-								<img
-									src={filePreview}
-									alt="Receipt preview"
-									className="rounded-2xl border-2 border-lavender/20 max-h-48 object-contain shadow-xl shadow-lavender/20"
-								/>
-							</div>
-						)}
-
-						<button
-							type="button"
-							onClick={() => inputRef.current?.click()}
-							className="w-full px-4 py-3 rounded-full text-lavender hover:text-purple-600 font-semibold transition-all duration-200 hover:bg-lavender/5 active:scale-95"
-						>
-							Replace receipt
-						</button>
-					</div>
-				)}
-
-				{/* Error State */}
-				{uploadState === 'error' && selectedFile && (
-					<div className="space-y-4 animate-slideUp">
-						<div className="flex items-start gap-3 p-4 bg-error border border-error rounded-lg">
-							<AlertCircle className="w-5 h-5 text-error flex-shrink-0 mt-0.5" />
-							<div className="flex-1">
-								<p className="text-sm font-semibold text-error mb-1">Upload failed</p>
-								<p className="text-sm text-black/70">{errorMessage}</p>
-								<div className="flex items-center gap-2 text-xs text-black/50 mt-2">
-									{getFileIcon(selectedFile)}
-									<span className="truncate">{selectedFile.name}</span>
-								</div>
-							</div>
-							<button
-								type="button"
-								className="text-black/40 hover:text-black/70 transition-colors"
-								onClick={clearFile}
-								aria-label="Remove file"
-							>
-								<X className="w-4 h-4" />
-							</button>
-						</div>
-						<div className="flex gap-3">
-							<button
-								type="button"
-								onClick={retryUpload}
-								className="flex-1 px-4 py-3 rounded-full bg-lavender text-black font-semibold shadow-lg shadow-lavender/40 hover:shadow-lavender/50 hover:scale-105 transition-all duration-200 active:scale-95"
-							>
-								Retry Upload
-							</button>
-							<button
-								type="button"
-								onClick={() => inputRef.current?.click()}
-								className="flex-1 px-4 py-3 rounded-full border-2 border-lavender/40 text-black font-semibold hover:bg-lavender/5 hover:border-lavender/60 transition-all duration-200 active:scale-95"
-							>
-								Choose Different
-							</button>
-						</div>
-					</div>
-				)}
-
-				<input
-					ref={inputRef}
-					type="file"
-					accept={accept}
-					onChange={onPick}
-					className="hidden"
-					disabled={disabled}
-				/>
-			</div>
-
-			{/* Camera Capture Modal */}
-			{showCamera && (
-				<CameraCapture
-					onCapture={handleCameraCapture}
-					onClose={() => setShowCamera(false)}
-				/>
-			)}
-
-			{/* Manual Text Input Section */}
-			<div className="grid gap-3 pt-4 sm:pt-6 border-t border-gray-200/50">
+			{/* Manual Text Input Section — now primary, shown first */}
+			<div className="grid gap-3">
 				<label className="text-sm font-semibold text-black/80 flex items-center gap-2">
 					<FileText className="w-4 h-4 text-lavender" strokeWidth={2} />
-					Or paste your grocery list:
+					Paste your grocery list:
 				</label>
 				<textarea
 					className="input rounded-xl border-2 border-gray-200/50 focus:border-lavender/50 focus:ring-0 min-h-[100px] sm:min-h-[120px] resize-none text-sm sm:text-base"
@@ -441,6 +237,203 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 					)}
 				</div>
 			</div>
+
+			{/* Receipt Upload Section — now secondary, shown below */}
+			<div className="grid gap-3 pt-4 sm:pt-6 border-t border-gray-200/50">
+				<label className="text-sm font-semibold text-black/80 flex items-center gap-2">
+					<Receipt className="w-4 h-4 text-lavender" strokeWidth={2} />
+					Or upload a receipt photo:
+				</label>
+				<div
+					onDragOver={(e) => {
+						e.preventDefault()
+						if (!disabled && uploadState === 'idle') setUploadState('dragOver')
+					}}
+					onDragLeave={() => {
+						if (uploadState === 'dragOver') setUploadState('idle')
+					}}
+					onDrop={onDrop}
+					onMouseEnter={() => {
+						if (!disabled && uploadState === 'idle') setUploadState('hover')
+					}}
+					onMouseLeave={() => {
+						if (uploadState === 'hover') setUploadState('idle')
+					}}
+					className={getDropzoneClass()}
+				>
+					{(uploadState === 'idle' || uploadState === 'hover' || uploadState === 'dragOver') && !selectedFile && (
+						<div className="flex flex-col items-center gap-4 py-4 sm:py-6">
+							<div className="relative">
+								<FileText className="w-12 h-12 sm:w-16 sm:h-16 text-lavender" strokeWidth={1.5} />
+								<div className="absolute -bottom-1 -right-1 bg-lavender rounded-full p-1 sm:p-1.5">
+									<Upload className="w-3 h-3 sm:w-4 sm:h-4 text-white" strokeWidth={2.5} />
+								</div>
+							</div>
+							<div className="text-center space-y-2 px-2">
+								<h3 className="text-base sm:text-lg font-semibold text-black">
+									{uploadState === 'dragOver' ? 'Drop here to upload' : 'Upload your grocery receipt or shopping list'}
+								</h3>
+								<p className="text-xs sm:text-sm text-black/60">
+									We support receipts from major stores • JPG, PNG, PDF
+								</p>
+							</div>
+							<div className="flex flex-col sm:flex-row gap-3 w-full px-2 sm:px-0 sm:justify-center">
+								<button
+									type="button"
+									onClick={() => inputRef.current?.click()}
+									className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-lavender text-black font-semibold shadow-lg shadow-lavender/40 hover:shadow-lavender/50 hover:scale-105 transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+									disabled={disabled}
+								>
+									<FileUp className="w-4 h-4" strokeWidth={2} />
+									Choose File
+								</button>
+								<button
+									type="button"
+									onClick={() => setShowCamera(true)}
+									className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-white border-2 border-lavender/40 text-black font-semibold hover:bg-lavender/5 hover:border-lavender/60 transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+									disabled={disabled}
+								>
+									<Camera className="w-4 h-4" strokeWidth={2} />
+									Take Photo
+								</button>
+							</div>
+							<p className="text-xs text-black/50 flex items-center gap-1">
+								💡 Tip: Upload a clear photo for best results
+							</p>
+						</div>
+					)}
+
+					{uploadState === 'uploading' && (
+						<div className="flex flex-col items-center gap-4 py-6 animate-fadeInScale">
+							<Loader2 className="w-12 h-12 text-lavender animate-spin" />
+							<div className="w-full max-w-xs space-y-2">
+								<div className="flex items-center justify-between text-sm">
+									<span className="text-black/70 font-medium">{selectedFile?.name}</span>
+									<span className="text-lavender font-semibold">{uploadProgress}%</span>
+								</div>
+								<div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+									<div
+										className="h-full bg-gradient-to-r from-lavender to-purple-400 transition-all duration-300 animate-progressPulse"
+										style={{ width: `${uploadProgress}%` }}
+									/>
+								</div>
+							</div>
+							<p className="text-sm text-black/60">Uploading...</p>
+						</div>
+					)}
+
+					{uploadState === 'processing' && (
+						<div className="flex flex-col items-center gap-4 py-6 animate-fadeInScale">
+							<Loader2 className="w-12 h-12 text-lavender animate-spin" />
+							<p className="text-sm text-black/70 font-medium">{manualText.trim() ? 'Edible is analyzing your list...' : 'Edible is analyzing your receipt...'}</p>
+						</div>
+					)}
+
+					{uploadState === 'success' && selectedFile && (
+						<div className="space-y-4 animate-slideUp">
+							<div className="flex items-start gap-3 p-4 bg-success border border-success rounded-lg">
+								<CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
+								<div className="flex-1 min-w-0">
+									<p className="text-sm font-semibold text-success mb-1">Receipt uploaded successfully</p>
+									<div className="flex items-center gap-2 text-sm text-black/70">
+										{getFileIcon(selectedFile)}
+										<span className="font-medium truncate">{selectedFile.name}</span>
+										<span className="text-black/50">•</span>
+										<span className="text-black/50">{formatFileSize(selectedFile.size)}</span>
+									</div>
+									{typeof ocrConfidence === 'number' && (
+										<p className="text-xs text-black/50 mt-1">
+											OCR confidence: {Math.round(ocrConfidence)}%
+										</p>
+									)}
+								</div>
+								<button
+									type="button"
+									className="text-black/40 hover:text-black/70 transition-colors"
+									onClick={clearFile}
+									aria-label="Remove file"
+								>
+									<X className="w-4 h-4" />
+								</button>
+							</div>
+
+							{filePreview && (
+								<div className="flex justify-center">
+									<img
+										src={filePreview}
+										alt="Receipt preview"
+										className="rounded-2xl border-2 border-lavender/20 max-h-48 object-contain shadow-xl shadow-lavender/20"
+									/>
+								</div>
+							)}
+
+							<button
+								type="button"
+								onClick={() => inputRef.current?.click()}
+								className="w-full px-4 py-3 rounded-full text-lavender hover:text-purple-600 font-semibold transition-all duration-200 hover:bg-lavender/5 active:scale-95"
+							>
+								Replace receipt
+							</button>
+						</div>
+					)}
+
+					{uploadState === 'error' && selectedFile && (
+						<div className="space-y-4 animate-slideUp">
+							<div className="flex items-start gap-3 p-4 bg-error border border-error rounded-lg">
+								<AlertCircle className="w-5 h-5 text-error flex-shrink-0 mt-0.5" />
+								<div className="flex-1">
+									<p className="text-sm font-semibold text-error mb-1">Upload failed</p>
+									<p className="text-sm text-black/70">{errorMessage}</p>
+									<div className="flex items-center gap-2 text-xs text-black/50 mt-2">
+										{getFileIcon(selectedFile)}
+										<span className="truncate">{selectedFile.name}</span>
+									</div>
+								</div>
+								<button
+									type="button"
+									className="text-black/40 hover:text-black/70 transition-colors"
+									onClick={clearFile}
+									aria-label="Remove file"
+								>
+									<X className="w-4 h-4" />
+								</button>
+							</div>
+							<div className="flex gap-3">
+								<button
+									type="button"
+									onClick={retryUpload}
+									className="flex-1 px-4 py-3 rounded-full bg-lavender text-black font-semibold shadow-lg shadow-lavender/40 hover:shadow-lavender/50 hover:scale-105 transition-all duration-200 active:scale-95"
+								>
+									Retry Upload
+								</button>
+								<button
+									type="button"
+									onClick={() => inputRef.current?.click()}
+									className="flex-1 px-4 py-3 rounded-full border-2 border-lavender/40 text-black font-semibold hover:bg-lavender/5 hover:border-lavender/60 transition-all duration-200 active:scale-95"
+								>
+									Choose Different
+								</button>
+							</div>
+						</div>
+					)}
+
+					<input
+						ref={inputRef}
+						type="file"
+						accept={accept}
+						onChange={onPick}
+						className="hidden"
+						disabled={disabled}
+					/>
+				</div>
+			</div>
+
+			{showCamera && (
+				<CameraCapture
+					onCapture={handleCameraCapture}
+					onClose={() => setShowCamera(false)}
+				/>
+			)}
 		</div>
 	)
 }
