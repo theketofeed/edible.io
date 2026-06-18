@@ -47,7 +47,11 @@ function MainContent() {
 	const [profileOpen, setProfileOpen] = useState(false)
 	const [pricingOpen, setPricingOpen] = useState(false)
 	const [pricingTrigger, setPricingTrigger] = useState<string>('')
-	const [pendingCheckout, setPendingCheckout] = useState<ProductType | null>(null)
+	const [pendingCheckout, setPendingCheckout] = useState<ProductType | null>(() => {
+		const saved = sessionStorage.getItem('pendingCheckout')
+		if (saved) { sessionStorage.removeItem('pendingCheckout'); return saved as ProductType }
+		return null
+	})
 
 	// Auto-close modal when login succeeds
 	useEffect(() => {
@@ -103,6 +107,7 @@ function MainContent() {
 	const handleRequireAuthForCheckout = useCallback((productType: ProductType) => {
 		console.log('[Checkout Debug] handleRequireAuthForCheckout called with:', productType)
 		setPendingCheckout(productType)
+		sessionStorage.setItem('pendingCheckout', productType)
 		setPricingOpen(false)
 		setAuthOpen(true)
 	}, [])
