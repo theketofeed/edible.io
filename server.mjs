@@ -634,47 +634,36 @@ app.post('/api/send-welcome', async (req, res) => {
       headers: {
         'X-Entity-Ref-ID': crypto.randomUUID(),
       },
-      html: `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
-  
-  <!-- Header -->
-  <div style="background: linear-gradient(135deg, #7c3aed, #a855f7); padding: 40px 32px; text-align: center; border-radius: 12px 12px 0 0;">
-    <div style="display: inline-flex; align-items: center; gap: 12px; justify-content: center;">
-      <img src="https://www.tryediblee.com/logo.png" alt="Edible logo" width="48" height="48" style="border-radius: 10px; display: block;" />
-      <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; line-height: 1;">Edible</h1>
-    </div>
-    <p style="color: #e9d5ff; margin: 10px 0 0; font-size: 15px;">AI-powered meal planning</p>
+      html: `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; background: #ffffff; padding: 40px 32px;">
+
+  <div style="border-top: 3px solid #C6A0F6; padding-top: 32px; margin-bottom: 32px;">
+    <p style="color: #1a1a1a; font-size: 20px; font-weight: 700; margin: 0;">Edible</p>
   </div>
 
-  <!-- Body -->
-  <div style="padding: 40px 32px; background: #fafafa;">
-    <h2 style="color: #1a1a1a; font-size: 22px; margin: 0 0 16px;">Welcome, ${name || 'there'}! 👋</h2>
-    <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 0 0 16px;">
-      You're all set on Edible. Just upload a photo of your grocery receipt and we'll turn it into a full personalized meal plan in seconds.
-    </p>
-    <p style="color: #555; font-size: 16px; line-height: 1.6; margin: 0 0 32px;">
-      You get <strong style="color: #7c3aed;">1 free meal plan</strong> to try it out — no credit card needed. Upgrade anytime for unlimited plans.
-    </p>
+  <h2 style="color: #1a1a1a; font-size: 22px; font-weight: 700; margin: 0 0 24px;">You're in, ${name ? name.split(' ')[0] : 'there'} 👋</h2>
 
-    <!-- CTA Button -->
-    <div style="text-align: center; margin: 0 0 32px;">
-      <a href="https://www.tryediblee.com" style="background: linear-gradient(135deg, #7c3aed, #a855f7); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-size: 16px; font-weight: 600; display: inline-block;">
-        Generate your first meal plan →
-      </a>
-    </div>
+  <p style="color: #444; font-size: 16px; line-height: 1.7; margin: 0 0 16px;">
+    I built Edible because meal planning was eating up too much of my week — deciding what to cook, checking what I had, making it all make sense. Now it takes seconds.
+  </p>
 
-    <!-- Divider -->
-    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 0 0 24px;" />
+  <p style="color: #444; font-size: 16px; line-height: 1.7; margin: 0 0 32px;">
+    Upload a grocery receipt or paste what's in your kitchen and Edible builds your week around it.
+  </p>
 
-    <p style="color: #999; font-size: 13px; line-height: 1.5; margin: 0;">
-      Questions? Just reply to this email — we're happy to help.<br/>
-      You're receiving this because you signed up at Edible.
-    </p>
+  <p style="color: #444; font-size: 16px; line-height: 1.7; margin: 0 0 24px;">You can try it out here 👇</p>
+
+  <div style="margin: 0 0 40px;">
+    <a href="https://www.tryediblee.com" style="background: #C6A0F6; color: #1a1a1a; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-size: 15px; font-weight: 700; display: inline-block;">
+      Generate your first meal plan →
+    </a>
   </div>
 
-  <!-- Footer -->
-  <div style="padding: 20px 32px; text-align: center; border-radius: 0 0 12px 12px; background: #f3f4f6;">
-    <p style="color: #9ca3af; font-size: 12px; margin: 0;">© 2026 Edible · All rights reserved</p>
-  </div>
+  <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 0 0 32px;" />
+
+  <p style="color: #444; font-size: 15px; line-height: 1.7; margin: 0 0 4px;">If you run into anything or just want to share how it went, reply to this email — I'm always around.</p>
+
+  <p style="color: #1a1a1a; font-size: 15px; font-weight: 600; margin: 16px 0 0;">Praise</p>
+  <p style="color: #888; font-size: 14px; margin: 2px 0 0;">Founder, Edible</p>
 
 </div>`
     })
