@@ -7,13 +7,13 @@ interface Step {
 }
 
 const STEPS: Step[] = [
-	{ number: 1, title: 'Upload Receipt', description: 'Snap a photo of your grocery receipt or paste your shopping list. Our AI extracts ingredients instantly' },
+	{ number: 1, title: 'Upload Your Groceries', description: 'Snap a photo of your receipt or paste your shopping list, Edible pulls out your ingredients instantly.' },
 	{ number: 2, title: 'Choose Your Diet', description: 'Select from 8 dietary preferences: Keto, Vegan, Paleo, and more. Customize to match your lifestyle' },
 	{ number: 3, title: 'Get Your Plan', description: 'Receive a personalized meal plan with step-by-step recipes using only what you bought. No food waste!' }
 ]
 
 const ReceiptIllustration = () => (
-	<svg viewBox="0 0 200 140" className="w-full h-28 sm:h-32" xmlns="http://www.w3.org/2000/svg">
+	<svg viewBox="0 0 200 140" className="w-full h-36 sm:h-40" xmlns="http://www.w3.org/2000/svg">
 		<path d="M16 34 L16 16 L34 16" stroke="#C6A0F6" strokeWidth="3" fill="none" strokeLinecap="round"/>
 		<path d="M166 16 L184 16 L184 34" stroke="#C6A0F6" strokeWidth="3" fill="none" strokeLinecap="round"/>
 		<path d="M16 106 L16 124 L34 124" stroke="#C6A0F6" strokeWidth="3" fill="none" strokeLinecap="round"/>
@@ -35,7 +35,7 @@ const ReceiptIllustration = () => (
 )
 
 const DietIllustration = () => (
-	<svg viewBox="0 0 200 140" className="w-full h-28 sm:h-32" xmlns="http://www.w3.org/2000/svg">
+	<svg viewBox="0 0 200 140" className="w-full h-36 sm:h-40" xmlns="http://www.w3.org/2000/svg">
 		<circle cx="100" cy="76" r="42" fill="white" stroke="#E5DEFA" strokeWidth="3"/>
 		<circle cx="100" cy="76" r="32" fill="#F5F3FF"/>
 		<ellipse cx="90" cy="72" rx="17" ry="11" fill="#D8B4FE"/>
@@ -58,7 +58,7 @@ const DietIllustration = () => (
 )
 
 const PlanIllustration = () => (
-	<svg viewBox="0 0 200 140" className="w-full h-28 sm:h-32" xmlns="http://www.w3.org/2000/svg">
+	<svg viewBox="0 0 200 140" className="w-full h-36 sm:h-40" xmlns="http://www.w3.org/2000/svg">
 		<rect x="56" y="14" width="92" height="100" rx="10" fill="#EDE9FE" transform="rotate(-4 102 64)"/>
 		<rect x="48" y="18" width="92" height="100" rx="10" fill="white" stroke="#E5DEFA" strokeWidth="2"/>
 		<rect x="48" y="18" width="92" height="18" rx="10" fill="#F5F3FF"/>
@@ -92,8 +92,8 @@ const HowItWorks = memo(function HowItWorks() {
 						<span className="text-[11px] sm:text-[12px] font-medium text-gray-900">How Edible works</span>
 					</div>
 					<h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-4 sm:mb-6">
-						Transform your groceries into meal plans in{' '}
-						<span className="text-[#C6A0F6]">3 simple steps</span>
+						From groceries to meal plans in{' '}
+						<span className="text-[#C6A0F6]">3 steps</span>
 					</h2>
 					<p className="text-sm sm:text-base md:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
 						No recipe hunting, no extra grocery trips — just tell us what's already in your kitchen and let Edible handle the rest.
@@ -110,7 +110,7 @@ const HowItWorks = memo(function HowItWorks() {
 								</div>
 								<div className="h-full bg-white rounded-2xl md:rounded-3xl border-2 border-[#C6A0F6]/30 shadow-[0_4px_20px_rgba(124,58,237,0.04)] overflow-hidden flex flex-col transition-all duration-500 hover:shadow-xl hover:shadow-purple-500/10 hover:border-[#C6A0F6] hover:-translate-y-1.5">
 									<div className="bg-gradient-to-b from-[#F5F3FF] to-[#EDE9FE]/40 px-5 pt-9 pb-8 flex items-center justify-center border-b-2 border-[#C6A0F6]/20">
-										<div className="w-full max-w-[180px] sm:max-w-[200px] flex items-center justify-center">
+										<div className="w-full max-w-[210px] sm:max-w-[240px] flex items-center justify-center">
 											<Illustration />
 										</div>
 									</div>
