@@ -49,7 +49,7 @@ const HeroSection = memo(function HeroSection() {
 					onClick={user ? () => navigate('/dashboard') : scrollToUpload}
 					className="h-12 sm:h-14 px-6 sm:px-10 rounded-full text-sm sm:text-base font-bold bg-[#C6A0F6] text-gray-900 shadow-[0_8px_24px_rgba(198,160,246,0.5)] hover:bg-[#b58df5] hover:-translate-y-1 transition-all duration-300 w-full sm:w-auto max-w-xs sm:max-w-none"
 				>
-					{user ? 'Go to My Dashboard' : 'Try Edible for Free'}
+					{user ? 'Go to My Dashboard' : 'Generate my meal plan'}
 				</button>
 			</div>
 
