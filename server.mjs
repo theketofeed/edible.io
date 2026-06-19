@@ -636,10 +636,6 @@ app.post('/api/send-welcome', async (req, res) => {
       },
       html: `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; background: #ffffff; padding: 40px 32px;">
 
-  <div style="border-top: 3px solid #C6A0F6; padding-top: 32px; margin-bottom: 32px;">
-    <p style="color: #1a1a1a; font-size: 20px; font-weight: 700; margin: 0;">Edible</p>
-  </div>
-
   <h2 style="color: #1a1a1a; font-size: 22px; font-weight: 700; margin: 0 0 24px;">You're in, ${name ? name.split(' ')[0] : 'there'} 👋</h2>
 
   <p style="color: #444; font-size: 16px; line-height: 1.7; margin: 0 0 16px;">
