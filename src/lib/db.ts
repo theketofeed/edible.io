@@ -17,6 +17,7 @@ export interface MealPlan {
   receipt_id?: string
   title: string
   plan_data: any
+  activated_at: string
   created_at: string
 }
 
@@ -80,10 +81,22 @@ export async function saveMealPlan(
       receipt_id: receiptId ?? null,
       title,
       plan_data: planData,
+      activated_at: new Date().toISOString(),
     })
     .select()
     .single()
 
+  if (error) throw error
+  return data as MealPlan
+}
+
+export async function updateMealPlan(id: string, updates: { plan_data?: any; title?: string; activated_at?: string }) {
+  const { data, error } = await supabase
+    .from('meal_plans')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single()
   if (error) throw error
   return data as MealPlan
 }

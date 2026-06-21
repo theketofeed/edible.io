@@ -11,7 +11,7 @@ import {
 } from "lucide-react"
 import logo from "../assets/favicon.png"
 import { useAuth } from "../context/AuthContext"
-import { getUserMealPlans, getProfile, deleteMealPlan, getUserSavedRecipes } from "../lib/db"
+import { getUserMealPlans, getProfile, deleteMealPlan, getUserSavedRecipes, updateMealPlan } from "../lib/db"
 import { fetchMealImage } from "../lib/mealImages"
 import type { MealPlanResult, Meal, SavedRecipe } from "../utils/types"
 import PlanBadge from "../components/PlanBadge"
@@ -51,7 +51,7 @@ const DIET: Record<DietKey, { icon: React.ElementType; col: string; bg: string }
 
 type MealSlot = { name: string; cal: number; rawMeal?: Meal }
 type PlanDay = { day: string; B: MealSlot; L: MealSlot; D: MealSlot }
-type Plan = { id: string; title: string; diet: DietKey; date: string; days: PlanDay[] }
+type Plan = { id: string; title: string; diet: DietKey; date: string; activatedAt: string; days: PlanDay[] }
 
 type Recipe = { id: string; title: string; type: string; time: number; cal: number; rawMeal?: Meal }
 type CustomMeal = { id: string; name: string; type: string; cal: number; time: number; rawMeal?: Meal }
@@ -202,10 +202,11 @@ const MCOL: Record<string, string> = { Breakfast: "#92400E", Lunch: "#065F46", D
 const MICON: Record<string, React.ElementType> = { Breakfast: Sunrise, Lunch: Sun, Dinner: Moon }
 
 
-function NotificationBell({ plans, onNav, onUpgrade }: { 
+function NotificationBell({ plans, onNav, onUpgrade, selectedPlanId }: { 
   plans: Plan[]
   onNav: (id: NavId) => void
   onUpgrade: (trigger: string) => void 
+  selectedPlanId: string | null
 }) {
   const [open, setOpen] = useState(false)
   const bellRef = useRef<HTMLDivElement>(null)
@@ -222,8 +223,8 @@ function NotificationBell({ plans, onNav, onUpgrade }: {
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [open])
 
-  const selectedPlan = plans[0] || null
-  const planStartDate = selectedPlan?.date ? new Date(selectedPlan.date) : null
+  const selectedPlan = plans.find(p => p.id === selectedPlanId) || plans[0] || null
+  const planStartDate = selectedPlan?.activatedAt ? new Date(selectedPlan.activatedAt) : null
 
   // Compute day index within current plan (0-6)
   const planDayIdx = planStartDate ? (() => {
@@ -297,7 +298,7 @@ function NotificationBell({ plans, onNav, onUpgrade }: {
 
   // 6. Today's calorie summary (only if they have a plan with today's meals)
   if (plans.length > 0 && planDayIdx >= 0 && planDayIdx <= 6) {
-    const planner = buildPlannerFromPlans(plans, plans[0]?.id)
+    const planner = buildPlannerFromPlans(plans, selectedPlan?.id)
     const todayMeals = planner[planDayIdx] || []
     const consumed = todayMeals.reduce((a, m) => a + m.cal, 0)
     if (consumed > 0) {
@@ -524,7 +525,7 @@ function Overview({ plans, onNav, userData, onSelectPlan, selectedPlanId }: Over
   const totalDays = plans.reduce((a, p) => a + p.days.length, 0)
   const totalMeals = totalDays * 3
   const selectedPlan = plans.find(p => p.id === selectedPlanId) || plans[0] || null
-  const planStartDate = selectedPlan?.date ? new Date(selectedPlan.date) : new Date()
+  const planStartDate = selectedPlan?.activatedAt ? new Date(selectedPlan.activatedAt) : new Date()
   const todayIdx = getToday(planStartDate)
   const planner = buildPlannerFromPlans(plans, selectedPlanId)
   const todayMeals = planner[todayIdx] || []
@@ -729,7 +730,7 @@ interface MealPlannerProps { plans: Plan[] }
 function MealPlanner({ plans, selectedPlanId }: MealPlannerProps & { selectedPlanId: string | null }) {
   const navigate = useNavigate()
   const selectedPlan = plans.find(p => p.id === selectedPlanId) || plans[0] || null
-  const startDate = selectedPlan?.date ? new Date(selectedPlan.date) : new Date()
+  const startDate = selectedPlan?.activatedAt ? new Date(selectedPlan.activatedAt) : new Date()
   const todayIdx = getToday(startDate)
   const endDate = new Date(startDate)
   endDate.setDate(startDate.getDate() + 6)
@@ -887,15 +888,17 @@ function MealPlanner({ plans, selectedPlanId }: MealPlannerProps & { selectedPla
 // ─── Saved Plans ──────────────────────────────────────────────────────────────
 interface SavedPlansProps { 
   plans: Plan[]; 
-  expandedPlanId: string | null; 
-  onExpandPlan: (id: string | null) => void;
+  activePlanId: string | null; 
+  onActivatePlan: (id: string) => void;
   onDeletePlan: (id: string) => void;
 }
 
-function SavedPlans({ plans, expandedPlanId, onExpandPlan, onDeletePlan }: SavedPlansProps) {
+function SavedPlans({ plans, activePlanId, onActivatePlan, onDeletePlan }: SavedPlansProps) {
   const navigate = useNavigate()
   const [filter, setFilter] = useState<DietKey>("All")
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [expandedPlanId, setExpandedPlanId] = useState<string | null>(null)
+  const [activatingId, setActivatingId] = useState<string | null>(null)
 
   const diets = ["All" as DietKey, ...Array.from(new Set(plans.map(p => p.diet)))]
   const visible = plans.filter(p => filter === "All" || p.diet === filter)
@@ -945,7 +948,7 @@ function SavedPlans({ plans, expandedPlanId, onExpandPlan, onDeletePlan }: Saved
                     <div>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
                         <p style={{ fontWeight: 700, color: C.txt, fontSize: 14 }}>{plan.title}</p>
-                        {plan.id === expandedPlanId && (
+                        {plan.id === activePlanId && (
                           <span style={{ fontSize: 9, fontWeight: 800, color: "white", background: C.accent, padding: "1px 6px", borderRadius: 4, textTransform: "uppercase" }}>Active</span>
                         )}
                       </div>
@@ -974,15 +977,23 @@ function SavedPlans({ plans, expandedPlanId, onExpandPlan, onDeletePlan }: Saved
                   ))}
                   {plan.days.length > 2 && <p style={{ fontSize: 11, color: C.faint, marginTop: 4 }}>+{plan.days.length - 2} more days</p>}
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
                   <div>
                     <p style={{ fontSize: 11.5, color: C.faint }}>{plan.days.length} days · {plan.days.length * 3} meals</p>
                     <p style={{ fontSize: 11, color: C.faint }}>{new Date(plan.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
                   </div>
-                  <button onClick={e => { e.stopPropagation(); onExpandPlan(expandedPlanId === plan.id ? null : plan.id) }}
-                    style={{ background: "transparent", border: "none", color: C.accent, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center" }}>
-                    {expandedPlanId === plan.id ? "Close" : "View Plan"} <ChevronRight size={14} style={{ transform: expandedPlanId === plan.id ? "rotate(90deg)" : "none", transition: "transform .15s" }} />
-                  </button>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    {plan.id !== activePlanId && (
+                      <button onClick={e => { e.stopPropagation(); setActivatingId(plan.id) }}
+                        style={{ background: "rgba(198,160,246,0.12)", border: `1px solid ${C.accent}`, color: C.accentDark, fontSize: 11.5, fontWeight: 700, cursor: "pointer", padding: "5px 10px", borderRadius: 8 }}>
+                        Use this plan
+                      </button>
+                    )}
+                    <button onClick={e => { e.stopPropagation(); setExpandedPlanId(expandedPlanId === plan.id ? null : plan.id) }}
+                      style={{ background: "transparent", border: "none", color: C.accent, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center" }}>
+                      {expandedPlanId === plan.id ? "Close" : "View Plan"} <ChevronRight size={14} style={{ transform: expandedPlanId === plan.id ? "rotate(90deg)" : "none", transition: "transform .15s" }} />
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -1072,6 +1083,33 @@ function SavedPlans({ plans, expandedPlanId, onExpandPlan, onDeletePlan }: Saved
                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = "0.9"}
                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = "1"}>
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activatingId && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, backdropFilter: "blur(4px)" }} onClick={() => setActivatingId(null)}>
+          <div style={{ background: C.white, borderRadius: 24, padding: 32, maxWidth: 400, width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.2)", margin: "0 16px" }} onClick={e => e.stopPropagation()}>
+            <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(198,160,246,0.15)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
+              <Sparkles size={22} style={{ color: C.accent }} />
+            </div>
+            <h3 style={{ fontSize: 22, fontWeight: 900, color: C.txt, marginBottom: 8 }}>Use this meal plan?</h3>
+            <p style={{ color: C.muted, fontSize: 14.5, marginBottom: 24, lineHeight: 1.5 }}>
+              This will become your active plan in Meal Planner, starting from today. Your current active plan will stay saved here.
+            </p>
+            <div style={{ display: "flex", gap: 12 }}>
+              <button onClick={() => setActivatingId(null)} style={{ flex: 1, padding: "14px 0", borderRadius: 14, border: `1px solid ${C.cardBdr}`, background: C.white, color: C.txt, fontWeight: 700, cursor: "pointer", transition: "background .15s" }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#F9FAFB"}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = C.white}>
+                Cancel
+              </button>
+              <button onClick={() => { onActivatePlan(activatingId); setActivatingId(null) }}
+                style={{ flex: 1, padding: "14px 0", borderRadius: 14, border: "none", background: C.accent, color: "white", fontWeight: 700, cursor: "pointer", transition: "opacity .15s" }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = "0.9"}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = "1"}>
+                Use This Plan
               </button>
             </div>
           </div>
@@ -1487,6 +1525,17 @@ export default function EdibleDashboard() {
     }
   }
 
+  const handleActivatePlan = async (id: string) => {
+    try {
+      const now = new Date().toISOString()
+      await updateMealPlan(id, { activated_at: now })
+      setPlans(prev => prev.map(p => p.id === id ? { ...p, activatedAt: now } : p))
+      setSelectedPlanId(id)
+    } catch (e) {
+      console.error('Failed to activate plan:', e)
+    }
+  }
+
   // Fetch user data from Supabase on mount
   useEffect(() => {
     const fetchUserData = async () => {
@@ -1550,6 +1599,7 @@ export default function EdibleDashboard() {
             title: mp.title,
             diet: (mp.plan_data?.diet || 'Balanced') as DietKey,
             date: mp.created_at || new Date().toISOString(),
+            activatedAt: mp.activated_at || mp.created_at || new Date().toISOString(),
             days,
           }
         })
@@ -1888,6 +1938,7 @@ export default function EdibleDashboard() {
                 plans={plans} 
                 onNav={go} 
                 onUpgrade={(trigger) => { setPricingTrigger(trigger); setPricingOpen(true) }}
+                selectedPlanId={selectedPlanId}
               />
               <div onClick={() => go("profile")} style={{ cursor: "pointer" }}>
                 <UserAvatar userData={userData} size={34} fontSize={14} />
@@ -1905,7 +1956,7 @@ export default function EdibleDashboard() {
                       plans={plans} 
                       onNav={go} 
                       userData={userData} 
-                      onSelectPlan={setSelectedPlanId} 
+                      onSelectPlan={handleActivatePlan} 
                       selectedPlanId={selectedPlanId} 
                     />
                   )}
@@ -1918,8 +1969,8 @@ export default function EdibleDashboard() {
                   {view === "plans" && (
                     <SavedPlans 
                       plans={plans} 
-                      expandedPlanId={selectedPlanId} 
-                      onExpandPlan={setSelectedPlanId} 
+                      activePlanId={selectedPlanId} 
+                      onActivatePlan={handleActivatePlan} 
                       onDeletePlan={handleDeletePlan}
                     />
                   )}
