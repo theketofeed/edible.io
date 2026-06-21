@@ -977,24 +977,23 @@ function SavedPlans({ plans, activePlanId, onActivatePlan, onDeletePlan }: Saved
                   ))}
                   {plan.days.length > 2 && <p style={{ fontSize: 11, color: C.faint, marginTop: 4 }}>+{plan.days.length - 2} more days</p>}
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                  <div>
-                    <p style={{ fontSize: 11.5, color: C.faint }}>{plan.days.length} days · {plan.days.length * 3} meals</p>
-                    <p style={{ fontSize: 11, color: C.faint }}>{new Date(plan.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    {plan.id !== activePlanId && (
-                      <button onClick={e => { e.stopPropagation(); setActivatingId(plan.id) }}
-                        style={{ background: "rgba(198,160,246,0.12)", border: `1px solid ${C.accent}`, color: C.accentDark, fontSize: 11.5, fontWeight: 700, cursor: "pointer", padding: "5px 10px", borderRadius: 8 }}>
-                        Use this plan
-                      </button>
-                    )}
-                    <button onClick={e => { e.stopPropagation(); setExpandedPlanId(expandedPlanId === plan.id ? null : plan.id) }}
-                      style={{ background: "transparent", border: "none", color: C.accent, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center" }}>
-                      {expandedPlanId === plan.id ? "Close" : "View Plan"} <ChevronRight size={14} style={{ transform: expandedPlanId === plan.id ? "rotate(90deg)" : "none", transition: "transform .15s" }} />
-                    </button>
-                  </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                  <p style={{ fontSize: 11.5, color: C.faint }}>{plan.days.length} days · {plan.days.length * 3} meals · {new Date(plan.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
+                  <button onClick={e => { e.stopPropagation(); setExpandedPlanId(expandedPlanId === plan.id ? null : plan.id) }}
+                    style={{ background: "transparent", border: "none", color: C.accent, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", flexShrink: 0 }}>
+                    {expandedPlanId === plan.id ? "Close" : "View Plan"} <ChevronRight size={14} style={{ transform: expandedPlanId === plan.id ? "rotate(90deg)" : "none", transition: "transform .15s" }} />
+                  </button>
                 </div>
+                {plan.id === activePlanId ? (
+                  <div style={{ width: "100%", textAlign: "center", padding: "9px 0", borderRadius: 10, background: "#F9F8F6", color: C.faint, fontSize: 12.5, fontWeight: 700 }}>
+                    Currently Active
+                  </div>
+                ) : (
+                  <button onClick={e => { e.stopPropagation(); setActivatingId(plan.id) }}
+                    style={{ width: "100%", padding: "9px 0", borderRadius: 10, border: "none", background: C.accent, color: "white", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
+                    Use this plan
+                  </button>
+                )}
               </div>
 
               {/* Inline Expanded View */}
@@ -1095,9 +1094,9 @@ function SavedPlans({ plans, activePlanId, onActivatePlan, onDeletePlan }: Saved
             <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(198,160,246,0.15)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
               <Sparkles size={22} style={{ color: C.accent }} />
             </div>
-            <h3 style={{ fontSize: 22, fontWeight: 900, color: C.txt, marginBottom: 8 }}>Use this meal plan?</h3>
+            <h3 style={{ fontSize: 22, fontWeight: 900, color: C.txt, marginBottom: 8 }}>Switch to this plan?</h3>
             <p style={{ color: C.muted, fontSize: 14.5, marginBottom: 24, lineHeight: 1.5 }}>
-              This will become your active plan in Meal Planner, starting from today. Your current active plan will stay saved here.
+              Meal Planner will start showing this plan from today. Your current plan stays saved, so you can always switch back.
             </p>
             <div style={{ display: "flex", gap: 12 }}>
               <button onClick={() => setActivatingId(null)} style={{ flex: 1, padding: "14px 0", borderRadius: 14, border: `1px solid ${C.cardBdr}`, background: C.white, color: C.txt, fontWeight: 700, cursor: "pointer", transition: "background .15s" }}
@@ -1109,7 +1108,7 @@ function SavedPlans({ plans, activePlanId, onActivatePlan, onDeletePlan }: Saved
                 style={{ flex: 1, padding: "14px 0", borderRadius: 14, border: "none", background: C.accent, color: "white", fontWeight: 700, cursor: "pointer", transition: "opacity .15s" }}
                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = "0.9"}
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = "1"}>
-                Use This Plan
+                Switch Plan
               </button>
             </div>
           </div>
