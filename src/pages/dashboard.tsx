@@ -17,6 +17,7 @@ import type { MealPlanResult, Meal, SavedRecipe } from "../utils/types"
 import PlanBadge from "../components/PlanBadge"
 import PricingModal from '../components/PricingModal'
 import { usePlan } from '../hooks/usePlan'
+import { track, Events } from '../lib/analytics'
 
 const C = {
   white: "#FFFFFF",
@@ -1530,6 +1531,7 @@ export default function EdibleDashboard() {
       await updateMealPlan(id, { activated_at: now })
       setPlans(prev => prev.map(p => p.id === id ? { ...p, activatedAt: now } : p))
       setSelectedPlanId(id)
+      track(Events.PLAN_SWITCHED, { planId: id })
     } catch (e) {
       console.error('Failed to activate plan:', e)
     }
@@ -2026,7 +2028,7 @@ export default function EdibleDashboard() {
       <PricingModal
         isOpen={pricingOpen}
         onClose={() => setPricingOpen(false)}
-        trigger={pricingTrigger}
+        pricingTrigger={pricingTrigger}
       />
     </>
   )

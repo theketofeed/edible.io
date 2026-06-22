@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import posthog from 'posthog-js'
+import { track, Events } from './lib/analytics'
 import { ArrowUp, AlertCircle, ArrowLeft, Lock, ArrowUpRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { BrowserRouter as Router, Routes, Route, useNavigate, useParams, useLocation } from 'react-router-dom'
@@ -131,7 +131,7 @@ function MainContent() {
 		setAiUnavailable(false)
 		setSourceText(rawText)
 		setShowConfirmation(true)
-		posthog.capture('receipt_uploaded', { item_count: items.length })
+		track(Events.GROCERY_INPUT_STARTED, { item_count: items.length })
 		setIsParsing(true)
 
 		try {
@@ -200,11 +200,8 @@ function MainContent() {
 
 			setResult(plan)
 
-			posthog.capture('meal_plan_generated', { 
-			  diet, 
-			  days: effectivePlanDays, 
-			  item_count: groceryItems.length 
-			})
+			// PLAN_GENERATED_SUCCESS is already fired inside mealPlanGenerator.ts
+			// with { diet, duration } — no duplicate needed here.
 
 			// Increment generation count for free users AFTER successful generation
 			await incrementGenerationCount()
@@ -301,7 +298,7 @@ function MainContent() {
 
 			<AuthModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
 			<ProfileModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
-			<PricingModal isOpen={pricingOpen} onClose={() => setPricingOpen(false)} trigger={pricingTrigger} onRequireAuth={handleRequireAuthForCheckout} />
+			<PricingModal isOpen={pricingOpen} onClose={() => setPricingOpen(false)} pricingTrigger={pricingTrigger} onRequireAuth={handleRequireAuthForCheckout} />
 
 			<ReceiptConfirmation
 				isOpen={showConfirmation}
@@ -585,7 +582,7 @@ function RecipeWrapper({ onBack, result, showToast }: {
 	}, [location.state?.meal, result, parsedDayIndex, mealType, isValidMealType])
 
 	useEffect(() => {
-		if (meal) posthog.capture('recipe_viewed', { title: meal.title, meal_type: mealType })
+		if (meal) track(Events.RECIPE_VIEWED, { title: meal.title, meal_type: mealType })
 	}, [meal, mealType])
 
 	// If the meal is missing and we don't even have a result, it might be a direct link

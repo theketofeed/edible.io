@@ -1,5 +1,5 @@
 import { forwardRef, memo, useMemo, useEffect, useState, useCallback } from 'react'
-import posthog from 'posthog-js'
+import { track, Events } from '../lib/analytics'
 import { Copy, Download, RefreshCw, ChevronRight, X, Bookmark, Check, Save } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
@@ -299,7 +299,7 @@ const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result
 		try {
 			await saveMealPlan(result, savePlanTitle.trim())
 			showToast('success', 'Meal plan saved successfully!')
-			posthog.capture('plan_saved', { diet: result.diet, days: result.totalDays })
+			track(Events.PLAN_SAVED, { diet: result.diet, days: result.totalDays })
 			setShowSaveModal(false)
 			setSaved(true)
 			setTimeout(() => setSaved(false), 2500)

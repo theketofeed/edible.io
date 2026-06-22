@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import posthog from 'posthog-js'
+import { track, Events } from '../lib/analytics'
 import { X, Check, Zap, Crown, Shield } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { createCheckout } from '../lib/checkout'
@@ -8,34 +8,34 @@ import type { ProductType } from '../lib/checkout'
 interface Props {
   isOpen: boolean
   onClose: () => void
-  trigger?: string
+  pricingTrigger?: string
   onRequireAuth?: (productType: ProductType) => void
 }
 
-export default function PricingModal({ isOpen, onClose, trigger, onRequireAuth }: Props) {
+export default function PricingModal({ isOpen, onClose, pricingTrigger, onRequireAuth }: Props) {
   const { user } = useAuth()
   const [loading, setLoading] = useState<ProductType | null>(null)
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual')
 
   useEffect(() => {
-    if (isOpen) posthog.capture('upgrade_modal_shown', { trigger })
-  }, [isOpen, trigger])
+    if (isOpen) track(Events.PRICING_MODAL_OPENED, { trigger: pricingTrigger })
+  }, [isOpen, pricingTrigger])
 
-  const handleUpgrade = useCallback(async (productType: ProductType) => {
+  const handleUpgrade = useCallback(async (selectedPlan: ProductType) => {
     if (!user) {
-      onRequireAuth?.(productType)
+      onRequireAuth?.(selectedPlan)
       return
     }
-    posthog.capture('upgrade_clicked', { trigger, plan: productType })
-    setLoading(productType)
-    const result = await createCheckout(productType, user.id, user.email!)
+    track(Events.UPGRADE_CLICKED, { plan: selectedPlan })
+    setLoading(selectedPlan)
+    const result = await createCheckout(selectedPlan, user.id, user.email!)
     if (result.success && result.url) {
       window.location.href = result.url
     } else {
       alert(result.error || 'Something went wrong. Please try again.')
       setLoading(null)
     }
-  }, [user, trigger, onRequireAuth])
+  }, [user, onRequireAuth])
 
   if (!isOpen) return null
 
@@ -54,7 +54,7 @@ export default function PricingModal({ isOpen, onClose, trigger, onRequireAuth }
     chef_tips: "Chef tips are a Pro feature. Start your free trial to unlock expert cooking techniques on every recipe.",
     recipe_limit: "You've hit the 10-recipe limit on the free plan. Start your free trial to save unlimited recipes.",
     save_plan: "Create a free account and start your 7-day trial to save this meal plan and access it anytime.",
-  }[trigger || ''] || "Try Edible Pro free for 7 days — unlimited plans, chef tips, PDF exports, and more. Cancel anytime."
+  }[pricingTrigger || ''] || "Try Edible Pro free for 7 days — unlimited plans, chef tips, PDF exports, and more. Cancel anytime."
 
   return (
     <div

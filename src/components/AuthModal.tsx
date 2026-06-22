@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { track, Events } from '../lib/analytics'
 import { supabase } from '../lib/supabase'
 import { Mail, Lock, Eye, EyeOff, ArrowRight, X } from 'lucide-react'
 import logo from '../assets/favicon.png'
@@ -20,9 +21,11 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     const [status, setStatus] = useState<AuthStatus>('idle')
     const [message, setMessage] = useState('')
 
-    // Reset state when modal opens/closes
+    // Reset state when modal opens/closes & track open event
     useEffect(() => {
-        if (!isOpen) {
+        if (isOpen) {
+            track(Events.AUTH_MODAL_OPENED)
+        } else {
             setTimeout(() => {
                 setMode('signin')
                 setEmail('')

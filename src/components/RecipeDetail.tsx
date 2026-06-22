@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
-import posthog from 'posthog-js'
+import { track, Events } from '../lib/analytics'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Clock, ChefHat, Timer, ArrowLeft, CheckCircle2, Circle, Share2, Zap, Download, Heart, Lightbulb, Crown, FileText, Check } from 'lucide-react'
 import type { Meal } from '../utils/types'
@@ -308,7 +308,7 @@ Made with Edible`
             
             if (success) {
                 showToast?.('success', 'Recipe PDF downloaded!')
-                posthog.capture('pdf_downloaded', { recipe: safeMeal.title })
+                track(Events.PDF_DOWNLOADED, { recipe: safeMeal.title })
             } else {
                 showToast?.('error', 'Failed to generate PDF. Please try again.')
             }
@@ -835,7 +835,7 @@ Made with Edible`
             <PricingModal 
                 isOpen={pricingOpen}
                 onClose={() => setPricingOpen(false)}
-                trigger={pricingTrigger}
+                pricingTrigger={pricingTrigger}
             />
 
             {/* Hidden PDF Template */}

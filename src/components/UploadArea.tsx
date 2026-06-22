@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import posthog from 'posthog-js'
+import { track, Events } from '../lib/analytics'
 import {
 	FileUp,
 	FileText,
@@ -115,7 +115,7 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 			if (items.length) {
 				setDetectedCount(items.length)
 				setUploadState('success')
-				posthog.capture('input_method_used', { method: 'receipt_uploaded' })
+				track(Events.INPUT_METHOD_SELECTED, { method: 'receipt' })
 				onItemsDetected(items, rawText)
 			} else {
 				setDetectedCount(0)
@@ -186,7 +186,7 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 			return
 		}
 		setDetectedCount(items.length)
-		posthog.capture('input_method_used', { method: 'list_typed' })
+		track(Events.INPUT_METHOD_SELECTED, { method: 'typed' })
 		onItemsDetected(items, manualText)
 	}, [manualText, onItemsDetected, onError])
 
