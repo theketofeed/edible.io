@@ -8,36 +8,36 @@ interface FAQItem {
 }
 
 const FAQ_ITEMS: FAQItem[] = [
-	{
-		question: 'Is Edible free?',
-		answer: 'Edible offers 4 free meal plan generations every month. Upgrade to Pro for unlimited generations, PDF exports, and exclusive chef tips.',
-		icon: <Banknote className="w-5 h-5 text-purple-500" />
-	},
-	{
-		question: 'What stores do you support?',
-		answer: 'Edible works with any grocery receipt format. Our OCR technology reads text from supermarkets, farmers markets, specialty stores, and delivery apps. Just take a clear photo!',
-		icon: <Store className="w-5 h-5 text-purple-500" />
-	},
-	{
-		question: 'Can I edit the meal plan?',
-		answer: 'Yes! You can swap meals, adjust portion sizes, and customize recipes. You can also regenerate plans with different diet preferences to get new recommendations.',
-		icon: <PencilLine className="w-5 h-5 text-purple-500" />
-	},
-	{
-		question: 'How many diets do you support?',
-		answer: 'We support 8 dietary preferences: Balanced, Keto, Vegan, Vegetarian, Paleo, Low-Carb, High-Protein, and Mediterranean. Mix and match to find what works for you.',
-		icon: <Salad className="w-5 h-5 text-purple-500" />
-	},
-	{
-		question: "What if I don't like a recipe?",
-		answer: "Simply regenerate your meal plan and you'll get different recipes. You can also click on individual recipes to see alternatives or manually adjust your plan.",
-		icon: <RefreshCw className="w-5 h-5 text-purple-500" />
-	},
-	{
-		question: "What's special about Edible?",
-		answer: 'Edible is the only meal planner that works from what you already have. Every competitor gives you recipes then tells you to go buy ingredients. Edible starts from your grocery list or receipt — meaning zero food waste, zero extra shopping, meals you can actually make tonight.',
-		icon: <Sparkles className="w-5 h-5 text-purple-500" />
-	}
+  {
+    question: 'Is Edible free?',
+    answer: 'You get 1 free meal plan — no account needed. After that, start a 7-day free trial to keep generating plans. Cancel anytime, no questions asked.',
+    icon: <Banknote className="w-5 h-5 text-purple-500" />
+  },
+  {
+    question: 'What stores do you support?',
+    answer: 'Any store, any format. Edible reads receipts from supermarkets, wholesale stores, farmers markets, and grocery delivery apps. As long as the photo is clear, it works.',
+    icon: <Store className="w-5 h-5 text-purple-500" />
+  },
+  {
+    question: 'Can I edit the meal plan?',
+    answer: 'Yes — you can regenerate your plan with a different diet preference anytime, or tap into any recipe to see the full details. Your saved plans stay in your dashboard so you can switch between them whenever you want.',
+    icon: <PencilLine className="w-5 h-5 text-purple-500" />
+  },
+  {
+    question: 'How many diets do you support?',
+    answer: 'Eight: Balanced, Keto, Vegan, Vegetarian, Paleo, Low-Carb, High-Protein, and Mediterranean. Pick one when you generate and Edible builds the whole week around it.',
+    icon: <Salad className="w-5 h-5 text-purple-500" />
+  },
+  {
+    question: "What if I don't like a recipe?",
+    answer: "Regenerate your plan and you'll get a completely different set of meals. You can regenerate as many times as you want during your trial.",
+    icon: <RefreshCw className="w-5 h-5 text-purple-500" />
+  },
+  {
+    question: "What makes Edible different?",
+    answer: 'Every other meal planner gives you recipes and tells you to go shopping. Edible works the other way — you start with what you already bought, and it builds your week around that. No food waste, no extra trips, meals you can actually make tonight.',
+    icon: <Sparkles className="w-5 h-5 text-purple-500" />
+  }
 ]
 
 const FAQRow = memo(function FAQRow({

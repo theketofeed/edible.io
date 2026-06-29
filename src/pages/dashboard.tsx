@@ -1517,6 +1517,10 @@ export default function EdibleDashboard() {
   const [isLoadingSaved, setIsLoadingSaved] = useState(true)
   const [pricingOpen, setPricingOpen] = useState(false)
   const [pricingTrigger, setPricingTrigger] = useState('')
+  const [showOnboarding, setShowOnboarding] = useState(false)
+  const [onboardingStep, setOnboardingStep] = useState(0)
+  const bellRef = useRef<HTMLDivElement>(null)
+  const plannerNavRef = useRef<HTMLButtonElement>(null)
 
   const handleDeletePlan = (id: string) => {
     setPlans(prev => prev.filter(p => p.id !== id))
@@ -1619,6 +1623,28 @@ export default function EdibleDashboard() {
 
     fetchPlans()
   }, [user, authLoading])
+
+  useEffect(() => {
+    if (!user || isLoadingPlans) return
+    const key = `edible_onboarding_done_${user.id}`
+    if (!localStorage.getItem(key)) {
+      setTimeout(() => setShowOnboarding(true), 800)
+    }
+  }, [user, isLoadingPlans])
+
+  const finishOnboarding = () => {
+    if (user) localStorage.setItem(`edible_onboarding_done_${user.id}`, 'true')
+    setShowOnboarding(false)
+    setOnboardingStep(0)
+  }
+
+  const nextOnboardingStep = () => {
+    if (onboardingStep < 2) {
+      setOnboardingStep(s => s + 1)
+    } else {
+      finishOnboarding()
+    }
+  }
 
   // Fetch saved recipes from Supabase on mount
   useEffect(() => {
@@ -2030,6 +2056,79 @@ export default function EdibleDashboard() {
         onClose={() => setPricingOpen(false)}
         pricingTrigger={pricingTrigger}
       />
+      {showOnboarding && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 200, pointerEvents: 'none' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', pointerEvents: 'auto' }} onClick={finishOnboarding} />
+
+          {onboardingStep === 0 && (
+            <div style={{
+              position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
+              background: 'white', borderRadius: 24, padding: 32, maxWidth: 380, width: 'calc(100% - 32px)',
+              boxShadow: '0 24px 60px rgba(0,0,0,0.18)', pointerEvents: 'auto', zIndex: 201
+            }}>
+              <div style={{ width: 48, height: 48, borderRadius: 16, background: 'rgba(198,160,246,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                <span style={{ fontSize: 24 }}>👋</span>
+              </div>
+              <p style={{ fontSize: 11, fontWeight: 700, color: C.accent, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>1 of 3</p>
+              <h3 style={{ fontSize: 20, fontWeight: 900, color: C.txt, marginBottom: 10 }}>Your meal plan is ready</h3>
+              <p style={{ fontSize: 14, color: C.muted, lineHeight: 1.6, marginBottom: 24 }}>
+                Head to <strong>Meal Planner</strong> to see today's meals. Tap any day in the strip to browse the full week.
+              </p>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={finishOnboarding} style={{ flex: 1, padding: '11px 0', borderRadius: 12, border: `1px solid ${C.cardBdr}`, background: 'white', color: C.muted, fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                  Skip
+                </button>
+                <button onClick={nextOnboardingStep} style={{ flex: 2, padding: '11px 0', borderRadius: 12, border: 'none', background: C.accent, color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                  Got it →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {onboardingStep === 1 && (
+            <div style={{
+              position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
+              background: 'white', borderRadius: 24, padding: 32, maxWidth: 380, width: 'calc(100% - 32px)',
+              boxShadow: '0 24px 60px rgba(0,0,0,0.18)', pointerEvents: 'auto', zIndex: 201
+            }}>
+              <div style={{ width: 48, height: 48, borderRadius: 16, background: 'rgba(198,160,246,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+                <span style={{ fontSize: 24 }}>📋</span>
+              </div>
+              <p style={{ fontSize: 11, fontWeight: 700, color: C.accent, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>2 of 3</p>
+              <h3 style={{ fontSize: 20, fontWeight: 900, color: C.txt, marginBottom: 10 }}>Generate as many plans as you want</h3>
+              <p style={{ fontSize: 14, color: C.muted, lineHeight: 1.6, marginBottom: 24 }}>
+                Every plan you generate gets saved under <strong>Saved Plans</strong>. Switch between them anytime — great for planning different weeks or trying a new diet.
+              </p>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={finishOnboarding} style={{ flex: 1, padding: '11px 0', borderRadius: 12, border: `1px solid ${C.cardBdr}`, background: 'white', color: C.muted, fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                  Skip
+                </button>
+                <button onClick={nextOnboardingStep} style={{ flex: 2, padding: '11px 0', borderRadius: 12, border: 'none', background: C.accent, color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                  Got it →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {onboardingStep === 2 && (
+            <div style={{
+              position: 'absolute', top: 70, right: 16,
+              background: 'white', borderRadius: 20, padding: 24, maxWidth: 300, width: 'calc(100% - 32px)',
+              boxShadow: '0 24px 60px rgba(0,0,0,0.18)', pointerEvents: 'auto', zIndex: 201
+            }}>
+              <div style={{ position: 'absolute', top: -8, right: 28, width: 16, height: 16, background: 'white', transform: 'rotate(45deg)', borderLeft: `1px solid ${C.cardBdr}`, borderTop: `1px solid ${C.cardBdr}` }} />
+              <p style={{ fontSize: 11, fontWeight: 700, color: C.accent, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>3 of 3</p>
+              <h3 style={{ fontSize: 17, fontWeight: 900, color: C.txt, marginBottom: 8 }}>Keep an eye on this bell 🔔</h3>
+              <p style={{ fontSize: 13, color: C.muted, lineHeight: 1.6, marginBottom: 20 }}>
+                It tells you when your plan is ending, tracks your generation limit, and shows today's calorie summary.
+              </p>
+              <button onClick={finishOnboarding} style={{ width: '100%', padding: '11px 0', borderRadius: 12, border: 'none', background: C.accent, color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                Let's go 🎉
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </>
   )
 }
