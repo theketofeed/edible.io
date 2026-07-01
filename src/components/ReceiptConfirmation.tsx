@@ -93,45 +93,45 @@ export default function ReceiptConfirmation({ isOpen, isParsing, parsedItems, on
                                 </div>
                             ) : (
                                 items.map((item) => (
-                                    <div
-                                        key={item.id}
-                                        className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex items-center gap-3 transition-shadow duration-75 hover:shadow-md"
-                                    >
-                                        {/* Quantity Input */}
-                                        <input
-                                            value={item.quantity}
-                                            onChange={(e) => updateItem(item.id, 'quantity', e.target.value)}
-                                            className="w-20 p-2 bg-gray-50 rounded-lg text-sm font-medium text-center focus:ring-2 focus:ring-purple-200 outline-none"
-                                            placeholder="Qty"
-                                        />
+                        <div
+                            key={item.id}
+                            className="bg-white px-3 py-3 rounded-xl border border-gray-200 shadow-sm flex items-center gap-2 transition-shadow duration-75 hover:shadow-md"
+                        >
+                            {/* Quantity Input */}
+                            <input
+                                value={item.quantity}
+                                onChange={(e) => updateItem(item.id, 'quantity', e.target.value)}
+                                className="w-12 shrink-0 p-2 bg-gray-50 rounded-lg text-sm font-medium text-center focus:ring-2 focus:ring-purple-200 outline-none"
+                                placeholder="Qty"
+                            />
 
-                                        {/* Name Input */}
-                                        <input
-                                            value={item.name}
-                                            onChange={(e) => updateItem(item.id, 'name', e.target.value)}
-                                            className="flex-1 p-2 bg-transparent font-medium text-gray-900 focus:bg-gray-50 rounded-lg outline-none"
-                                            placeholder="Item name"
-                                        />
+                            {/* Name Input */}
+                            <input
+                                value={item.name}
+                                onChange={(e) => updateItem(item.id, 'name', e.target.value)}
+                                className="flex-1 min-w-0 p-2 bg-transparent font-medium text-gray-900 focus:bg-gray-50 rounded-lg outline-none text-sm"
+                                placeholder="Item name"
+                            />
 
-                                        {/* Category Badge (Read only visual for now) */}
-                                        <span className={`
-											hidden md:inline-block px-3 py-1 rounded-full text-xs font-bold
-											${item.category === 'Produce' ? 'bg-green-100 text-green-700' :
-                                                item.category === 'Meat' ? 'bg-red-100 text-red-700' :
-                                                    item.category === 'Dairy' ? 'bg-blue-100 text-blue-700' :
-                                                        'bg-gray-100 text-gray-600'}
-										`}>
-                                            {item.category}
-                                        </span>
+                            {/* Category Badge — desktop only */}
+                            <span className={`
+                                hidden md:inline-block shrink-0 px-2 py-1 rounded-full text-xs font-bold
+                                ${item.category === 'Produce' ? 'bg-green-100 text-green-700' :
+                                    item.category === 'Meat' ? 'bg-red-100 text-red-700' :
+                                        item.category === 'Dairy' ? 'bg-blue-100 text-blue-700' :
+                                            'bg-gray-100 text-gray-600'}
+                            `}>
+                                {item.category}
+                            </span>
 
-                                        {/* Actions */}
-                                        <button
-                                            onClick={() => handleDelete(item.id)}
-                                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors duration-75"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </div>
+                            {/* Delete */}
+                            <button
+                                onClick={() => handleDelete(item.id)}
+                                className="shrink-0 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors duration-75"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        </div>
                                 ))
                             )}
 
@@ -148,23 +148,21 @@ export default function ReceiptConfirmation({ isOpen, isParsing, parsedItems, on
 
                 {/* Footer */}
                 {!isParsing && (
-                    <div className="p-6 border-t border-gray-100 bg-white flex justify-between items-center">
-                        <div className="text-sm text-gray-500">
-                            {items.length} items confirmed
-                        </div>
-                        <div className="flex gap-3">
+                    <div className="px-6 pt-4 pb-6 border-t border-gray-100 bg-white flex flex-col gap-3">
+                        <button
+                            onClick={handleSave}
+                            className="w-full py-3 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+                        >
+                            <Check className="w-4 h-4" />
+                            Confirm List
+                        </button>
+                        <div className="flex justify-between items-center">
+                            <p className="text-sm text-gray-400">{items.length} items confirmed</p>
                             <button
                                 onClick={onCancel}
-                                className="px-6 py-2.5 rounded-lg font-semibold text-gray-600 hover:bg-gray-100 transition-colors"
+                                className="text-sm font-semibold text-gray-500 hover:text-gray-700 transition-colors"
                             >
                                 Cancel
-                            </button>
-                            <button
-                                onClick={handleSave}
-                                className="px-8 py-2.5 rounded-lg font-bold text-white bg-green-600 hover:bg-green-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center gap-2"
-                            >
-                                <Check className="w-4 h-4" />
-                                Confirm List
                             </button>
                         </div>
                     </div>
