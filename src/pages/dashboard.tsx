@@ -890,16 +890,19 @@ function MealPlanner({ plans, selectedPlanId }: MealPlannerProps & { selectedPla
 interface SavedPlansProps { 
   plans: Plan[]; 
   activePlanId: string | null; 
-  onActivatePlan: (id: string) => void;
+  onActivatePlan: (id: string) => Promise<void>;
   onDeletePlan: (id: string) => void;
+  onNav: (id: NavId) => void;
 }
 
-function SavedPlans({ plans, activePlanId, onActivatePlan, onDeletePlan }: SavedPlansProps) {
+function SavedPlans({ plans, activePlanId, onActivatePlan, onDeletePlan, onNav }: SavedPlansProps) {
   const navigate = useNavigate()
   const [filter, setFilter] = useState<DietKey>("All")
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [expandedPlanId, setExpandedPlanId] = useState<string | null>(null)
   const [activatingId, setActivatingId] = useState<string | null>(null)
+  const [activatingLoading, setActivatingLoading] = useState(false)
+  const [justActivatedId, setJustActivatedId] = useState<string | null>(null)
 
   const diets = ["All" as DietKey, ...Array.from(new Set(plans.map(p => p.diet)))]
   const visible = plans.filter(p => filter === "All" || p.diet === filter)
@@ -986,9 +989,17 @@ function SavedPlans({ plans, activePlanId, onActivatePlan, onDeletePlan }: Saved
                   </button>
                 </div>
                 {plan.id === activePlanId ? (
-                  <div style={{ width: "100%", textAlign: "center", padding: "9px 0", borderRadius: 10, background: "#F9F8F6", color: C.faint, fontSize: 12.5, fontWeight: 700 }}>
-                    Currently Active
-                  </div>
+                  <button
+                    onClick={e => { e.stopPropagation(); onNav('planner') }}
+                    style={{ width: "100%", textAlign: "center", padding: "9px 0", borderRadius: 10, border: `1px solid ${C.accent}`, background: "rgba(198,160,246,0.08)", color: C.accentDark, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
+                    View in Meal Planner →
+                  </button>
+                ) : justActivatedId === plan.id ? (
+                  <button
+                    onClick={e => { e.stopPropagation(); onNav('planner') }}
+                    style={{ width: "100%", textAlign: "center", padding: "9px 0", borderRadius: 10, border: "none", background: C.accent, color: "white", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
+                    View in Meal Planner →
+                  </button>
                 ) : (
                   <button onClick={e => { e.stopPropagation(); setActivatingId(plan.id) }}
                     style={{ width: "100%", padding: "9px 0", borderRadius: 10, border: "none", background: C.accent, color: "white", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
@@ -1105,11 +1116,27 @@ function SavedPlans({ plans, activePlanId, onActivatePlan, onDeletePlan }: Saved
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = C.white}>
                 Cancel
               </button>
-              <button onClick={() => { onActivatePlan(activatingId); setActivatingId(null) }}
-                style={{ flex: 1, padding: "14px 0", borderRadius: 14, border: "none", background: C.accent, color: "white", fontWeight: 700, cursor: "pointer", transition: "opacity .15s" }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = "0.9"}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = "1"}>
-                Switch Plan
+              <button
+                onClick={async () => {
+                  setActivatingLoading(true)
+                  await onActivatePlan(activatingId)
+                  setActivatingLoading(false)
+                  setJustActivatedId(activatingId)
+                  setActivatingId(null)
+                }}
+                disabled={activatingLoading}
+                style={{ flex: 1, padding: "14px 0", borderRadius: 14, border: "none", background: C.accent, color: "white", fontWeight: 700, cursor: activatingLoading ? "not-allowed" : "pointer", transition: "opacity .15s", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: activatingLoading ? 0.7 : 1 }}
+                onMouseEnter={e => { if (!activatingLoading) (e.currentTarget as HTMLElement).style.opacity = "0.9" }}
+                onMouseLeave={e => { if (!activatingLoading) (e.currentTarget as HTMLElement).style.opacity = "1" }}>
+                {activatingLoading ? (
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 14 14" style={{ animation: 'spin 0.7s linear infinite' }}>
+                      <circle cx="7" cy="7" r="5" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" />
+                      <path d="M7 2 A5 5 0 0 1 12 7" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                    Switching...
+                  </>
+                ) : "Switch Plan"}
               </button>
             </div>
           </div>
@@ -1404,7 +1431,7 @@ interface ProfileProps { user: UserData; plans: Plan[] }
 function Profile({ user, plans }: ProfileProps) {
   const { signOut } = useAuth()
   const totalDays = plans.reduce((a, p) => a + p.days.length, 0)
-  const diets = Array.from(new Set(plans.map(p => p.diet)))
+  const diets = Array.from(new Set(plans.map(p => p.diet))).filter(d => DIET[d])
   return (
     <div style={{ maxWidth: 560 }}>
       <h1 style={{ fontSize: 24, fontWeight: 800, color: C.txt, marginBottom: 20 }}>Profile</h1>
@@ -1472,7 +1499,7 @@ function Profile({ user, plans }: ProfileProps) {
         <p style={{ fontWeight: 700, fontSize: 14, color: C.txt, marginBottom: 14 }}>Diets You've Tried</p>
         <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
           {diets.map(d => {
-            const dm = DIET[d]
+            const dm = DIET[d] || DIET.Balanced
             return (
               <span key={d} style={{
                 display: "inline-flex", alignItems: "center", gap: 4,
@@ -1529,7 +1556,7 @@ export default function EdibleDashboard() {
     }
   }
 
-  const handleActivatePlan = async (id: string) => {
+  const handleActivatePlan = async (id: string): Promise<void> => {
     try {
       const now = new Date().toISOString()
       await updateMealPlan(id, { activated_at: now })
@@ -1611,7 +1638,10 @@ export default function EdibleDashboard() {
 
         setPlans(transformedPlans)
         if (transformedPlans.length > 0 && !selectedPlanId) {
-          setSelectedPlanId(transformedPlans[0].id)
+          const mostRecentlyActivated = [...transformedPlans].sort((a, b) =>
+            new Date(b.activatedAt).getTime() - new Date(a.activatedAt).getTime()
+          )[0]
+          setSelectedPlanId(mostRecentlyActivated.id)
         }
       } catch (error) {
         console.error('Failed to load meal plans:', error)
@@ -1702,6 +1732,7 @@ export default function EdibleDashboard() {
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         body,button,input{font-family:'Plus Jakarta Sans',sans-serif}
         ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#E5E7EB;border-radius:4px}
+        @keyframes spin { to { transform: rotate(360deg); } }
         .dashboard-home-btn{transition:all .15s ease}
         .dashboard-home-btn:hover{
           background:rgba(181,141,245,0.14);
@@ -1999,6 +2030,7 @@ export default function EdibleDashboard() {
                       activePlanId={selectedPlanId} 
                       onActivatePlan={handleActivatePlan} 
                       onDeletePlan={handleDeletePlan}
+                      onNav={go}
                     />
                   )}
                   {view === "recipes" && (
