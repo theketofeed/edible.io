@@ -191,15 +191,9 @@ useEffect(() => {
 
 			{/* Content */}
 			<div className="flex-1 min-w-0">
-				{/* Title */}
-				<p className="text-[13px] font-bold text-gray-900 leading-snug line-clamp-2 group-hover:text-purple-600 transition-colors mb-2">
+				<p className="text-[14px] font-bold text-gray-900 leading-snug line-clamp-2 group-hover:text-purple-600 transition-colors">
 					{meal.title}
 				</p>
-
-				{/* Badge */}
-				<span className={`inline-block text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${getMealTypeGlass(mealType)}`}>
-					{mealType}
-				</span>
 			</div>
 
 			{/* Arrow */}
@@ -249,10 +243,23 @@ const DayCard = memo(function DayCard({
 					</div>
 
 					{/* Meal Cards - Full width, stacked vertically */}
-					<div className="space-y-3 w-full">
-						<MealCard meal={day.Breakfast} mealType="Breakfast" dayIndex={index} onNavigate={onNavigate} />
-						{day.Lunch && <MealCard meal={day.Lunch} mealType="Lunch" dayIndex={index} onNavigate={onNavigate} />}
-						{day.Dinner && <MealCard meal={day.Dinner} mealType="Dinner" dayIndex={index} onNavigate={onNavigate} />}
+					<div className="space-y-4 w-full">
+						<div className="flex flex-col gap-2">
+							<p className="text-[10px] font-bold tracking-widest uppercase" style={{ color: '#92400e' }}>Breakfast</p>
+							<MealCard meal={day.Breakfast} mealType="Breakfast" dayIndex={index} onNavigate={onNavigate} />
+						</div>
+						{day.Lunch && (
+							<div className="flex flex-col gap-2">
+								<p className="text-[10px] font-bold tracking-widest uppercase" style={{ color: '#065f46' }}>Lunch</p>
+								<MealCard meal={day.Lunch} mealType="Lunch" dayIndex={index} onNavigate={onNavigate} />
+							</div>
+						)}
+						{day.Dinner && (
+							<div className="flex flex-col gap-2">
+								<p className="text-[10px] font-bold tracking-widest uppercase" style={{ color: '#5b21b6' }}>Dinner</p>
+								<MealCard meal={day.Dinner} mealType="Dinner" dayIndex={index} onNavigate={onNavigate} />
+							</div>
+						)}
 					</div>
 				</div>
 			</div>
