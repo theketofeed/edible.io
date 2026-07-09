@@ -33,6 +33,7 @@ import html2pdf from 'html2pdf.js'
 import ToastContainer, { ToastKind, ToastMessage } from './components/Toast'
 import ReceiptConfirmation from './components/ReceiptConfirmation'
 import { parseReceiptWithGemini, ParsedItem } from './services/receiptParser'
+import SharedPlan from './pages/SharedPlan'
 import EdibleDashboard from './pages/dashboard'
 import PaymentSuccess from './pages/PaymentSuccess'
 import Privacy from './pages/Privacy'
@@ -514,6 +515,7 @@ function MainContent() {
 				<Route path="/payment-success" element={<PaymentSuccess />} />
 				<Route path="/privacy" element={<Privacy />} />
 				<Route path="/terms" element={<Terms />} />
+				<Route path="/plan/:id" element={<SharedPlan />} />
 			</Routes>
 
 			<Footer />

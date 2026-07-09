@@ -7,11 +7,11 @@ import {
   ClipboardList, CalendarDays, Utensils,
   Sunrise, Sun, Moon,
   Scale, Leaf, Dumbbell, Wheat, Sprout,
-  Camera, PencilLine
+  Camera, PencilLine, Share2
 } from "lucide-react"
 import logo from "../assets/favicon.png"
 import { useAuth } from "../context/AuthContext"
-import { getUserMealPlans, getProfile, deleteMealPlan, getUserSavedRecipes, updateMealPlan } from "../lib/db"
+import { getUserMealPlans, getProfile, deleteMealPlan, getUserSavedRecipes, updateMealPlan, setMealPlanPublic } from "../lib/db"
 import { fetchMealImage } from "../lib/mealImages"
 import type { MealPlanResult, Meal, SavedRecipe } from "../utils/types"
 import PlanBadge from "../components/PlanBadge"
@@ -901,6 +901,7 @@ function SavedPlans({ plans, activePlanId, onActivatePlan, onDeletePlan, onNav }
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [expandedPlanId, setExpandedPlanId] = useState<string | null>(null)
   const [activatingId, setActivatingId] = useState<string | null>(null)
+  const [sharingId, setSharingId] = useState<string | null>(null)
   const [activatingLoading, setActivatingLoading] = useState(false)
   const [justActivatedId, setJustActivatedId] = useState<string | null>(null)
 
@@ -962,13 +963,38 @@ function SavedPlans({ plans, activePlanId, onActivatePlan, onDeletePlan, onNav }
                       }}>{plan.diet}</span>
                     </div>
                   </div>
-                  <button onClick={e => { e.stopPropagation(); setDeletingId(plan.id) }}
-                    style={{
-                      width: 26, height: 26, borderRadius: 7, background: "#FEF2F2", border: "none",
-                      cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center"
-                    }}>
-                    <Trash2 size={11} style={{ color: C.red }} />
-                  </button>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button onClick={async e => {
+                      e.stopPropagation()
+                      setSharingId(plan.id)
+                      try {
+                        await setMealPlanPublic(plan.id, true)
+                        const url = `${window.location.origin}/plan/${plan.id}`
+                        await navigator.clipboard.writeText(url)
+                        setSharingId(null)
+                        alert('Link copied! Share it anywhere.')
+                      } catch {
+                        setSharingId(null)
+                        alert('Failed to generate link. Please try again.')
+                      }
+                    }}
+                      style={{
+                        width: 26, height: 26, borderRadius: 7, background: 'rgba(198,160,246,0.12)', border: 'none',
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}>
+                      {sharingId === plan.id
+                        ? <div style={{ width: 10, height: 10, borderRadius: '50%', border: `2px solid ${C.accent}`, borderTopColor: 'transparent', animation: 'spin 0.7s linear infinite' }} />
+                        : <Share2 size={11} style={{ color: C.accentDark }} />
+                      }
+                    </button>
+                    <button onClick={e => { e.stopPropagation(); setDeletingId(plan.id) }}
+                      style={{
+                        width: 26, height: 26, borderRadius: 7, background: '#FEF2F2', border: 'none',
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }}>
+                      <Trash2 size={11} style={{ color: C.red }} />
+                    </button>
+                  </div>
                 </div>
                 <div style={{ background: "#F9F8F6", borderRadius: 10, padding: "10px 12px", marginBottom: 12 }}>
                   {plan.days.slice(0, 2).map((dayItem, i) => (

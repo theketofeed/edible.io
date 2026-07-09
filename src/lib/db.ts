@@ -124,6 +124,28 @@ export async function deleteMealPlan(id: string) {
   if (error) throw error
 }
 
+export async function getPublicMealPlan(id: string) {
+  const { data, error } = await supabase
+    .from('meal_plans')
+    .select('*')
+    .eq('id', id)
+    .eq('is_public', true)
+    .maybeSingle()
+  if (error) throw error
+  return data as MealPlan | null
+}
+
+export async function setMealPlanPublic(id: string, isPublic: boolean) {
+  const { data, error } = await supabase
+    .from('meal_plans')
+    .update({ is_public: isPublic })
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data as MealPlan
+}
+
 // ─── Profile ──────────────────────────────────────────────────────────────────
 
 export async function getProfile() {
