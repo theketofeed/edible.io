@@ -148,7 +148,7 @@ export default function SharedPlan() {
 
         {/* CTA */}
         <div style={{ marginTop: 32, background: 'white', borderRadius: 20, padding: '32px 28px', textAlign: 'center', border: '1px solid #ede9e2' }}>
-          <p style={{ color: '#111827', fontSize: 18, fontWeight: 800, marginBottom: 12, lineHeight: 1.3 }}>Want a meal plan like this?</p>
+          <p style={{ color: '#111827', fontSize: 18, fontWeight: 900, marginBottom: 12, lineHeight: 1.3 }}>Want a meal plan like this?</p>
           <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 28, lineHeight: 1.6, maxWidth: 280, margin: '0 auto 28px' }}>Upload your groceries and Edible turns them into a full week of meals built just for you.</p>
           <button onClick={() => navigate('/')} style={{ background: '#c6a0f6', color: 'white', border: 'none', borderRadius: 12, padding: '14px 28px', fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: "'Open Sans', ui-sans-serif, system-ui, sans-serif", width: '100%' }}>
             Generate my meal plan →
