@@ -1848,6 +1848,14 @@ export default function EdibleDashboard() {
           .dash-planner-calories-card, .dash-calories-card {
             padding: 12px !important;
           }
+          .dash-planner-grid > div:first-child {
+            min-width: 0 !important;
+            overflow: hidden !important;
+          }
+          .dash-planner-grid > div:first-child p {
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+          }
         }
         @media (max-width: 500px) {
           .dash-overview-calories-row {

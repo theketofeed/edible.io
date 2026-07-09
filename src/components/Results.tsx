@@ -192,21 +192,14 @@ useEffect(() => {
 			{/* Content */}
 			<div className="flex-1 min-w-0">
 				{/* Title */}
-				<p className="text-[15px] font-bold text-gray-900 leading-tight line-clamp-1 group-hover:text-purple-600 transition-colors mb-2">
+				<p className="text-[13px] font-bold text-gray-900 leading-snug line-clamp-2 group-hover:text-purple-600 transition-colors mb-2">
 					{meal.title}
 				</p>
 
-				{/* Badge — centered between title and macros */}
-				<div className="mb-1.5">
-					<span className={`inline-block text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${getMealTypeGlass(mealType)}`}>
-						{mealType}
-					</span>
-				</div>
-
-				{/* Macros — all on one line */}
-				<p className="text-[11px] text-gray-400 font-bold tracking-tight uppercase">
-				<span className="text-gray-900">{cal}</span> kcal &nbsp;·&nbsp; <span className="text-gray-900">{c}g</span> carbs &nbsp;·&nbsp; <span className="text-gray-900">{p}g</span> protein
-				</p>
+				{/* Badge */}
+				<span className={`inline-block text-[10px] font-semibold px-2.5 py-0.5 rounded-full ${getMealTypeGlass(mealType)}`}>
+					{mealType}
+				</span>
 			</div>
 
 			{/* Arrow */}
