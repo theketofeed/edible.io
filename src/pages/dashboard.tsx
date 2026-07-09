@@ -951,16 +951,16 @@ function SavedPlans({ plans, activePlanId, onActivatePlan, onDeletePlan, onNav }
                   <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                     <dm.icon size={22} style={{ color: "white", flexShrink: 0 }} />
                     <div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                        <p style={{ fontWeight: 700, color: C.txt, fontSize: 14 }}>{plan.title}</p>
+                      <p style={{ fontWeight: 700, color: C.txt, fontSize: 14, marginBottom: 6 }}>{plan.title}</p>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{
+                          fontSize: 11, fontWeight: 600, color: dm.col, background: dm.bg,
+                          padding: "2px 8px", borderRadius: 999
+                        }}>{plan.diet}</span>
                         {plan.id === activePlanId && (
-                          <span style={{ fontSize: 9, fontWeight: 800, color: "white", background: C.accent, padding: "1px 6px", borderRadius: 4, textTransform: "uppercase" }}>Active</span>
+                          <span style={{ fontSize: 9, fontWeight: 800, color: "white", background: C.accent, padding: "2px 7px", borderRadius: 999, textTransform: "uppercase" }}>Active</span>
                         )}
                       </div>
-                      <span style={{
-                        fontSize: 11, fontWeight: 600, color: dm.col, background: dm.bg,
-                        padding: "2px 8px", borderRadius: 999
-                      }}>{plan.diet}</span>
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 6 }}>
