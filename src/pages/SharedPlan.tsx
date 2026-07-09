@@ -67,7 +67,7 @@ export default function SharedPlan() {
   }, [id])
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f3ef', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f3ef', fontFamily: "'Open Sans', ui-sans-serif, system-ui, sans-serif" }}>
       <div style={{ textAlign: 'center' }}>
         <img src={logo} alt="Edible" style={{ width: 48, height: 48, objectFit: 'contain', marginBottom: 12 }} />
         <p style={{ color: '#9ca3af', fontSize: 14, fontWeight: 600 }}>Loading meal plan...</p>
@@ -76,12 +76,12 @@ export default function SharedPlan() {
   )
 
   if (notFound) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f3ef', fontFamily: "'Plus Jakarta Sans', sans-serif", padding: 24 }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f3ef', fontFamily: "'Open Sans', ui-sans-serif, system-ui, sans-serif", padding: 24 }}>
       <div style={{ textAlign: 'center', maxWidth: 360 }}>
         <p style={{ fontSize: 40, marginBottom: 12 }}>🍽️</p>
         <h2 style={{ fontSize: 22, fontWeight: 800, color: '#111827', marginBottom: 8 }}>Plan not found</h2>
         <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 24, lineHeight: 1.6 }}>This meal plan doesn't exist or hasn't been shared publicly.</p>
-        <button onClick={() => navigate('/')} style={{ background: '#c6a0f6', color: 'white', border: 'none', borderRadius: 12, padding: '12px 24px', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+        <button onClick={() => navigate('/')} style={{ background: '#c6a0f6', color: 'white', border: 'none', borderRadius: 12, padding: '12px 24px', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: "'Open Sans', ui-sans-serif, system-ui, sans-serif" }}>
           Try Edible free →
         </button>
       </div>
@@ -99,14 +99,14 @@ export default function SharedPlan() {
   const diet = plan.plan_data?.diet || 'Balanced'
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f5f3ef', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: '#f5f3ef', fontFamily: "'Open Sans', ui-sans-serif, system-ui, sans-serif" }}>
       {/* Minimal sticky bar */}
       <div style={{ background: 'rgba(245,243,239,0.92)', backdropFilter: 'blur(10px)', borderBottom: '1px solid #ede9e2', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
           <img src={logo} alt="Edible" style={{ width: 24, height: 24, objectFit: 'contain' }} />
           <span style={{ fontWeight: 800, fontSize: 14, color: '#111827' }}>Edible</span>
         </div>
-        <button onClick={() => navigate('/')} style={{ background: '#c6a0f6', color: 'white', border: 'none', borderRadius: 9, padding: '7px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+        <button onClick={() => navigate('/')} style={{ background: '#c6a0f6', color: 'white', border: 'none', borderRadius: 9, padding: '7px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: "'Open Sans', ui-sans-serif, system-ui, sans-serif" }}>
           Get my own plan →
         </button>
       </div>
@@ -147,10 +147,10 @@ export default function SharedPlan() {
         </div>
 
         {/* CTA */}
-        <div style={{ marginTop: 32, background: 'white', borderRadius: 20, padding: '28px 24px', textAlign: 'center', border: '1px solid #ede9e2' }}>
-          <p style={{ color: '#111827', fontSize: 18, fontWeight: 800, marginBottom: 8, lineHeight: 1.3 }}>Want a meal plan like this?</p>
-          <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 22, lineHeight: 1.6, maxWidth: 280, margin: '0 auto 22px' }}>Upload your groceries and Edible turns them into a full week of meals built just for you.</p>
-          <button onClick={() => navigate('/')} style={{ background: '#c6a0f6', color: 'white', border: 'none', borderRadius: 12, padding: '13px 28px', fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", width: '100%' }}>
+        <div style={{ marginTop: 32, background: 'white', borderRadius: 20, padding: '32px 28px', textAlign: 'center', border: '1px solid #ede9e2' }}>
+          <p style={{ color: '#111827', fontSize: 18, fontWeight: 800, marginBottom: 12, lineHeight: 1.3 }}>Want a meal plan like this?</p>
+          <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 28, lineHeight: 1.6, maxWidth: 280, margin: '0 auto 28px' }}>Upload your groceries and Edible turns them into a full week of meals built just for you.</p>
+          <button onClick={() => navigate('/')} style={{ background: '#c6a0f6', color: 'white', border: 'none', borderRadius: 12, padding: '14px 28px', fontWeight: 800, fontSize: 14, cursor: 'pointer', fontFamily: "'Open Sans', ui-sans-serif, system-ui, sans-serif", width: '100%' }}>
             Generate my meal plan →
           </button>
         </div>
