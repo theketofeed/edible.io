@@ -309,7 +309,7 @@ function MainContent() {
 				onCancel={() => setShowConfirmation(false)}
 			/>
 
-{!location.pathname.startsWith("/dashboard") && !location.pathname.startsWith("/recipe") && !isLoading && !result && !showConfirmation && !isParsing && !authOpen && !pricingOpen && (
+{!location.pathname.startsWith("/dashboard") && !location.pathname.startsWith("/recipe") && !location.pathname.startsWith("/plan") && !isLoading && !result && !showConfirmation && !isParsing && !authOpen && !pricingOpen && (
 				<Header onAuthClick={() => setAuthOpen(true)} onOpenProfile={() => setProfileOpen(true)} />
 			)}
 
