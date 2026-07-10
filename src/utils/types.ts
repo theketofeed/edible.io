@@ -10,6 +10,7 @@ export interface Meal {
 	instructions: string[]
 	ingredients: string[]
 	tips?: string[]
+	imageUrl?: string
 	nutrition?: {
 		calories: number
 		protein: number

@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getPublicMealPlan } from '../lib/db'
-import { fetchMealImage } from '../lib/mealImages'
 import { ChevronRight, ArrowLeft } from 'lucide-react'
 import logo from '../assets/favicon.png'
 
-type MealSlot = { name: string; cal: number }
+type MealSlot = { name: string; cal: number; imageUrl?: string }
 type PlanDay = { day: string; B: MealSlot; L: MealSlot; D: MealSlot }
 
 function getMealEmoji(title: string): string {
@@ -25,8 +24,7 @@ function getMealEmoji(title: string): string {
   return '🍽️'
 }
 
-function MealRow({ name, type, cal }: { name: string; type: string; cal: number }) {
-  const [img, setImg] = useState<string | null>(null)
+function MealRow({ name, type, cal, imageUrl }: { name: string; type: string; cal: number; imageUrl?: string }) {
   const typeColors: Record<string, { label: string; bg: string }> = {
     Breakfast: { label: '#92400e', bg: '#fef3c7' },
     Lunch: { label: '#065f46', bg: '#d1fae5' },
@@ -34,14 +32,10 @@ function MealRow({ name, type, cal }: { name: string; type: string; cal: number 
   }
   const col = typeColors[type] || typeColors.Dinner
 
-  useEffect(() => {
-    fetchMealImage(name).then(url => { if (url) setImg(url) })
-  }, [name])
-
   return (
     <div style={{ background: '#f9f8f6', borderRadius: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
       <div style={{ width: 44, height: 44, borderRadius: 9, background: col.bg, flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>
-        {img ? <img src={img} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : getMealEmoji(name)}
+        {imageUrl ? <img src={imageUrl} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : getMealEmoji(name)}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{ fontSize: 13, fontWeight: 700, color: '#111827', margin: 0, lineHeight: 1.3 }}>{name}</p>
@@ -67,10 +61,93 @@ export default function SharedPlan() {
   }, [id])
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f3ef', fontFamily: "'Open Sans', ui-sans-serif, system-ui, sans-serif" }}>
-      <div style={{ textAlign: 'center' }}>
-        <img src={logo} alt="Edible" style={{ width: 48, height: 48, objectFit: 'contain', marginBottom: 12 }} />
-        <p style={{ color: '#9ca3af', fontSize: 14, fontWeight: 600 }}>Loading meal plan...</p>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f3ef', fontFamily: "'Open Sans', ui-sans-serif, system-ui, sans-serif", padding: 24 }}>
+      <style>{`
+        .receipt-wrapper {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 24px;
+        }
+        .receipt-box {
+          width: 96px;
+          background: white;
+          border-radius: 6px 6px 0 0;
+          border: 2px solid #e5e7eb;
+          position: relative;
+          overflow: hidden;
+          opacity: 0;
+          animation: fadeInReceipt 0.4s ease-out forwards;
+        }
+        .receipt-teeth {
+          width: 96px;
+          height: 14px;
+          position: relative;
+          overflow: hidden;
+          opacity: 0;
+          animation: fadeInReceipt 0.4s ease-out 0.15s forwards;
+        }
+        .receipt-lines {
+          padding: 14px 12px 6px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .receipt-line {
+          height: 6px;
+          border-radius: 3px;
+          background: #e5e7eb;
+          opacity: 0;
+        }
+        .receipt-line:nth-child(1) { width: 100%; animation: blinkLine 0.5s ease-in-out 0.3s infinite; }
+        .receipt-line:nth-child(2) { width: 55%; animation: blinkLine 0.5s ease-in-out 0.5s infinite; }
+        .receipt-line:nth-child(3) { width: 100%; animation: blinkLine 0.5s ease-in-out 0.7s infinite; }
+        .receipt-line:nth-child(4) { width: 70%; animation: blinkLine 0.5s ease-in-out 0.9s infinite; }
+        .receipt-line:nth-child(5) { width: 100%; animation: blinkLine 0.5s ease-in-out 1.1s infinite; }
+        .receipt-line:nth-child(6) { width: 40%; animation: blinkLine 0.5s ease-in-out 1.3s infinite; }
+        .loading-dots span {
+          display: inline-block;
+          width: 6px; height: 6px;
+          border-radius: 50%;
+          background: #111827;
+          margin: 0 3px;
+          animation: dotBounce 1.2s ease-in-out infinite;
+        }
+        .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes fadeInReceipt {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes blinkLine {
+          0%, 100% { opacity: 0.15; }
+          50% { opacity: 1; }
+        }
+        @keyframes dotBounce {
+          0%, 80%, 100% { transform: translateY(0); opacity: 0.3; }
+          40% { transform: translateY(-5px); opacity: 1; }
+        }
+      `}</style>
+      <div className="receipt-wrapper">
+        <div className="receipt-box">
+          <div className="receipt-lines">
+            <div className="receipt-line"></div>
+            <div className="receipt-line"></div>
+            <div className="receipt-line"></div>
+            <div className="receipt-line"></div>
+            <div className="receipt-line"></div>
+            <div className="receipt-line"></div>
+          </div>
+        </div>
+        <svg className="receipt-teeth" width="96" height="14" viewBox="0 0 96 14">
+          <path d="M0,0 L8,12 L16,0 L24,12 L32,0 L40,12 L48,0 L56,12 L64,0 L72,12 L80,0 L88,12 L96,0 L96,0 L0,0 Z" fill="white" stroke="#e5e7eb" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 15, color: '#111827', fontWeight: 600 }}>Loading meal plan</span>
+          <div className="loading-dots">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -91,9 +168,9 @@ export default function SharedPlan() {
   const rawDays: any[] = plan.plan_data?.days || []
   const days: PlanDay[] = rawDays.map((d: any) => ({
     day: d.day || 'Day',
-    B: { name: d.Breakfast?.title || d.B?.name || 'N/A', cal: d.Breakfast?.nutrition?.calories || d.B?.cal || 0 },
-    L: { name: d.Lunch?.title || d.L?.name || 'N/A', cal: d.Lunch?.nutrition?.calories || d.L?.cal || 0 },
-    D: { name: d.Dinner?.title || d.D?.name || 'N/A', cal: d.Dinner?.nutrition?.calories || d.D?.cal || 0 },
+    B: { name: d.Breakfast?.title || d.B?.name || 'N/A', cal: d.Breakfast?.nutrition?.calories || d.B?.cal || 0, imageUrl: d.Breakfast?.imageUrl || d.B?.imageUrl },
+    L: { name: d.Lunch?.title || d.L?.name || 'N/A', cal: d.Lunch?.nutrition?.calories || d.L?.cal || 0, imageUrl: d.Lunch?.imageUrl || d.L?.imageUrl },
+    D: { name: d.Dinner?.title || d.D?.name || 'N/A', cal: d.Dinner?.nutrition?.calories || d.D?.cal || 0, imageUrl: d.Dinner?.imageUrl || d.D?.imageUrl },
   }))
 
   const diet = plan.plan_data?.diet || 'Balanced'
@@ -127,18 +204,18 @@ export default function SharedPlan() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <div>
                   <p style={{ fontSize: 10, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 6px' }}>Breakfast</p>
-                  <MealRow name={day.B.name} type="Breakfast" cal={day.B.cal} />
+                  <MealRow name={day.B.name} type="Breakfast" cal={day.B.cal} imageUrl={day.B.imageUrl} />
                 </div>
                 {day.L.name !== 'N/A' && (
                   <div>
                     <p style={{ fontSize: 10, fontWeight: 700, color: '#065f46', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 6px' }}>Lunch</p>
-                    <MealRow name={day.L.name} type="Lunch" cal={day.L.cal} />
+                    <MealRow name={day.L.name} type="Lunch" cal={day.L.cal} imageUrl={day.L.imageUrl} />
                   </div>
                 )}
                 {day.D.name !== 'N/A' && (
                   <div>
                     <p style={{ fontSize: 10, fontWeight: 700, color: '#5b21b6', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 6px' }}>Dinner</p>
-                    <MealRow name={day.D.name} type="Dinner" cal={day.D.cal} />
+                    <MealRow name={day.D.name} type="Dinner" cal={day.D.cal} imageUrl={day.D.imageUrl} />
                   </div>
                 )}
               </div>

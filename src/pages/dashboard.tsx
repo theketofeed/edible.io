@@ -50,7 +50,7 @@ const DIET: Record<DietKey, { icon: React.ElementType; col: string; bg: string }
   Paleo: { icon: UtensilsCrossed, col: "#c2410c", bg: "#FFF7ED" },
 }
 
-type MealSlot = { name: string; cal: number; rawMeal?: Meal }
+type MealSlot = { name: string; cal: number; imageUrl?: string; rawMeal?: Meal }
 type PlanDay = { day: string; B: MealSlot; L: MealSlot; D: MealSlot }
 type Plan = { id: string; title: string; diet: DietKey; date: string; activatedAt: string; days: PlanDay[] }
 
@@ -104,17 +104,19 @@ function calcMacros(meals: { rawMeal?: Meal }[]) {
 }
 
 // Helper: build planner data from a specific plan
-function buildPlannerFromPlans(plans: Plan[], selectedId?: string | null): Record<number, { type: string; name: string; cal: number; time: number; rawMeal?: Meal }[]> {
+type PlannerMeal = { type: string; name: string; cal: number; time: number; imageUrl?: string; rawMeal?: Meal }
+
+function buildPlannerFromPlans(plans: Plan[], selectedId?: string | null): Record<number, PlannerMeal[]> {
   if (plans.length === 0) return { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] }
   const plan = selectedId ? (plans.find(p => p.id === selectedId) || plans[0]) : plans[0]
-  const planner: Record<number, { type: string; name: string; cal: number; time: number; rawMeal?: Meal }[]> = {}
+  const planner: Record<number, PlannerMeal[]> = {}
   for (let i = 0; i < 7; i++) {
     if (i < plan.days.length) {
       const d = plan.days[i]
       planner[i] = [
-        { type: "Breakfast", name: d.B.name, cal: d.B.cal, time: d.B.rawMeal?.totalTime || 0, rawMeal: d.B.rawMeal },
-        ...(d.L.name !== 'N/A' ? [{ type: "Lunch", name: d.L.name, cal: d.L.cal, time: d.L.rawMeal?.totalTime || 0, rawMeal: d.L.rawMeal }] : []),
-        ...(d.D.name !== 'N/A' ? [{ type: "Dinner", name: d.D.name, cal: d.D.cal, time: d.D.rawMeal?.totalTime || 0, rawMeal: d.D.rawMeal }] : []),
+        { type: "Breakfast", name: d.B.name, cal: d.B.cal, time: d.B.rawMeal?.totalTime || 0, imageUrl: d.B.imageUrl || d.B.rawMeal?.imageUrl, rawMeal: d.B.rawMeal },
+        ...(d.L.name !== 'N/A' ? [{ type: "Lunch", name: d.L.name, cal: d.L.cal, time: d.L.rawMeal?.totalTime || 0, imageUrl: d.L.imageUrl || d.L.rawMeal?.imageUrl, rawMeal: d.L.rawMeal }] : []),
+        ...(d.D.name !== 'N/A' ? [{ type: "Dinner", name: d.D.name, cal: d.D.cal, time: d.D.rawMeal?.totalTime || 0, imageUrl: d.D.imageUrl || d.D.rawMeal?.imageUrl, rawMeal: d.D.rawMeal }] : []),
       ]
     } else {
       planner[i] = []
@@ -139,22 +141,25 @@ function UserAvatar({ userData, size = 30, fontSize = 12 }: { userData: UserData
   )
 }
 
-// Helper: Meal Image component that fetches from Unsplash
-function MealImage({ name, type, size = 42 }: { name: string; type: string; size?: number }) {
-  const [img, setImg] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
+// Helper: Meal Image component — uses stored imageUrl when available, otherwise fetches
+function MealImage({ name, type, size = 42, imageUrl: storedUrl }: { name: string; type: string; size?: number; imageUrl?: string }) {
+  const [fetchedUrl, setFetchedUrl] = useState<string | null>(null)
+  const [loading, setLoading] = useState(!storedUrl)
+
+  const img = storedUrl || fetchedUrl
 
   useEffect(() => {
+    if (storedUrl) return
     let active = true
     setLoading(true)
     fetchMealImage(name).then(url => {
       if (active) {
-        setImg(url)
+        setFetchedUrl(url)
         setLoading(false)
       }
     })
     return () => { active = false }
-  }, [name])
+  }, [name, storedUrl])
 
   const MealIcon = MICON[type] || Sunrise
 
@@ -618,7 +623,7 @@ function Overview({ plans, onNav, userData, onSelectPlan, selectedPlanId }: Over
                 display: "flex", gap: 10, alignItems: "center", padding: "10px 0",
                 borderBottom: i < todayMeals.length - 1 ? `1px solid rgba(0,0,0,0.03)` : "none"
               }}>
-                <MealImage name={m.name} type={m.type} size={34} />
+                <MealImage name={m.name} type={m.type} size={34} imageUrl={(m as any).imageUrl} />
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: 12.5, fontWeight: 600, color: C.txt }}>{m.name}</p>
                   <p style={{ fontSize: 11, color: C.faint }}>{m.type} · {m.cal} kcal · {m.time} min</p>
@@ -811,7 +816,7 @@ function MealPlanner({ plans, selectedPlanId }: MealPlannerProps & { selectedPla
                   onClick={() => { if (m.rawMeal) navigate(`/recipe/${day}/${m.type}`, { state: { meal: m.rawMeal, fromDashboard: true } }) }}
                   onMouseEnter={e => { if (m.rawMeal) (e.currentTarget as HTMLElement).style.opacity = '0.85' }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}>
-                  <MealImage name={m.name} type={m.type} />
+                  <MealImage name={m.name} type={m.type} imageUrl={(m as any).imageUrl} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontSize: 11.5, fontWeight: 700, color: MCOL[m.type] || C.purple, marginBottom: 2 }}>{m.type}</p>
                     <p style={{ fontSize: 14, fontWeight: 700, color: C.txt, marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.name}</p>
@@ -1648,9 +1653,9 @@ export default function EdibleDashboard() {
           const rawDays: any[] = mp.plan_data?.days || []
           const days: PlanDay[] = rawDays.map((d: any) => ({
             day: d.day || 'Day',
-            B: { name: d.Breakfast?.title || d.B?.name || 'N/A', cal: d.Breakfast?.nutrition?.calories || d.B?.cal || 0, rawMeal: d.Breakfast || d.B?.rawMeal },
-            L: { name: d.Lunch?.title || d.L?.name || 'N/A', cal: d.Lunch?.nutrition?.calories || d.L?.cal || 0, rawMeal: d.Lunch || d.L?.rawMeal },
-            D: { name: d.Dinner?.title || d.D?.name || 'N/A', cal: d.Dinner?.nutrition?.calories || d.D?.cal || 0, rawMeal: d.Dinner || d.D?.rawMeal },
+            B: { name: d.Breakfast?.title || d.B?.name || 'N/A', cal: d.Breakfast?.nutrition?.calories || d.B?.cal || 0, imageUrl: d.Breakfast?.imageUrl || d.B?.imageUrl, rawMeal: d.Breakfast || d.B?.rawMeal },
+            L: { name: d.Lunch?.title || d.L?.name || 'N/A', cal: d.Lunch?.nutrition?.calories || d.L?.cal || 0, imageUrl: d.Lunch?.imageUrl || d.L?.imageUrl, rawMeal: d.Lunch || d.L?.rawMeal },
+            D: { name: d.Dinner?.title || d.D?.name || 'N/A', cal: d.Dinner?.nutrition?.calories || d.D?.cal || 0, imageUrl: d.Dinner?.imageUrl || d.D?.imageUrl, rawMeal: d.Dinner || d.D?.rawMeal },
           }))
           return {
             id: mp.id,

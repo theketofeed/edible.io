@@ -4,7 +4,7 @@ import { Copy, Download, RefreshCw, ChevronRight, X, Bookmark, Check, Save } fro
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import type { MealPlanResult, DayMeals, Meal } from '../utils/types'
-import { fetchMealImage, sessionCache, titleToKey } from '../lib/mealImages'
+import { fetchMealImage, fetchMealImages, sessionCache, titleToKey } from '../lib/mealImages'
 import { useAuth } from '../context/AuthContext'
 import { usePlan } from '../hooks/usePlan'
 import { saveMealPlan } from '../lib/db'
@@ -162,7 +162,7 @@ useEffect(() => {
 
 	return (
 		<div
-			className="group bg-white rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.02)] border border-gray-50/50 cursor-pointer flex flex-row items-center gap-4 px-3.5 py-3.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all duration-300"
+			className="group bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-gray-200 cursor-pointer flex flex-row items-center gap-4 px-3.5 py-3.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.10)] hover:border-gray-300 hover:-translate-y-0.5 transition-all duration-300"
 			onClick={() => onNavigate(dayIndex, mealType, meal)}
 		>
 			{/* Image */}
@@ -297,7 +297,27 @@ const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result
 
 		setIsSaving(true)
 		try {
-			await saveMealPlan(result, savePlanTitle.trim())
+			// Pre-fetch images for every meal so URLs are stored in plan_data
+			const mealTitles: string[] = []
+			for (const day of result.days) {
+				if (day.Breakfast?.title) mealTitles.push(day.Breakfast.title)
+				if (day.Lunch?.title) mealTitles.push(day.Lunch.title)
+				if (day.Dinner?.title) mealTitles.push(day.Dinner.title)
+			}
+			await fetchMealImages(mealTitles)
+
+			// Attach imageUrl to each meal before persisting
+			const enriched = {
+				...result,
+				days: result.days.map(day => ({
+					...day,
+					Breakfast: day.Breakfast ? { ...day.Breakfast, imageUrl: sessionCache.get(titleToKey(day.Breakfast.title)) || undefined } : day.Breakfast,
+					Lunch: day.Lunch ? { ...day.Lunch, imageUrl: sessionCache.get(titleToKey(day.Lunch.title)) || undefined } : day.Lunch,
+					Dinner: day.Dinner ? { ...day.Dinner, imageUrl: sessionCache.get(titleToKey(day.Dinner.title)) || undefined } : day.Dinner,
+				}))
+			}
+
+			await saveMealPlan(enriched, savePlanTitle.trim())
 			showToast('success', 'Meal plan saved successfully!')
 			track(Events.PLAN_SAVED, { diet: result.diet, days: result.totalDays })
 			setShowSaveModal(false)

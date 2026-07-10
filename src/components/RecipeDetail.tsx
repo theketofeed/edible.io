@@ -129,6 +129,10 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
         return `edible-recipe-${dayName}-${mealType}-${safeMeal.title.replace(/\s+/g, '-').toLowerCase()}`
     }, [dayName, mealType, safeMeal])
 
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'instant' })
+    }, [])
+
     // Check if recipe is saved on mount
     useEffect(() => {
         if (!user || !safeMeal) return
