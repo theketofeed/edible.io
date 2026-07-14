@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getPublicMealPlan } from '../lib/db'
+import { fetchMealImage } from '../lib/mealImages'
 import { ChevronRight, ArrowLeft } from 'lucide-react'
 import logo from '../assets/favicon.png'
 
@@ -24,7 +25,8 @@ function getMealEmoji(title: string): string {
   return '🍽️'
 }
 
-function MealRow({ name, type, cal, imageUrl }: { name: string; type: string; cal: number; imageUrl?: string }) {
+function MealRow({ name, type, cal, imageUrl: storedImageUrl }: { name: string; type: string; cal: number; imageUrl?: string }) {
+  const [img, setImg] = useState<string | null>(storedImageUrl || null)
   const typeColors: Record<string, { label: string; bg: string }> = {
     Breakfast: { label: '#92400e', bg: '#fef3c7' },
     Lunch: { label: '#065f46', bg: '#d1fae5' },
@@ -32,10 +34,15 @@ function MealRow({ name, type, cal, imageUrl }: { name: string; type: string; ca
   }
   const col = typeColors[type] || typeColors.Dinner
 
+  useEffect(() => {
+    if (storedImageUrl) { setImg(storedImageUrl); return }
+    fetchMealImage(name).then(url => { if (url) setImg(url) })
+  }, [name, storedImageUrl])
+
   return (
     <div style={{ background: '#f9f8f6', borderRadius: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
       <div style={{ width: 44, height: 44, borderRadius: 9, background: col.bg, flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>
-        {imageUrl ? <img src={imageUrl} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : getMealEmoji(name)}
+        {img ? <img src={img} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : getMealEmoji(name)}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{ fontSize: 13, fontWeight: 700, color: '#111827', margin: 0, lineHeight: 1.3 }}>{name}</p>
@@ -61,92 +68,71 @@ export default function SharedPlan() {
   }, [id])
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f3ef', fontFamily: "'Open Sans', ui-sans-serif, system-ui, sans-serif", padding: 24 }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f5f3ef', fontFamily: "'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif" }}>
       <style>{`
-        .receipt-wrapper {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 24px;
-        }
-        .receipt-box {
+        .rec-body {
           width: 96px;
-          background: white;
-          border-radius: 6px 6px 0 0;
-          border: 2px solid #e5e7eb;
-          position: relative;
-          overflow: hidden;
-          opacity: 0;
-          animation: fadeInReceipt 0.4s ease-out forwards;
+          background: #ffffff;
+          border: 2.5px solid #111827;
+          border-bottom: none;
+          border-radius: 5px 5px 0 0;
+          padding: 14px 12px 10px;
+          box-shadow: 0 4px 24px rgba(0,0,0,0.10);
         }
-        .receipt-teeth {
-          width: 96px;
-          height: 14px;
-          position: relative;
-          overflow: hidden;
-          opacity: 0;
-          animation: fadeInReceipt 0.4s ease-out 0.15s forwards;
-        }
-        .receipt-lines {
-          padding: 14px 12px 6px;
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-        .receipt-line {
+        .rec-line {
           height: 6px;
           border-radius: 3px;
-          background: #e5e7eb;
-          opacity: 0;
+          background: #111827;
+          margin-bottom: 8px;
+          opacity: 0.08;
         }
-        .receipt-line:nth-child(1) { width: 100%; animation: blinkLine 0.5s ease-in-out 0.3s infinite; }
-        .receipt-line:nth-child(2) { width: 55%; animation: blinkLine 0.5s ease-in-out 0.5s infinite; }
-        .receipt-line:nth-child(3) { width: 100%; animation: blinkLine 0.5s ease-in-out 0.7s infinite; }
-        .receipt-line:nth-child(4) { width: 70%; animation: blinkLine 0.5s ease-in-out 0.9s infinite; }
-        .receipt-line:nth-child(5) { width: 100%; animation: blinkLine 0.5s ease-in-out 1.1s infinite; }
-        .receipt-line:nth-child(6) { width: 40%; animation: blinkLine 0.5s ease-in-out 1.3s infinite; }
-        .loading-dots span {
+        .rec-line:last-child { margin-bottom: 0; }
+        .rec-line.w-full { width: 100%; }
+        .rec-line.w-60 { width: 60%; }
+        .rec-line.w-80 { width: 80%; }
+        .rec-line.w-45 { width: 45%; }
+        .rec-line:nth-child(1) { animation: blinkLine 1.6s ease-in-out 0.00s infinite; }
+        .rec-line:nth-child(2) { animation: blinkLine 1.6s ease-in-out 0.20s infinite; }
+        .rec-line:nth-child(3) { animation: blinkLine 1.6s ease-in-out 0.40s infinite; }
+        .rec-line:nth-child(4) { animation: blinkLine 1.6s ease-in-out 0.60s infinite; }
+        .rec-line:nth-child(5) { animation: blinkLine 1.6s ease-in-out 0.80s infinite; }
+        .rec-line:nth-child(6) { animation: blinkLine 1.6s ease-in-out 1.00s infinite; }
+        .rec-dots span {
           display: inline-block;
           width: 6px; height: 6px;
           border-radius: 50%;
           background: #111827;
           margin: 0 3px;
-          animation: dotBounce 1.2s ease-in-out infinite;
+          animation: dotPop 1.4s ease-in-out infinite;
         }
-        .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
-        .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes fadeInReceipt {
-          from { opacity: 0; transform: translateY(8px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
+        .rec-dots span:nth-child(2) { animation-delay: 0.22s; }
+        .rec-dots span:nth-child(3) { animation-delay: 0.44s; }
         @keyframes blinkLine {
-          0%, 100% { opacity: 0.15; }
+          0%, 100% { opacity: 0.08; }
           50% { opacity: 1; }
         }
-        @keyframes dotBounce {
-          0%, 80%, 100% { transform: translateY(0); opacity: 0.3; }
-          40% { transform: translateY(-5px); opacity: 1; }
+        @keyframes dotPop {
+          0%, 80%, 100% { transform: translateY(0); opacity: 0.2; }
+          40% { transform: translateY(-6px); opacity: 1; }
         }
       `}</style>
-      <div className="receipt-wrapper">
-        <div className="receipt-box">
-          <div className="receipt-lines">
-            <div className="receipt-line"></div>
-            <div className="receipt-line"></div>
-            <div className="receipt-line"></div>
-            <div className="receipt-line"></div>
-            <div className="receipt-line"></div>
-            <div className="receipt-line"></div>
-          </div>
+      <div>
+        <div className="rec-body">
+          <div className="rec-line w-full"></div>
+          <div className="rec-line w-60"></div>
+          <div className="rec-line w-full"></div>
+          <div className="rec-line w-80"></div>
+          <div className="rec-line w-full"></div>
+          <div className="rec-line w-45"></div>
         </div>
-        <svg className="receipt-teeth" width="96" height="14" viewBox="0 0 96 14">
-          <path d="M0,0 L8,12 L16,0 L24,12 L32,0 L40,12 L48,0 L56,12 L64,0 L72,12 L80,0 L88,12 L96,0 L96,0 L0,0 Z" fill="white" stroke="#e5e7eb" stroke-width="2" stroke-linejoin="round"/>
+        <svg width="101" height="14" viewBox="0 0 101 14" style={{ display: 'block' }} xmlns="http://www.w3.org/2000/svg">
+          <path d="M0,0 L8.4,12 L16.8,0 L25.2,12 L33.6,0 L42,12 L50.5,0 L58.9,12 L67.3,0 L75.7,12 L84.1,0 L92.5,12 L101,0" fill="white" stroke="#111827" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"/>
         </svg>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 15, color: '#111827', fontWeight: 600 }}>Loading meal plan</span>
-          <div className="loading-dots">
-            <span></span><span></span><span></span>
-          </div>
+      </div>
+      <div style={{ marginTop: 28, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontSize: 14, fontWeight: 700, color: '#374151', letterSpacing: '0.01em' }}>Loading meal plan</span>
+        <div className="rec-dots">
+          <span></span><span></span><span></span>
         </div>
       </div>
     </div>
