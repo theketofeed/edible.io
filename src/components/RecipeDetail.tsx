@@ -825,7 +825,7 @@ Made with Edible`
                 </motion.div>
 
                 {/* Tips Section */}
-                <div className="mt-2 sm:mt-4">
+                <div className="mt-6 sm:mt-10">
                     {tipsContent}
                 </div>
             </div>

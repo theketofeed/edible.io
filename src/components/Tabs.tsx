@@ -60,7 +60,7 @@ export default function Tabs({ tabs, defaultTabId, className = '' }: TabsProps) 
                                 tabIndex={isActive ? 0 : -1}
                                 onClick={() => setActiveTabId(tab.id)}
                                 onKeyDown={(e) => handleKeyDown(e, index)}
-                                className={`relative flex-1 min-w-max px-4 sm:px-5 py-2.5 text-[11px] sm:text-[12px] font-bold tracking-wide rounded-full transition-colors duration-300 outline-none
+                                className={`relative flex-1 min-w-max px-4 sm:px-5 py-2.5 text-[13px] sm:text-[14px] font-bold tracking-wide rounded-full transition-colors duration-300 outline-none
 									${isActive ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
                             >
                                 {isActive && (
