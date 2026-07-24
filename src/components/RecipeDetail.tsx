@@ -825,7 +825,9 @@ Made with Edible`
                 </motion.div>
 
                 {/* Tips Section */}
-                {tipsContent}
+                <div className="mt-2 sm:mt-4">
+                    {tipsContent}
+                </div>
             </div>
 
             {/* Cooking Mode Modal */}

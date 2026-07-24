@@ -34,7 +34,6 @@ export default function Tabs({ tabs, defaultTabId, className = '' }: TabsProps) 
 
         e.preventDefault()
         setActiveTabId(tabs[newIndex].id)
-        // Focus the new tab
         const tabList = e.currentTarget.parentElement
         const nextTab = tabList?.children[newIndex] as HTMLElement
         nextTab?.focus()
@@ -42,41 +41,41 @@ export default function Tabs({ tabs, defaultTabId, className = '' }: TabsProps) 
 
     return (
         <div className={`bg-white rounded-[2rem] shadow-[0_8px_40px_rgba(0,0,0,0.03)] border border-gray-50/50 overflow-hidden ${className}`}>
-            {/* Tab Headers */}
-            <div
-                role="tablist"
-                aria-label="Recipe details"
-                className="flex border-b border-gray-50 bg-white overflow-x-auto"
-            >
-                {tabs.map((tab, index) => {
-                    const isActive = activeTabId === tab.id
-                    return (
-                        <button
-                            key={tab.id}
-                            id={`tab-${tab.id}`}
-                            role="tab"
-                            aria-selected={isActive}
-                            aria-controls={`panel-${tab.id}`}
-                            tabIndex={isActive ? 0 : -1}
-                            onClick={() => setActiveTabId(tab.id)}
-                            onKeyDown={(e) => handleKeyDown(e, index)}
-                            className={`relative flex-1 min-w-max sm:flex-1 px-3 sm:px-4 py-2.5 sm:py-3.5 text-[10px] sm:text-[11px] font-bold tracking-widest uppercase transition-all duration-300 outline-none
-								${isActive ? 'text-gray-900 bg-white' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
-                        >
-                            {tab.label}
-
-                            {/* Active Indicator */}
-                            {isActive && (
-                                <motion.div
-                                    layoutId="activeTab"
-                                    className="absolute bottom-0 left-0 right-0 h-1 bg-[#C6A0F6] rounded-t-full shadow-[0_0_8px_rgba(198,160,246,0.6)]"
-                                    initial={false}
-                                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                                />
-                            )}
-                        </button>
-                    )
-                })}
+            {/* Tab Headers — segmented pill switcher */}
+            <div className="p-3 sm:p-4 bg-white border-b border-gray-50">
+                <div
+                    role="tablist"
+                    aria-label="Recipe details"
+                    className="flex items-center gap-1 bg-gray-50 rounded-full p-1 overflow-x-auto"
+                >
+                    {tabs.map((tab, index) => {
+                        const isActive = activeTabId === tab.id
+                        return (
+                            <button
+                                key={tab.id}
+                                id={`tab-${tab.id}`}
+                                role="tab"
+                                aria-selected={isActive}
+                                aria-controls={`panel-${tab.id}`}
+                                tabIndex={isActive ? 0 : -1}
+                                onClick={() => setActiveTabId(tab.id)}
+                                onKeyDown={(e) => handleKeyDown(e, index)}
+                                className={`relative flex-1 min-w-max px-4 sm:px-5 py-2.5 text-[11px] sm:text-[12px] font-bold tracking-wide rounded-full transition-colors duration-300 outline-none
+									${isActive ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
+                            >
+                                {isActive && (
+                                    <motion.div
+                                        layoutId="activeTabPill"
+                                        className="absolute inset-0 bg-white rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.08)]"
+                                        initial={false}
+                                        transition={{ type: 'spring', stiffness: 500, damping: 32 }}
+                                    />
+                                )}
+                                <span className="relative z-10">{tab.label}</span>
+                            </button>
+                        )
+                    })}
+                </div>
             </div>
 
             {/* Tab Content */}
