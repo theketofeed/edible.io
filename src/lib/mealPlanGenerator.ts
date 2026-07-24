@@ -85,7 +85,7 @@ If ingredients are insufficient to create a meaningful meal for a slot, use null
         "prepTime": 10,
         "cookTime": 15,
         "totalTime": 25,
-        "nutrition": { "calories": 350, "protein": 20, "carbs": 40, "fat": 12, "fiber": 5 }
+        "nutrition": { "calories": 350, "protein": 20, "carbs": 40, "fat": 12, "fiber": 5, "sodium": 480, "sugars": 6 }
       },
       "Lunch": { ... },
       "Dinner": { ... }
@@ -148,6 +148,8 @@ function coerceMeal(meal: any, fallbackTitle: string, context: string = ''): Mea
       carbs: Number(meal.nutrition.carbs) || 40,
       fat: Number(meal.nutrition.fat) || 15,
       fiber: meal.nutrition.fiber !== undefined ? Number(meal.nutrition.fiber) : undefined,
+      sodium: meal.nutrition.sodium !== undefined ? Number(meal.nutrition.sodium) : undefined,
+      sugars: meal.nutrition.sugars !== undefined ? Number(meal.nutrition.sugars) : undefined,
     }
   }
 

@@ -17,6 +17,8 @@ export interface Meal {
 		carbs: number
 		fat: number
 		fiber?: number
+		sodium?: number
+		sugars?: number
 	}
 }
 

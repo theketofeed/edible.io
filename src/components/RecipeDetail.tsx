@@ -497,6 +497,8 @@ Made with Edible`
                         { label: 'Carbohydrates', value: `${safeMeal.nutrition.carbs}g` },
                         { label: 'Fat', value: `${safeMeal.nutrition.fat}g` },
                         ...(safeMeal.nutrition.fiber !== undefined ? [{ label: 'Dietary Fibre', value: `${safeMeal.nutrition.fiber}g` }] : []),
+                        ...(safeMeal.nutrition.sugars !== undefined ? [{ label: 'Sugars', value: `${safeMeal.nutrition.sugars}g` }] : []),
+                        ...(safeMeal.nutrition.sodium !== undefined ? [{ label: 'Sodium', value: `${safeMeal.nutrition.sodium}mg` }] : []),
                     ].map((row, i) => (
                         <div key={i} className="flex items-center justify-between py-5 px-1">
                             <span className="text-gray-600 font-medium text-[15px]">{row.label}</span>
