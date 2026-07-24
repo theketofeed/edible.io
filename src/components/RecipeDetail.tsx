@@ -423,7 +423,7 @@ Made with Edible`
         },
         {
             id: 'instructions',
-            label: 'Cooking Steps',
+            label: 'Method',
             content: (
                 <div className="space-y-4 md:space-y-6">
                     {instructionSteps.length > 0 ? (
