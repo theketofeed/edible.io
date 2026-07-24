@@ -485,6 +485,28 @@ Made with Edible`
                     )}
                 </div>
             )
+        },
+        {
+            id: 'nutrition',
+            label: 'Nutrition',
+            content: safeMeal.nutrition ? (
+                <div className="divide-y divide-gray-100">
+                    {[
+                        { label: 'Calories', value: `${safeMeal.nutrition.calories}kcal` },
+                        { label: 'Protein', value: `${safeMeal.nutrition.protein}g` },
+                        { label: 'Carbohydrates', value: `${safeMeal.nutrition.carbs}g` },
+                        { label: 'Fat', value: `${safeMeal.nutrition.fat}g` },
+                        ...(safeMeal.nutrition.fiber !== undefined ? [{ label: 'Dietary Fibre', value: `${safeMeal.nutrition.fiber}g` }] : []),
+                    ].map((row, i) => (
+                        <div key={i} className="flex items-center justify-between py-5 px-1">
+                            <span className="text-gray-600 font-medium text-[15px]">{row.label}</span>
+                            <span className="text-gray-900 font-bold text-[15px]">{row.value}</span>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <p className="text-gray-500 italic text-center py-8">No nutrition data available</p>
+            )
         }
     ]
 
@@ -756,23 +778,6 @@ Made with Edible`
                     </div>
                 </motion.div>
 
-                {/* Nutrition Section */}
-                {safeMeal.nutrition && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2, duration: 0.4 }}
-                        className="bg-white rounded-2xl sm:rounded-[2rem] md:rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.03)] p-6 sm:p-8 md:p-12 mb-6 sm:mb-8 md:mb-12 border border-gray-50/50 relative overflow-hidden"
-                    >
-                        <div className="absolute top-0 right-0 w-48 h-48 bg-purple-50 rounded-full blur-[80px] -mr-24 -mt-24"></div>
-                        <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-6 sm:mb-8 flex items-center gap-4">
-                            <div className="w-1.5 h-8 bg-[#C6A0F6] rounded-full shadow-[0_0_12px_rgba(198,160,246,0.5)]"></div>
-                            Nutrition Guide
-                        </h2>
-                        <NutritionBadges nutrition={safeMeal.nutrition} />
-                    </motion.div>
-                )}
-
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -811,16 +816,16 @@ Made with Edible`
                     </div>
                 </motion.div>
 
-                {/* Tips Section */}
-                {tipsContent}
-
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3, duration: 0.4 }}
+                    transition={{ delay: 0.22, duration: 0.4 }}
                 >
                     <Tabs tabs={tabs} />
                 </motion.div>
+
+                {/* Tips Section */}
+                {tipsContent}
             </div>
 
             {/* Cooking Mode Modal */}

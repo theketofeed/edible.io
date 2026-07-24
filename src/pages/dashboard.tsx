@@ -11,7 +11,7 @@ import {
 } from "lucide-react"
 import logo from "../assets/favicon.png"
 import { useAuth } from "../context/AuthContext"
-import { getUserMealPlans, getProfile, deleteMealPlan, getUserSavedRecipes, updateMealPlan, setMealPlanPublic } from "../lib/db"
+import { getUserMealPlans, getProfile, deleteMealPlan, getUserSavedRecipes, updateMealPlan, setMealPlanPublic, getDismissedNotifications, setDismissedNotifications } from "../lib/db"
 import { fetchMealImage } from "../lib/mealImages"
 import type { MealPlanResult, Meal, SavedRecipe } from "../utils/types"
 import PlanBadge from "../components/PlanBadge"
@@ -198,6 +198,15 @@ const getToday = (startDate?: Date) => {
   return diffDays
 }
 
+function isPlanExpired(plan: Plan): boolean {
+  const start = new Date(plan.activatedAt)
+  start.setHours(0, 0, 0, 0)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const dayIdx = Math.floor((today.getTime() - start.getTime()) / 86400000)
+  return dayIdx >= plan.days.length
+}
+
 const MBG: Record<string, string> = {
   Breakfast: "#FEF3C7",
   Lunch: "#D1FAE5",
@@ -215,9 +224,15 @@ function NotificationBell({ plans, onNav, onUpgrade, selectedPlanId }: {
   selectedPlanId: string | null
 }) {
   const [open, setOpen] = useState(false)
+  const [dismissedIds, setDismissedIds] = useState<string[]>([])
   const bellRef = useRef<HTMLDivElement>(null)
   const { plan, generationsUsed, generationsRemaining, FREE_GENERATION_LIMIT, maxSavedPlans } = usePlan()
   const isPro = plan === 'pro' || plan === 'founding'
+
+  // Load dismissed notification ids from Supabase on mount
+  useEffect(() => {
+    getDismissedNotifications().then(setDismissedIds).catch(() => {})
+  }, [])
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -232,20 +247,34 @@ function NotificationBell({ plans, onNav, onUpgrade, selectedPlanId }: {
   const selectedPlan = plans.find(p => p.id === selectedPlanId) || plans[0] || null
   const planStartDate = selectedPlan?.activatedAt ? new Date(selectedPlan.activatedAt) : null
 
-  // Compute day index within current plan (0-6)
+  // Compute day index within current plan — no longer clamped to 0-6, reflects true elapsed days
   const planDayIdx = planStartDate ? (() => {
     const today = new Date(); today.setHours(0,0,0,0)
     const start = new Date(planStartDate); start.setHours(0,0,0,0)
     return Math.floor((today.getTime() - start.getTime()) / 86400000)
   })() : -1
 
+  const planExpired = selectedPlan ? isPlanExpired(selectedPlan) : false
+  const planLength = selectedPlan?.days.length || 7
+
   type Nudge = { id: string; icon: string; title: string; body: string; action?: { label: string; nav: NavId }; urgent?: boolean }
 
   const nudges: Nudge[] = []
 
-  // 1. Plan expiring soon (day 5, 6, or 7)
-  if (planStartDate && planDayIdx >= 4 && planDayIdx <= 6) {
-    const daysLeft = 6 - planDayIdx
+  // 1. Plan expired — accurate message, only shows once, no more stale "days left"
+  if (selectedPlan && planExpired) {
+    nudges.push({
+      id: `plan_expired_${selectedPlan.id}`,
+      icon: '📭',
+      title: 'Meal plan expired',
+      body: 'Your meal plan has finished. Generate a new one to keep going.',
+      action: { label: 'Generate new plan', nav: 'generate' },
+      urgent: true,
+    })
+  }
+  // 2. Plan expiring soon (last 2 days of whatever length this plan actually is)
+  else if (planStartDate && planDayIdx >= planLength - 2 && planDayIdx < planLength) {
+    const daysLeft = planLength - 1 - planDayIdx
     nudges.push({
       id: 'plan_expiring',
       icon: '📅',
@@ -256,7 +285,7 @@ function NotificationBell({ plans, onNav, onUpgrade, selectedPlanId }: {
     })
   }
 
-  // 2. Generation limit warning (used 3 of 4)
+  // 3. Generation limit warning (used 3 of 4)
   if (!isPro && generationsUsed >= FREE_GENERATION_LIMIT - 1 && generationsRemaining > 0) {
     nudges.push({
       id: 'gen_limit',
@@ -268,7 +297,7 @@ function NotificationBell({ plans, onNav, onUpgrade, selectedPlanId }: {
     })
   }
 
-  // 3. Generations used up
+  // 4. Generations used up
   if (!isPro && generationsRemaining === 0) {
     nudges.push({
       id: 'gen_limit_full',
@@ -280,7 +309,7 @@ function NotificationBell({ plans, onNav, onUpgrade, selectedPlanId }: {
     })
   }
 
-  // 4. Saved plans limit warning (3 of 4)
+  // 5. Saved plans limit warning (3 of 4)
   if (!isPro && plans.length >= maxSavedPlans - 1 && plans.length < maxSavedPlans) {
     nudges.push({
       id: 'plans_limit',
@@ -291,7 +320,7 @@ function NotificationBell({ plans, onNav, onUpgrade, selectedPlanId }: {
     })
   }
 
-  // 5. No plan yet — new user nudge
+  // 6. No active plan — new user or all plans expired
   if (plans.length === 0) {
     nudges.push({
       id: 'no_plan',
@@ -302,8 +331,8 @@ function NotificationBell({ plans, onNav, onUpgrade, selectedPlanId }: {
     })
   }
 
-  // 6. Today's calorie summary (only if they have a plan with today's meals)
-  if (plans.length > 0 && planDayIdx >= 0 && planDayIdx <= 6) {
+  // 7. Today's calorie summary (only if plan is active and has today's meals)
+  if (selectedPlan && !planExpired && planDayIdx >= 0) {
     const planner = buildPlannerFromPlans(plans, selectedPlan?.id)
     const todayMeals = planner[planDayIdx] || []
     const consumed = todayMeals.reduce((a, m) => a + m.cal, 0)
@@ -319,7 +348,7 @@ function NotificationBell({ plans, onNav, onUpgrade, selectedPlanId }: {
     }
   }
 
-  // 7. Milestone — first plan saved
+  // 8. Milestone — first plan saved
   if (plans.length === 1) {
     nudges.push({
       id: 'milestone_first',
@@ -329,8 +358,22 @@ function NotificationBell({ plans, onNav, onUpgrade, selectedPlanId }: {
     })
   }
 
-  const hasUrgent = nudges.some(n => n.urgent)
-  const displayNudges = nudges.slice(0, 4)
+  const allNudges = nudges.slice(0, 4)
+  const unreadNudges = allNudges.filter(n => !dismissedIds.includes(n.id))
+  const unreadCount = unreadNudges.length
+
+  const markAsRead = async (id: string) => {
+    if (dismissedIds.includes(id)) return
+    const updated = [...dismissedIds, id]
+    setDismissedIds(updated)
+    try { await setDismissedNotifications(updated) } catch {}
+  }
+
+  const markAllAsRead = async () => {
+    const updated = Array.from(new Set([...dismissedIds, ...allNudges.map(n => n.id)]))
+    setDismissedIds(updated)
+    try { await setDismissedNotifications(updated) } catch {}
+  }
 
   return (
     <div ref={bellRef} style={{ position: 'relative' }}>
@@ -345,11 +388,13 @@ function NotificationBell({ plans, onNav, onUpgrade, selectedPlanId }: {
         }}
       >
         <Bell size={14} style={{ color: open ? 'white' : C.muted }} />
-        {hasUrgent && !open && (
+        {unreadCount > 0 && !open && (
           <span style={{
-            position: 'absolute', top: 6, right: 6, width: 7, height: 7,
-            borderRadius: '50%', background: '#ef4444', border: '1.5px solid white',
-          }} />
+            position: 'absolute', top: -4, right: -4, minWidth: 16, height: 16, padding: '0 3px',
+            borderRadius: 999, background: '#ef4444', border: '1.5px solid white',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 9.5, fontWeight: 800, color: 'white', lineHeight: 1,
+          }}>{unreadCount > 9 ? '9+' : unreadCount}</span>
         )}
       </button>
 
@@ -363,22 +408,34 @@ function NotificationBell({ plans, onNav, onUpgrade, selectedPlanId }: {
             {/* Header */}
             <div style={{ padding: '14px 16px 10px', borderBottom: `1px solid ${C.cardBdr}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <p style={{ fontSize: 13, fontWeight: 800, color: C.txt }}>Notifications</p>
-              <span style={{ fontSize: 11, color: C.faint, fontWeight: 600 }}>{displayNudges.length} update{displayNudges.length !== 1 ? 's' : ''}</span>
+              {unreadCount > 0 ? (
+                <button onClick={markAllAsRead}
+                  style={{ fontSize: 11, color: C.accentDark, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, fontFamily: "'Plus Jakarta Sans',sans-serif" }}>
+                  Mark all as read
+                </button>
+              ) : (
+                <span style={{ fontSize: 11, color: C.faint, fontWeight: 600 }}>All read</span>
+              )}
             </div>
 
             {/* Nudges */}
             <div style={{ maxHeight: 380, overflowY: 'auto' }}>
-              {displayNudges.length === 0 ? (
+              {allNudges.length === 0 ? (
                 <div style={{ padding: '32px 16px', textAlign: 'center' }}>
                   <p style={{ fontSize: 24, marginBottom: 8 }}>✅</p>
                   <p style={{ fontSize: 13, fontWeight: 700, color: C.txt, marginBottom: 4 }}>All caught up!</p>
                   <p style={{ fontSize: 12, color: C.faint }}>No updates right now.</p>
                 </div>
-              ) : displayNudges.map((n, i) => (
-                <div key={n.id} style={{
+              ) : allNudges.map((n, i) => {
+                const isRead = dismissedIds.includes(n.id)
+                return (
+                <div key={n.id} onClick={() => markAsRead(n.id)} style={{
                   padding: '12px 16px',
-                  borderBottom: i < displayNudges.length - 1 ? `1px solid ${C.cardBdr}` : 'none',
-                  background: n.urgent ? 'rgba(239,68,68,0.03)' : 'transparent',
+                  borderBottom: i < allNudges.length - 1 ? `1px solid ${C.cardBdr}` : 'none',
+                  background: isRead ? 'transparent' : (n.urgent ? 'rgba(239,68,68,0.03)' : 'rgba(198,160,246,0.04)'),
+                  cursor: 'pointer',
+                  opacity: isRead ? 0.55 : 1,
+                  transition: 'opacity .15s, background .15s',
                 }}>
                   <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
                     <span style={{
@@ -387,11 +444,15 @@ function NotificationBell({ plans, onNav, onUpgrade, selectedPlanId }: {
                       display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
                     }}>{n.icon}</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: 12.5, fontWeight: 700, color: n.urgent ? '#b91c1c' : C.txt, marginBottom: 2 }}>{n.title}</p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {!isRead && <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.accent, flexShrink: 0 }} />}
+                        <p style={{ fontSize: 12.5, fontWeight: 700, color: n.urgent && !isRead ? '#b91c1c' : C.txt, marginBottom: 2 }}>{n.title}</p>
+                      </div>
                       <p style={{ fontSize: 11.5, color: C.muted, lineHeight: 1.4 }}>{n.body}</p>
                       {n.action && (
                         <button
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation()
                             setOpen(false)
                             if (n.id === 'gen_limit' || n.id === 'gen_limit_full') {
                               onUpgrade('generation_limit')
@@ -412,7 +473,7 @@ function NotificationBell({ plans, onNav, onUpgrade, selectedPlanId }: {
                     </div>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           </div>
       )}
@@ -1580,6 +1641,8 @@ export default function EdibleDashboard() {
   const bellRef = useRef<HTMLDivElement>(null)
   const plannerNavRef = useRef<HTMLButtonElement>(null)
 
+  const activePlans = plans.filter(p => !isPlanExpired(p))
+
   const handleDeletePlan = (id: string) => {
     setPlans(prev => prev.filter(p => p.id !== id))
     if (selectedPlanId === id) {
@@ -2032,7 +2095,7 @@ export default function EdibleDashboard() {
             </div>
             <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
               <NotificationBell 
-                plans={plans} 
+                plans={activePlans} 
                 onNav={go} 
                 onUpgrade={(trigger) => { setPricingTrigger(trigger); setPricingOpen(true) }}
                 selectedPlanId={selectedPlanId}
@@ -2050,7 +2113,7 @@ export default function EdibleDashboard() {
                 <>
                   {view === "overview" && (
                     <Overview 
-                      plans={plans} 
+                      plans={activePlans} 
                       onNav={go} 
                       userData={userData} 
                       onSelectPlan={handleActivatePlan} 
@@ -2059,7 +2122,7 @@ export default function EdibleDashboard() {
                   )}
                   {view === "planner" && (
                     <MealPlanner
-                      plans={plans}
+                      plans={activePlans}
                       selectedPlanId={selectedPlanId}
                     />
                   )}

@@ -184,6 +184,34 @@ export async function getProfile() {
   }
 }
 
+// ─── Dismissed Notifications ──────────────────────────────────────────────────
+
+export async function getDismissedNotifications(): Promise<string[]> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('dismissed_notification_ids')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (error || !data) return []
+  return data.dismissed_notification_ids || []
+}
+
+export async function setDismissedNotifications(ids: string[]) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ dismissed_notification_ids: ids })
+    .eq('id', user.id)
+
+  if (error) throw error
+}
+
 // ─── Saved Recipes ────────────────────────────────────────────────────────────
 
 export async function saveSavedRecipe(recipeTitle: string, mealType: string, recipeData: any) {
