@@ -671,6 +671,121 @@ app.post('/api/send-welcome', async (req, res) => {
   }
 })
 
+// ─── Plan Expiry Check (called daily by Supabase cron) ─────────────────────
+app.post('/api/check-plan-expiry', async (req, res) => {
+  try {
+    const now = new Date()
+    const todayStart = new Date(now); todayStart.setHours(0,0,0,0)
+    const tomorrowStart = new Date(todayStart); tomorrowStart.setDate(tomorrowStart.getDate() + 1)
+    const dayAfterStart = new Date(tomorrowStart); dayAfterStart.setDate(dayAfterStart.getDate() + 1)
+
+    // Fetch all meal plans with their activation date and day count
+    const { data: plans, error } = await supabaseAdmin
+      .from('meal_plans')
+      .select('id, user_id, title, activated_at, plan_data')
+
+    if (error) throw error
+
+    let endingSoonCount = 0
+    let expiredCount = 0
+
+    for (const plan of plans || []) {
+      if (!plan.activated_at) continue
+      const dayCount = plan.plan_data?.days?.length || 7
+      const start = new Date(plan.activated_at); start.setHours(0,0,0,0)
+      const expiryDate = new Date(start)
+      expiryDate.setDate(expiryDate.getDate() + dayCount) // day this plan expires
+
+      // Get user email
+      const { data: userData } = await supabaseAdmin.auth.admin.getUserById(plan.user_id)
+      const email = userData?.user?.email
+      if (!email) continue
+
+      // Ending soon: expiry falls tomorrow
+      if (expiryDate >= tomorrowStart && expiryDate < dayAfterStart) {
+        try {
+          await resend.emails.send({
+            from: 'Edible <hello@tryediblee.com>',
+            to: email,
+            subject: 'Your meal plan ends tomorrow',
+            reply_to: 'hello@tryediblee.com',
+            headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
+            html: `<div style="font-family: -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 32px;">
+              <h2 style="color:#1a1a1a;">Your plan "${plan.title}" ends tomorrow</h2>
+              <p style="color:#444; font-size:16px; line-height:1.6;">Generate your next plan so you're not left guessing what to cook.</p>
+              <a href="https://www.tryediblee.com/dashboard" style="background:#C6A0F6; color:#1a1a1a; text-decoration:none; padding:12px 24px; border-radius:8px; font-weight:700; display:inline-block; margin-top:16px;">Generate new plan →</a>
+            </div>`
+          })
+          endingSoonCount++
+        } catch (e) { console.error('[PlanExpiry] Failed ending-soon email:', e.message) }
+      }
+
+      // Expired: expiry was today
+      if (expiryDate >= todayStart && expiryDate < tomorrowStart) {
+        try {
+          await resend.emails.send({
+            from: 'Edible <hello@tryediblee.com>',
+            to: email,
+            subject: 'Your meal plan has ended',
+            reply_to: 'hello@tryediblee.com',
+            headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
+            html: `<div style="font-family: -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 32px;">
+              <h2 style="color:#1a1a1a;">Your plan "${plan.title}" has finished</h2>
+              <p style="color:#444; font-size:16px; line-height:1.6;">Ready for your next week? Generate a new plan in seconds.</p>
+              <a href="https://www.tryediblee.com/dashboard" style="background:#C6A0F6; color:#1a1a1a; text-decoration:none; padding:12px 24px; border-radius:8px; font-weight:700; display:inline-block; margin-top:16px;">Generate new plan →</a>
+            </div>`
+          })
+          expiredCount++
+        } catch (e) { console.error('[PlanExpiry] Failed expired email:', e.message) }
+      }
+    }
+
+    console.log(`[PlanExpiry] Sent ${endingSoonCount} ending-soon, ${expiredCount} expired emails`)
+    res.json({ success: true, endingSoonCount, expiredCount })
+  } catch (err) {
+    console.error('[PlanExpiry] Error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ─── First Plan Milestone Email (called by Supabase webhook) ───────────────
+app.post('/api/first-plan-check', async (req, res) => {
+  try {
+    const record = req.body?.record
+    if (!record?.user_id) return res.status(400).json({ error: 'Missing record.user_id' })
+
+    const { count } = await supabaseAdmin
+      .from('meal_plans')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', record.user_id)
+
+    if (count !== 1) return res.json({ skipped: true, reason: 'not first plan' })
+
+    const { data: userData } = await supabaseAdmin.auth.admin.getUserById(record.user_id)
+    const email = userData?.user?.email
+    if (!email) return res.json({ skipped: true, reason: 'no email' })
+
+    await resend.emails.send({
+      from: 'Edible <hello@tryediblee.com>',
+      to: email,
+      subject: 'Your first meal plan is ready 🎉',
+      reply_to: 'hello@tryediblee.com',
+      headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
+      html: `<div style="font-family: -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 32px;">
+        <h2 style="color:#1a1a1a;">You just made your first plan 🎉</h2>
+        <p style="color:#444; font-size:16px; line-height:1.6;">It's saved and ready to go. Come back anytime to check today's meals or generate a new plan.</p>
+        <a href="https://www.tryediblee.com/dashboard" style="background:#C6A0F6; color:#1a1a1a; text-decoration:none; padding:12px 24px; border-radius:8px; font-weight:700; display:inline-block; margin-top:16px;">View your plan →</a>
+      </div>`
+    })
+
+    console.log(`[FirstPlan] 📧 Milestone email sent to ${email}`)
+    res.json({ success: true })
+  } catch (err) {
+    console.error('[FirstPlan] Error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // ─── Health check ──────────────────────────────────────────────────────────
 app.get('/health', (req, res) => {
 	res.json({ status: 'ok', timestamp: new Date().toISOString() })
