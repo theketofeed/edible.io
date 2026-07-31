@@ -751,7 +751,7 @@ app.post('/api/check-plan-expiry', async (req, res) => {
             headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
             html: emailShell(
               'Your Plan Ends Today ⏰',
-              `"${plan.title}" ends today`,
+              `Your "${plan.title}" meal plan ends today`,
               'This is your last day on this plan. Generate your next one now so you\'re not left guessing what to cook tomorrow.',
               'Generate new plan'
             )
@@ -771,8 +771,8 @@ app.post('/api/check-plan-expiry', async (req, res) => {
             headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
             html: emailShell(
               'Your Plan Has Ended 📭',
-              `"${plan.title}" has finished`,
-              'Ready for your next week? Upload a fresh grocery list and get a new plan in seconds.',
+              `Your "${plan.title}" meal plan has finished`,
+              'That\'s a wrap on this week\'s meals. Upload your groceries and get your next plan in seconds.',
               'Generate new plan'
             )
           })
