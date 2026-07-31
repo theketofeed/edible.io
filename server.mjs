@@ -640,22 +640,36 @@ app.post('/api/send-welcome', async (req, res) => {
             <span style="color: #1a1a1a; font-size: 22px; font-weight: 800; letter-spacing: -0.3px;">Welcome to Edible 🥗</span>
           </div>
           <div style="background: #ffffff; border-radius: 0 0 20px 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.04); padding: 36px 32px 40px;">
-            <h2 style="color: #1a1a1a; font-size: 20px; font-weight: 800; margin: 0 0 12px; line-height: 1.3;">You're in, ${name ? name.split(' ')[0] : 'there'} 👋</h2>
+            <h2 style="color: #1a1a1a; font-size: 20px; font-weight: 800; margin: 0 0 20px; line-height: 1.3;">You're in, ${name ? name.split(' ')[0] : 'there'} 👋</h2>
 
             <p style="color: #555; font-size: 15.5px; line-height: 1.65; margin: 0 0 20px;">
               Welcome to Edible, so glad you're here.
             </p>
 
             <p style="color: #555; font-size: 15.5px; line-height: 1.65; margin: 0 0 16px;">
-              We've all been there — you want to cook but don't know what to make, so you end up ordering takeout. Or you get home from work too tired to think of anything for dinner. Or you buy groceries with good intentions and watch them go to waste because you never figured out what to make with them.
+              We've all been there.
+            </p>
+
+            <div style="margin: 0 0 20px;">
+              <p style="color: #555; font-size: 15.5px; line-height: 1.6; margin: 0 0 10px; padding-left: 18px; position: relative;"><span style="color:#C6A0F6; position:absolute; left:0;">▪</span>You want to cook but don't know what to make so you order takeout</p>
+              <p style="color: #555; font-size: 15.5px; line-height: 1.6; margin: 0 0 10px; padding-left: 18px; position: relative;"><span style="color:#C6A0F6; position:absolute; left:0;">▪</span>You get home from work too tired to think of dinner</p>
+              <p style="color: #555; font-size: 15.5px; line-height: 1.6; margin: 0; padding-left: 18px; position: relative;"><span style="color:#C6A0F6; position:absolute; left:0;">▪</span>You buy groceries with good intentions, then watch them go to waste</p>
+            </div>
+
+            <p style="color: #555; font-size: 15.5px; line-height: 1.65; margin: 0 0 16px;">
+              That's exactly why I built Edible.
+            </p>
+
+            <p style="color: #555; font-size: 15.5px; line-height: 1.65; margin: 0 0 20px;">
+              I got tired of staring into my fridge every night with no idea what to make from what I actually had.
             </p>
 
             <p style="color: #555; font-size: 15.5px; line-height: 1.65; margin: 0 0 16px;">
-              That's exactly why I built Edible. I got tired of staring into my fridge every night having no idea what to make with what I actually had.
+              Now I just upload a grocery receipt, or type out what's in my kitchen — and Edible turns it into a full week of meals.
             </p>
 
             <p style="color: #555; font-size: 15.5px; line-height: 1.65; margin: 0 0 28px;">
-              So now I just upload my grocery receipt or type out what's in my kitchen, and Edible turns it into a full week of meals. No more wasted groceries, no more "what should we eat" panic.
+              No more wasted groceries. No more "what should we eat" panic.
             </p>
 
             <a href="https://www.tryediblee.com" style="background: #C6A0F6; color: #1a1a1a; text-decoration: none; padding: 13px 26px; border-radius: 10px; font-size: 14.5px; font-weight: 700; display: inline-block;">
