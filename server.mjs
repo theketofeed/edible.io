@@ -634,50 +634,45 @@ app.post('/api/send-welcome', async (req, res) => {
       headers: {
         'X-Entity-Ref-ID': crypto.randomUUID(),
       },
-      html: `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #F0EEEA;">
-  <div style="background: linear-gradient(135deg, #C6A0F6, #B58DF5); padding: 32px 32px 28px; text-align: center;">
-    <div style="display: inline-flex; align-items: center; gap: 10px; justify-content: center;">
-      <img src="https://www.tryediblee.com/logo.png" alt="Edible" width="36" height="36" style="border-radius: 9px; display: block;" />
-      <span style="color: #1a1a1a; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">Edible</span>
-    </div>
-  </div>
+      html: `<div style="background: #F5F3EF; padding: 32px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+        <div style="max-width: 560px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #C6A0F6, #B58DF5); padding: 40px 32px; text-align: center; border-radius: 20px 20px 0 0;">
+            <span style="color: #1a1a1a; font-size: 22px; font-weight: 800; letter-spacing: -0.3px;">Welcome to Edible 🥗</span>
+          </div>
+          <div style="background: #ffffff; border-radius: 0 0 20px 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.04); padding: 36px 32px 40px;">
+            <h2 style="color: #1a1a1a; font-size: 20px; font-weight: 800; margin: 0 0 12px; line-height: 1.3;">You're in, ${name ? name.split(' ')[0] : 'there'} 👋</h2>
 
-  <div style="padding: 36px 32px 40px;">
-    <h2 style="color: #1a1a1a; font-size: 21px; font-weight: 800; margin: 0 0 12px; line-height: 1.3;">You're in, ${name ? name.split(' ')[0] : 'there'} 👋</h2>
+            <p style="color: #555; font-size: 15.5px; line-height: 1.65; margin: 0 0 20px;">
+              Welcome to Edible, so glad you're here.
+            </p>
 
-    <p style="color: #555; font-size: 15.5px; line-height: 1.65; margin: 0 0 20px;">
-      Welcome to Edible, so glad you're here.
-    </p>
+            <p style="color: #555; font-size: 15.5px; line-height: 1.65; margin: 0 0 16px;">
+              We've all been there — you want to cook but don't know what to make, so you end up ordering takeout. Or you get home from work too tired to think of anything for dinner. Or you buy groceries with good intentions and watch them go to waste because you never figured out what to make with them.
+            </p>
 
-    <p style="color: #555; font-size: 15.5px; line-height: 1.65; margin: 0 0 16px;">
-      We've all been there — you want to cook but don't know what to make, so you end up ordering takeout. Or you get home from work too tired to think of anything for dinner. Or you buy groceries with good intentions and watch them go to waste because you never figured out what to make with them.
-    </p>
+            <p style="color: #555; font-size: 15.5px; line-height: 1.65; margin: 0 0 16px;">
+              That's exactly why I built Edible. I got tired of staring into my fridge every night having no idea what to make with what I actually had.
+            </p>
 
-    <p style="color: #555; font-size: 15.5px; line-height: 1.65; margin: 0 0 16px;">
-      That's exactly why I built Edible. I got tired of staring into my fridge every night having no idea what to make with what I actually had.
-    </p>
+            <p style="color: #555; font-size: 15.5px; line-height: 1.65; margin: 0 0 28px;">
+              So now I just upload my grocery receipt or type out what's in my kitchen, and Edible turns it into a full week of meals. No more wasted groceries, no more "what should we eat" panic.
+            </p>
 
-    <p style="color: #555; font-size: 15.5px; line-height: 1.65; margin: 0 0 28px;">
-      So now I just upload my grocery receipt or type out what's in my kitchen, and Edible turns it into a full week of meals. No more wasted groceries, no more "what should we eat" panic.
-    </p>
+            <a href="https://www.tryediblee.com" style="background: #C6A0F6; color: #1a1a1a; text-decoration: none; padding: 13px 26px; border-radius: 10px; font-size: 14.5px; font-weight: 700; display: inline-block;">
+              Generate your first meal plan →
+            </a>
+            <p style="color: #999; font-size: 13px; margin: 12px 0 0;">Takes less than a minute. Try it with whatever's in your fridge right now.</p>
 
-    <a href="https://www.tryediblee.com" style="background: #C6A0F6; color: #1a1a1a; text-decoration: none; padding: 13px 26px; border-radius: 10px; font-size: 14.5px; font-weight: 700; display: inline-block;">
-      Generate your first meal plan →
-    </a>
-    <p style="color: #999; font-size: 13px; margin: 12px 0 0;">Takes less than a minute. Try it with whatever's in your fridge right now.</p>
+            <hr style="border: none; border-top: 1px solid #F0EEEA; margin: 28px 0 24px;" />
 
-    <hr style="border: none; border-top: 1px solid #F0EEEA; margin: 28px 0 24px;" />
+            <p style="color: #555; font-size: 14px; line-height: 1.65; margin: 0 0 4px;">Got stuck, have an idea, or just want to say what you made? Reply here — I read everything.</p>
 
-    <p style="color: #555; font-size: 14px; line-height: 1.65; margin: 0 0 4px;">Got stuck, have an idea, or just want to say what you made? Reply here — I read everything.</p>
-
-    <p style="color: #1a1a1a; font-size: 14px; font-weight: 700; margin: 16px 0 0;">Praise</p>
-    <p style="color: #999; font-size: 13px; margin: 2px 0 0;">Founder, Edible</p>
-  </div>
-
-  <div style="padding: 18px 32px; background: #FAF9F7; border-top: 1px solid #F0EEEA; text-align: center;">
-    <p style="color: #B0AAA2; font-size: 12px; margin: 0;">Edible — Turn groceries into meal plans, instantly.</p>
-  </div>
-</div>`
+            <p style="color: #1a1a1a; font-size: 14px; font-weight: 700; margin: 16px 0 0;">Praise</p>
+            <p style="color: #999; font-size: 13px; margin: 2px 0 0;">Founder, Edible</p>
+          </div>
+          <p style="text-align: center; color: #A8A29A; font-size: 12px; margin: 20px 0 0;">Edible — Turn groceries into meal plans, instantly.</p>
+        </div>
+      </div>`
     })
     console.log(`[Welcome Email] 📧 Sent to ${email}`)
     res.json({ success: true })
@@ -687,7 +682,6 @@ app.post('/api/send-welcome', async (req, res) => {
   }
 })
 
-// ─── Plan Expiry Check (called daily by Supabase cron) ─────────────────────
 // ─── Plan Expiry Check (called daily by Supabase cron) ─────────────────────
 app.post('/api/check-plan-expiry', async (req, res) => {
   try {
@@ -704,21 +698,18 @@ app.post('/api/check-plan-expiry', async (req, res) => {
     let endingSoonCount = 0
     let expiredCount = 0
 
-    const emailShell = (title, body, ctaText) => `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #F0EEEA;">
-        <div style="background: linear-gradient(135deg, #C6A0F6, #B58DF5); padding: 32px 32px 28px; text-align: center;">
-          <div style="display: inline-flex; align-items: center; gap: 10px; justify-content: center;">
-            <img src="https://www.tryediblee.com/logo.png" alt="Edible" width="36" height="36" style="border-radius: 9px; display: block;" />
-            <span style="color: #1a1a1a; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">Edible</span>
+    const emailShell = (bannerText, title, body, ctaText) => `
+      <div style="background: #F5F3EF; padding: 32px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+        <div style="max-width: 560px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #C6A0F6, #B58DF5); padding: 40px 32px; text-align: center; border-radius: 20px 20px 0 0;">
+            <span style="color: #1a1a1a; font-size: 22px; font-weight: 800; letter-spacing: -0.3px;">${bannerText}</span>
           </div>
-        </div>
-        <div style="padding: 36px 32px 40px;">
-          <h2 style="color: #1a1a1a; font-size: 21px; font-weight: 800; margin: 0 0 12px; line-height: 1.3;">${title}</h2>
-          <p style="color: #555; font-size: 15.5px; line-height: 1.65; margin: 0 0 28px;">${body}</p>
-          <a href="https://www.tryediblee.com/dashboard" style="background: #C6A0F6; color: #1a1a1a; text-decoration: none; padding: 13px 26px; border-radius: 10px; font-size: 14.5px; font-weight: 700; display: inline-block;">${ctaText} →</a>
-        </div>
-        <div style="padding: 18px 32px; background: #FAF9F7; border-top: 1px solid #F0EEEA; text-align: center;">
-          <p style="color: #B0AAA2; font-size: 12px; margin: 0;">Edible — Turn groceries into meal plans, instantly.</p>
+          <div style="background: #ffffff; border-radius: 0 0 20px 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.04); padding: 36px 32px 40px;">
+            <h2 style="color: #1a1a1a; font-size: 20px; font-weight: 800; margin: 0 0 12px; line-height: 1.3;">${title}</h2>
+            <p style="color: #555; font-size: 15.5px; line-height: 1.65; margin: 0 0 28px;">${body}</p>
+            <a href="https://www.tryediblee.com/dashboard" style="background: #C6A0F6; color: #1a1a1a; text-decoration: none; padding: 13px 26px; border-radius: 10px; font-size: 14.5px; font-weight: 700; display: inline-block;">${ctaText} →</a>
+          </div>
+          <p style="text-align: center; color: #A8A29A; font-size: 12px; margin: 20px 0 0;">Edible — Turn groceries into meal plans, instantly.</p>
         </div>
       </div>`
 
@@ -745,6 +736,7 @@ app.post('/api/check-plan-expiry', async (req, res) => {
             reply_to: 'hello@tryediblee.com',
             headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
             html: emailShell(
+              'Your Plan Ends Today ⏰',
               `"${plan.title}" ends today`,
               'This is your last day on this plan. Generate your next one now so you\'re not left guessing what to cook tomorrow.',
               'Generate new plan'
@@ -764,6 +756,7 @@ app.post('/api/check-plan-expiry', async (req, res) => {
             reply_to: 'hello@tryediblee.com',
             headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
             html: emailShell(
+              'Your Plan Has Ended 📭',
               `"${plan.title}" has finished`,
               'Ready for your next week? Upload a fresh grocery list and get a new plan in seconds.',
               'Generate new plan'
@@ -805,20 +798,17 @@ app.post('/api/first-plan-check', async (req, res) => {
       subject: 'Your first meal plan is ready 🎉',
       reply_to: 'hello@tryediblee.com',
       headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
-      html: `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #F0EEEA;">
-        <div style="background: linear-gradient(135deg, #C6A0F6, #B58DF5); padding: 32px 32px 28px; text-align: center;">
-          <div style="display: inline-flex; align-items: center; gap: 10px; justify-content: center;">
-            <img src="https://www.tryediblee.com/logo.png" alt="Edible" width="36" height="36" style="border-radius: 9px; display: block;" />
-            <span style="color: #1a1a1a; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">Edible</span>
+      html: `<div style="background: #F5F3EF; padding: 32px 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+        <div style="max-width: 560px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #C6A0F6, #B58DF5); padding: 40px 32px; text-align: center; border-radius: 20px 20px 0 0;">
+            <span style="color: #1a1a1a; font-size: 22px; font-weight: 800; letter-spacing: -0.3px;">Your First Plan is Ready 🎉</span>
           </div>
-        </div>
-        <div style="padding: 36px 32px 40px;">
-          <h2 style="color: #1a1a1a; font-size: 21px; font-weight: 800; margin: 0 0 12px; line-height: 1.3;">Your first plan is saved 🎉</h2>
-          <p style="color: #555; font-size: 15.5px; line-height: 1.65; margin: 0 0 28px;">It's ready and waiting for you. Come back anytime to check today's meals, swap a recipe, or start your next week.</p>
-          <a href="https://www.tryediblee.com/dashboard" style="background: #C6A0F6; color: #1a1a1a; text-decoration: none; padding: 13px 26px; border-radius: 10px; font-size: 14.5px; font-weight: 700; display: inline-block;">View your plan →</a>
-        </div>
-        <div style="padding: 18px 32px; background: #FAF9F7; border-top: 1px solid #F0EEEA; text-align: center;">
-          <p style="color: #B0AAA2; font-size: 12px; margin: 0;">Edible — Turn groceries into meal plans, instantly.</p>
+          <div style="background: #ffffff; border-radius: 0 0 20px 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.04); padding: 36px 32px 40px;">
+            <h2 style="color: #1a1a1a; font-size: 20px; font-weight: 800; margin: 0 0 12px; line-height: 1.3;">Your first plan is saved</h2>
+            <p style="color: #555; font-size: 15.5px; line-height: 1.65; margin: 0 0 28px;">It's ready and waiting for you. Come back anytime to check today's meals, swap a recipe, or start your next week.</p>
+            <a href="https://www.tryediblee.com/dashboard" style="background: #C6A0F6; color: #1a1a1a; text-decoration: none; padding: 13px 26px; border-radius: 10px; font-size: 14.5px; font-weight: 700; display: inline-block;">View your plan →</a>
+          </div>
+          <p style="text-align: center; color: #A8A29A; font-size: 12px; margin: 20px 0 0;">Edible — Turn groceries into meal plans, instantly.</p>
         </div>
       </div>`
     })
