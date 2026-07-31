@@ -672,14 +672,13 @@ app.post('/api/send-welcome', async (req, res) => {
 })
 
 // ─── Plan Expiry Check (called daily by Supabase cron) ─────────────────────
+// ─── Plan Expiry Check (called daily by Supabase cron) ─────────────────────
 app.post('/api/check-plan-expiry', async (req, res) => {
   try {
     const now = new Date()
     const todayStart = new Date(now); todayStart.setHours(0,0,0,0)
     const tomorrowStart = new Date(todayStart); tomorrowStart.setDate(tomorrowStart.getDate() + 1)
-    const dayAfterStart = new Date(tomorrowStart); dayAfterStart.setDate(dayAfterStart.getDate() + 1)
 
-    // Fetch all meal plans with their activation date and day count
     const { data: plans, error } = await supabaseAdmin
       .from('meal_plans')
       .select('id, user_id, title, activated_at, plan_data')
@@ -689,39 +688,58 @@ app.post('/api/check-plan-expiry', async (req, res) => {
     let endingSoonCount = 0
     let expiredCount = 0
 
+    const emailShell = (title, body, ctaText) => `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #F0EEEA;">
+        <div style="background: linear-gradient(135deg, #C6A0F6, #B58DF5); padding: 32px 32px 28px; text-align: center;">
+          <div style="display: inline-flex; align-items: center; gap: 10px; justify-content: center;">
+            <img src="https://www.tryediblee.com/logo.png" alt="Edible" width="36" height="36" style="border-radius: 9px; display: block;" />
+            <span style="color: #1a1a1a; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">Edible</span>
+          </div>
+        </div>
+        <div style="padding: 36px 32px 40px;">
+          <h2 style="color: #1a1a1a; font-size: 21px; font-weight: 800; margin: 0 0 12px; line-height: 1.3;">${title}</h2>
+          <p style="color: #555; font-size: 15.5px; line-height: 1.65; margin: 0 0 28px;">${body}</p>
+          <a href="https://www.tryediblee.com/dashboard" style="background: #C6A0F6; color: #1a1a1a; text-decoration: none; padding: 13px 26px; border-radius: 10px; font-size: 14.5px; font-weight: 700; display: inline-block;">${ctaText} →</a>
+        </div>
+        <div style="padding: 18px 32px; background: #FAF9F7; border-top: 1px solid #F0EEEA; text-align: center;">
+          <p style="color: #B0AAA2; font-size: 12px; margin: 0;">Edible — Turn groceries into meal plans, instantly.</p>
+        </div>
+      </div>`
+
     for (const plan of plans || []) {
       if (!plan.activated_at) continue
       const dayCount = plan.plan_data?.days?.length || 7
       const start = new Date(plan.activated_at); start.setHours(0,0,0,0)
-      const expiryDate = new Date(start)
-      expiryDate.setDate(expiryDate.getDate() + dayCount) // day this plan expires
+      const lastValidDay = new Date(start)
+      lastValidDay.setDate(lastValidDay.getDate() + dayCount - 1)
+      const expiredDay = new Date(lastValidDay)
+      expiredDay.setDate(expiredDay.getDate() + 1)
 
-      // Get user email
       const { data: userData } = await supabaseAdmin.auth.admin.getUserById(plan.user_id)
       const email = userData?.user?.email
       if (!email) continue
 
-      // Ending soon: expiry falls tomorrow
-      if (expiryDate >= tomorrowStart && expiryDate < dayAfterStart) {
+      // Ending soon: today IS the last valid day
+      if (lastValidDay >= todayStart && lastValidDay < tomorrowStart) {
         try {
           await resend.emails.send({
             from: 'Edible <hello@tryediblee.com>',
             to: email,
-            subject: 'Your meal plan ends tomorrow',
+            subject: 'Your meal plan ends today',
             reply_to: 'hello@tryediblee.com',
             headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
-            html: `<div style="font-family: -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 32px;">
-              <h2 style="color:#1a1a1a;">Your plan "${plan.title}" ends tomorrow</h2>
-              <p style="color:#444; font-size:16px; line-height:1.6;">Generate your next plan so you're not left guessing what to cook.</p>
-              <a href="https://www.tryediblee.com/dashboard" style="background:#C6A0F6; color:#1a1a1a; text-decoration:none; padding:12px 24px; border-radius:8px; font-weight:700; display:inline-block; margin-top:16px;">Generate new plan →</a>
-            </div>`
+            html: emailShell(
+              `"${plan.title}" ends today`,
+              'This is your last day on this plan. Generate your next one now so you\'re not left guessing what to cook tomorrow.',
+              'Generate new plan'
+            )
           })
           endingSoonCount++
         } catch (e) { console.error('[PlanExpiry] Failed ending-soon email:', e.message) }
       }
 
-      // Expired: expiry was today
-      if (expiryDate >= todayStart && expiryDate < tomorrowStart) {
+      // Expired: today is the day after the last valid day
+      if (expiredDay >= todayStart && expiredDay < tomorrowStart) {
         try {
           await resend.emails.send({
             from: 'Edible <hello@tryediblee.com>',
@@ -729,11 +747,11 @@ app.post('/api/check-plan-expiry', async (req, res) => {
             subject: 'Your meal plan has ended',
             reply_to: 'hello@tryediblee.com',
             headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
-            html: `<div style="font-family: -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 32px;">
-              <h2 style="color:#1a1a1a;">Your plan "${plan.title}" has finished</h2>
-              <p style="color:#444; font-size:16px; line-height:1.6;">Ready for your next week? Generate a new plan in seconds.</p>
-              <a href="https://www.tryediblee.com/dashboard" style="background:#C6A0F6; color:#1a1a1a; text-decoration:none; padding:12px 24px; border-radius:8px; font-weight:700; display:inline-block; margin-top:16px;">Generate new plan →</a>
-            </div>`
+            html: emailShell(
+              `"${plan.title}" has finished`,
+              'Ready for your next week? Upload a fresh grocery list and get a new plan in seconds.',
+              'Generate new plan'
+            )
           })
           expiredCount++
         } catch (e) { console.error('[PlanExpiry] Failed expired email:', e.message) }
@@ -771,10 +789,21 @@ app.post('/api/first-plan-check', async (req, res) => {
       subject: 'Your first meal plan is ready 🎉',
       reply_to: 'hello@tryediblee.com',
       headers: { 'X-Entity-Ref-ID': crypto.randomUUID() },
-      html: `<div style="font-family: -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 32px;">
-        <h2 style="color:#1a1a1a;">You just made your first plan 🎉</h2>
-        <p style="color:#444; font-size:16px; line-height:1.6;">It's saved and ready to go. Come back anytime to check today's meals or generate a new plan.</p>
-        <a href="https://www.tryediblee.com/dashboard" style="background:#C6A0F6; color:#1a1a1a; text-decoration:none; padding:12px 24px; border-radius:8px; font-weight:700; display:inline-block; margin-top:16px;">View your plan →</a>
+      html: `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 560px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #F0EEEA;">
+        <div style="background: linear-gradient(135deg, #C6A0F6, #B58DF5); padding: 32px 32px 28px; text-align: center;">
+          <div style="display: inline-flex; align-items: center; gap: 10px; justify-content: center;">
+            <img src="https://www.tryediblee.com/logo.png" alt="Edible" width="36" height="36" style="border-radius: 9px; display: block;" />
+            <span style="color: #1a1a1a; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;">Edible</span>
+          </div>
+        </div>
+        <div style="padding: 36px 32px 40px;">
+          <h2 style="color: #1a1a1a; font-size: 21px; font-weight: 800; margin: 0 0 12px; line-height: 1.3;">Your first plan is saved 🎉</h2>
+          <p style="color: #555; font-size: 15.5px; line-height: 1.65; margin: 0 0 28px;">It's ready and waiting for you. Come back anytime to check today's meals, swap a recipe, or start your next week.</p>
+          <a href="https://www.tryediblee.com/dashboard" style="background: #C6A0F6; color: #1a1a1a; text-decoration: none; padding: 13px 26px; border-radius: 10px; font-size: 14.5px; font-weight: 700; display: inline-block;">View your plan →</a>
+        </div>
+        <div style="padding: 18px 32px; background: #FAF9F7; border-top: 1px solid #F0EEEA; text-align: center;">
+          <p style="color: #B0AAA2; font-size: 12px; margin: 0;">Edible — Turn groceries into meal plans, instantly.</p>
+        </div>
       </div>`
     })
 
