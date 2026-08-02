@@ -396,7 +396,7 @@ function MainContent() {
 														<button
 															className={`px-6 py-3 rounded-lg font-semibold transition-all ${canGenerate && !isLoading ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-purple-600/50 text-white cursor-not-allowed'}`}
 															disabled={!canGenerate || isLoading}
-															onClick={handleGenerate}
+															onClick={() => { track(Events.GENERATE_PLAN_CLICKED, { retry: false, item_count: groceryItems.length, diet }); handleGenerate() }}
 														>
 															Generate Plan
 														</button>
@@ -426,7 +426,7 @@ function MainContent() {
 												Edible is experiencing high demand right now. This usually fixes itself in a few seconds — give it another try!
 											</p>
 											<button
-												onClick={handleGenerate}
+												onClick={() => { track(Events.GENERATE_PLAN_CLICKED, { retry: true, item_count: groceryItems.length, diet }); handleGenerate() }}
 												className="w-full sm:w-auto px-8 py-4 bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-bold rounded-2xl transition-all shadow-lg shadow-purple-200 flex items-center justify-center gap-2 group mx-auto"
 											>
 												Try Again
