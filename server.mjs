@@ -40,6 +40,30 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY
 )
 
+// ─── PostHog server-side capture ────────────────────────────────────────────
+async function capturePostHogEvent(distinctId, event, properties = {}) {
+  const posthogKey = process.env.VITE_POSTHOG_TOKEN
+  const posthogHost = process.env.VITE_POSTHOG_HOST || 'https://eu.posthog.com'
+  if (!posthogKey) {
+    console.warn('[PostHog] No API key configured — skipping server-side capture')
+    return
+  }
+  try {
+    await fetch(`${posthogHost}/capture/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        api_key: posthogKey,
+        event,
+        distinct_id: distinctId,
+        properties: { ...properties, source: 'backend' }
+      })
+    })
+  } catch (err) {
+    console.warn('[PostHog] Failed to capture event:', err.message)
+  }
+}
+
 const aiLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 10, // 10 AI calls per minute per IP
@@ -359,7 +383,8 @@ app.post('/api/webhooks/dodo', async (req, res) => {
         console.error('[Webhook] ❌ Supabase error:', error)
       } else {
         console.log(`[Webhook] ✅ User ${userId} upgraded to ${plan}`)
-        
+        capturePostHogEvent(userId, 'payment_succeeded', { plan: productType })
+
         // Send welcome email
         const userEmail = event.data.customer?.email
         if (userEmail) {
