@@ -27,6 +27,7 @@ export default function PricingModal({ isOpen, onClose, pricingTrigger, onRequir
       return
     }
     track(Events.UPGRADE_CLICKED, { plan: selectedPlan })
+    track(Events.CHECKOUT_STARTED, { plan: selectedPlan })
     setLoading(selectedPlan)
     const result = await createCheckout(selectedPlan, user.id, user.email!)
     if (result.success && result.url) {

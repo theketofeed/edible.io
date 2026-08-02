@@ -50,6 +50,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     const handleGoogleSignIn = async () => {
         setStatus('loading')
         localStorage.setItem('edible_google_signup_time', Date.now().toString())
+        track(Events.SIGNUP_COMPLETED, { method: 'google' })
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: { redirectTo: 'https://www.tryediblee.com' },
@@ -79,6 +80,8 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             if (mode === 'signup') {
                 const { error } = await supabase.auth.signUp({ email, password })
                 if (error) throw error
+
+                track(Events.SIGNUP_COMPLETED, { method: 'email' })
 
                 // Send welcome email immediately — don't wait for SIGNED_IN event
                 fetch(`${import.meta.env.VITE_BACKEND_URL}/api/send-welcome`, {
