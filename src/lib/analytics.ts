@@ -22,6 +22,8 @@ export const Events = {
   RECIPE_VIEWED: 'recipe_viewed',
   PDF_DOWNLOADED: 'pdf_downloaded',
   PLAN_VIEWED: 'plan_viewed',
+  COOKING_MODE_ENTERED: 'cooking_mode_entered',
+  COOKING_MODE_COMPLETED: 'cooking_mode_completed',
 
   // Homepage engagement
   HERO_CTA_CLICKED: 'hero_cta_clicked',

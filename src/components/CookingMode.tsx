@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { X, ChevronLeft, ChevronRight, Play, Pause, RotateCcw, Timer as TimerIcon, Check, Mic, MicOff } from 'lucide-react'
+import { track, Events } from '../lib/analytics'
 
 interface CookingModeProps {
     steps: string[]
@@ -10,6 +11,12 @@ interface CookingModeProps {
 
 export default function CookingMode({ steps, onClose, mealTitle, storageKey }: CookingModeProps) {
     const [currentStepIndex, setCurrentStepIndex] = useState(0)
+
+    // Track when cooking mode opens
+    useEffect(() => {
+        track(Events.COOKING_MODE_ENTERED, { meal_title: mealTitle, step_count: steps.length })
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
     const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set())
     const stepRef = useRef<HTMLDivElement>(null)
 
@@ -330,7 +337,7 @@ export default function CookingMode({ steps, onClose, mealTitle, storageKey }: C
 
                     {currentStepIndex === steps.length - 1 ? (
                         <button
-                            onClick={onClose}
+                            onClick={() => { track(Events.COOKING_MODE_COMPLETED, { meal_title: mealTitle, step_count: steps.length }); onClose() }}
                             className="flex-[2] py-3.5 bg-neutral-900 text-white rounded-xl font-semibold flex items-center justify-center gap-1.5 hover:bg-neutral-800 transition-colors"
                         >
                             <Check className="w-5 h-5" />
