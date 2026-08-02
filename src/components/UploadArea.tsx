@@ -115,7 +115,6 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 			if (items.length) {
 				setDetectedCount(items.length)
 				setUploadState('success')
-				track(Events.INPUT_METHOD_SELECTED, { method: 'receipt' })
 				onItemsDetected(items, rawText)
 			} else {
 				setDetectedCount(0)
@@ -186,7 +185,6 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 			return
 		}
 		setDetectedCount(items.length)
-		track(Events.INPUT_METHOD_SELECTED, { method: 'typed' })
 		onItemsDetected(items, manualText)
 	}, [manualText, onItemsDetected, onError])
 
@@ -225,7 +223,7 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 					<button
 						type="button"
 						className="px-5 sm:px-6 py-2.5 sm:py-2.5 rounded-full bg-lavender text-black font-semibold shadow-lg shadow-lavender/40 hover:shadow-lavender/50 hover:scale-105 transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed text-sm"
-						onClick={useManual}
+						onClick={() => { track(Events.INPUT_METHOD_SELECTED, { method: 'typed', source: 'homepage' }); useManual() }}
 						disabled={disabled || !manualText.trim()}
 					>
 						Use this text
@@ -280,7 +278,7 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 							<div className="flex flex-col sm:flex-row gap-3 w-full px-2 sm:px-0 sm:justify-center">
 								<button
 									type="button"
-									onClick={() => inputRef.current?.click()}
+									onClick={() => { track(Events.INPUT_METHOD_SELECTED, { method: 'receipt', source: 'homepage' }); inputRef.current?.click() }}
 									className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-lavender text-black font-semibold shadow-lg shadow-lavender/40 hover:shadow-lavender/50 hover:scale-105 transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
 									disabled={disabled}
 								>
@@ -289,7 +287,7 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 								</button>
 								<button
 									type="button"
-									onClick={() => setShowCamera(true)}
+									onClick={() => { track(Events.INPUT_METHOD_SELECTED, { method: 'receipt', source: 'homepage' }); setShowCamera(true) }}
 									className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-white border-2 border-lavender/40 text-black font-semibold hover:bg-lavender/5 hover:border-lavender/60 transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
 									disabled={disabled}
 								>

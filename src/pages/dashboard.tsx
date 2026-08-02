@@ -1465,11 +1465,11 @@ function Generate() {
       <p style={{ color: C.muted, fontSize: 13, marginBottom: 28 }}>Tell us what you've got. We'll handle the rest.</p>
       <div className="dash-generate-grid" style={{ marginBottom: 24 }}>
         {[
-          { Icon: Camera, label: "Upload a Receipt", desc: "Take a photo of your grocery receipt" },
-          { Icon: PencilLine, label: "Type or Paste", desc: "Enter your grocery items directly" },
+          { Icon: Camera, label: "Upload a Receipt", desc: "Take a photo of your grocery receipt", method: 'receipt' },
+          { Icon: PencilLine, label: "Type or Paste", desc: "Enter your grocery items directly", method: 'typed' },
         ].map((o, i) => (
           <div key={i} onMouseEnter={() => setHov(i)} onMouseLeave={() => setHov(null)}
-            onClick={handleGenerate}
+            onClick={() => { track(Events.INPUT_METHOD_SELECTED, { method: o.method, source: 'dashboard' }); handleGenerate() }}
             style={{
               background: C.white, borderRadius: 16,
               border: `2px solid ${hov === i ? C.accent : C.cardBdr}`,
