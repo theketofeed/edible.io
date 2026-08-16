@@ -1,7 +1,27 @@
 import fs from 'node:fs'
 import http from 'node:http'
+import os from 'node:os'
 import path from 'node:path'
-import puppeteer from 'puppeteer'
+import puppeteer from 'puppeteer-core'
+import chromium from '@sparticuz/chromium'
+
+async function resolveBrowserPath() {
+	if (process.platform !== 'win32') {
+		// Linux / macOS: use @sparticuz/chromium's bundled binary (works on Vercel).
+		return chromium.executablePath()
+	}
+	// Windows: find a local Chrome / Edge installation.
+	const candidates = [
+		path.join(process.env['PROGRAMFILES'] || '', 'Google', 'Chrome', 'Application', 'chrome.exe'),
+		path.join(process.env['LOCALAPPDATA'] || '', 'Google', 'Chrome', 'Application', 'chrome.exe'),
+		path.join(process.env['PROGRAMFILES(X86)'] || '', 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+		path.join(process.env['PROGRAMFILES'] || '', 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+	]
+	for (const p of candidates) {
+		if (fs.existsSync(p)) return p
+	}
+	throw new Error('[prerender] No Chrome or Edge found on Windows. Install Chrome or Edge to run the prerender.')
+}
 
 const ROUTES = ['/']
 
@@ -90,7 +110,13 @@ async function prerenderHomepage(distDir) {
 	const { server, port } = await startStaticServer(distDir)
 	let browser
 	try {
-		browser = await puppeteer.launch({ headless: true })
+		const execPath = await resolveBrowserPath()
+		browser = await puppeteer.launch({
+			executablePath: execPath,
+			args: chromium.args,
+			defaultViewport: chromium.defaultViewport,
+			headless: chromium.headless,
+		})
 		const page = await browser.newPage()
 		await page.setViewport({ width: 1280, height: 900 })
 
