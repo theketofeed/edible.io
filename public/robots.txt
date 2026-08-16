@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+
+# Disallow private/authenticated frontend routes
+Disallow: /dashboard
+Disallow: /planner
+Disallow: /account
+Disallow: /auth
+
+# Disallow API endpoints
+Disallow: /api/
+
+Sitemap: https://www.tryediblee.com/sitemap.xml
