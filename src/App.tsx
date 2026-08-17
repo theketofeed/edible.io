@@ -38,6 +38,9 @@ import EdibleDashboard from './pages/dashboard'
 import PaymentSuccess from './pages/PaymentSuccess'
 import Privacy from './pages/Privacy'
 import Terms from './pages/Terms'
+import PricingPage from './pages/PricingPage'
+import HowItWorksPage from './pages/HowItWorksPage'
+import FAQPage from './pages/FAQPage'
 
 function MainContent() {
 	const navigate = useNavigate()
@@ -511,11 +514,14 @@ function MainContent() {
 						}} result={result} showToast={showToast} />
 					</ErrorBoundary>
 				} />
-				<Route path="/dashboard" element={<EdibleDashboard />} />
-				<Route path="/payment-success" element={<PaymentSuccess />} />
-				<Route path="/privacy" element={<Privacy />} />
-				<Route path="/terms" element={<Terms />} />
-				<Route path="/plan/:id" element={<SharedPlan />} />
+			<Route path="/dashboard" element={<EdibleDashboard />} />
+			<Route path="/payment-success" element={<PaymentSuccess />} />
+			<Route path="/privacy" element={<Privacy />} />
+			<Route path="/terms" element={<Terms />} />
+			<Route path="/pricing" element={<PricingPage />} />
+			<Route path="/how-it-works" element={<HowItWorksPage />} />
+			<Route path="/faq" element={<FAQPage />} />
+			<Route path="/plan/:id" element={<SharedPlan />} />
 			</Routes>
 
 			<Footer />

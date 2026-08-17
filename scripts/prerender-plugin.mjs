@@ -23,9 +23,12 @@ async function resolveBrowserPath() {
 	throw new Error('[prerender] No Chrome or Edge found on Windows. Install Chrome or Edge to run the prerender.')
 }
 
-const ROUTES = ['/']
-
-const CONTENT_MARKER = 'Turn your groceries into meal plans instantly'
+const ROUTES = [
+	{ path: '/', contentMarker: 'Turn your groceries into meal plans instantly', h1Prefix: 'Turn your groceries' },
+	{ path: '/pricing', contentMarker: 'Simple Pricing', h1Prefix: null },
+	{ path: '/how-it-works', contentMarker: 'From groceries to meal plans', h1Prefix: null },
+	{ path: '/faq', contentMarker: 'Frequently Asked Questions', h1Prefix: null },
+]
 
 const MIME_TYPES = {
 	'.html': 'text/html; charset=utf-8',
@@ -60,8 +63,19 @@ function startStaticServer(rootDir) {
 		const filePath = path.join(rootDir, pathname === '/' ? 'index.html' : pathname)
 		fs.readFile(filePath, (err, data) => {
 			if (err) {
-				res.writeHead(404)
-				res.end('Not found')
+				// SPA fallback: serve index.html for client-side routing
+				fs.readFile(path.join(rootDir, 'index.html'), (err2, indexData) => {
+					if (err2) {
+						res.writeHead(404)
+						res.end('Not found')
+						return
+					}
+					res.writeHead(200, {
+						'Content-Type': 'text/html; charset=utf-8',
+						'Cache-Control': 'no-store'
+					})
+					res.end(indexData)
+				})
 				return
 			}
 			const ext = path.extname(filePath).toLowerCase()
@@ -138,19 +152,31 @@ async function prerenderHomepage(distDir) {
 		})
 
 		for (const route of ROUTES) {
-			const url = `http://127.0.0.1:${port}${route}`
+			const url = `http://127.0.0.1:${port}${route.path}`
 			const response = await page.goto(url, { waitUntil: 'networkidle0', timeout: 60000 })
 			if (!response || response.status() !== 200) {
-				throw new Error(`[prerender] ${route} returned ${response ? response.status() : 'no response'}`)
+				throw new Error(`[prerender] ${route.path} returned ${response ? response.status() : 'no response'}`)
 			}
 
-			await page.waitForFunction(
-				() => {
-					const h1 = document.querySelector('h1')
-					return !!(h1 && h1.textContent.includes('Turn your groceries'))
-				},
-				{ timeout: 30000 }
-			)
+			if (route.h1Prefix) {
+				await page.waitForFunction(
+					(prefix) => {
+						const h1 = document.querySelector('h1')
+						return !!(h1 && h1.textContent.includes(prefix))
+					},
+					{ timeout: 30000 },
+					route.h1Prefix
+				)
+			} else {
+				// Wait for the root div to be populated (non-homepage routes use h2 sections)
+				await page.waitForFunction(
+					() => {
+						const root = document.getElementById('root')
+						return root && root.children.length > 0 && root.textContent.trim().length > 100
+					},
+					{ timeout: 30000 }
+				)
+			}
 
 			// Let images/animations settle before serializing.
 			await new Promise((resolve) => setTimeout(resolve, 750))
@@ -161,25 +187,25 @@ async function prerenderHomepage(distDir) {
 			const hasContent = await page.evaluate((marker) => {
 				const text = document.body ? document.body.textContent || '' : ''
 				return text.replace(/\s+/g, ' ').includes(marker.replace(/\s+/g, ' '))
-			}, CONTENT_MARKER)
+			}, route.contentMarker)
 
 			if (!hasContent) {
 				const h1Text = await page.evaluate(() => document.querySelector('h1')?.textContent)
 				fs.writeFileSync(path.join(distDir, 'prerender-debug.html'), html, 'utf8')
 				throw new Error(
-					`[prerender] rendered HTML for ${route} is missing expected content ("${CONTENT_MARKER}"). h1 textContent: ${JSON.stringify(h1Text)}. Debug dump written to dist/prerender-debug.html`
+					`[prerender] rendered HTML for ${route.path} is missing expected content ("${route.contentMarker}"). h1 textContent: ${JSON.stringify(h1Text)}. Debug dump written to dist/prerender-debug.html`
 				)
 			}
 			if (html.includes('<div id="root"></div>')) {
-				throw new Error(`[prerender] rendered HTML for ${route} still has an empty #root — nothing was rendered.`)
+				throw new Error(`[prerender] rendered HTML for ${route.path} still has an empty #root — nothing was rendered.`)
 			}
 
 			const outPath =
-				route === '/' ? indexHtmlPath : path.join(distDir, route.replace(/^\//, ''), 'index.html')
+				route.path === '/' ? indexHtmlPath : path.join(distDir, route.path.replace(/^\//, ''), 'index.html')
 			fs.mkdirSync(path.dirname(outPath), { recursive: true })
 			fs.writeFileSync(outPath, html, 'utf8')
 			console.log(
-				`[prerender] ${route} -> ${path.relative(distDir, outPath)} (${(Buffer.byteLength(html) / 1024).toFixed(1)} KB)`
+				`[prerender] ${route.path} -> ${path.relative(distDir, outPath)} (${(Buffer.byteLength(html) / 1024).toFixed(1)} KB)`
 			)
 		}
 	} finally {

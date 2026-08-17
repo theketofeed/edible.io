@@ -1,4 +1,12 @@
 {
+  "headers": [
+    {
+      "source": "/",
+      "headers": [
+        { "key": "Link", "value": "</llms.txt>; rel=\"describedby\"; type=\"text/markdown\"" }
+      ]
+    }
+  ],
   "routes": [
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/shell.html" }

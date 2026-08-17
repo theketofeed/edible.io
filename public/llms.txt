@@ -1,0 +1,13 @@
+# Edible
+
+> Edible is an AI-powered meal planning app that turns your grocery list, receipt, or a photo of your kitchen into a complete, personalized weekly meal plan with recipes — instantly.
+
+## About
+
+Edible helps you stop guessing what to cook. Snap a photo of your groceries or receipt, and Edible's AI generates a full weekly meal plan tailored to your dietary preferences, household size, and budget. No food goes to waste, every meal is planned, and your grocery list is built for you.
+
+## Key Pages
+
+- [Homepage](https://www.tryediblee.com/) — Upload your groceries and get an instant personalized meal plan
+- [Privacy Policy](https://www.tryediblee.com/privacy) — How Edible handles your data
+- [Terms of Service](https://www.tryediblee.com/terms) — Edible's terms of use
