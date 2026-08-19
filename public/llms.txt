@@ -12,5 +12,6 @@ Edible helps you stop guessing what to cook. Snap a photo of your groceries or r
 - [Pricing](https://www.tryediblee.com/pricing) — Edible's plans and pricing
 - [How It Works](https://www.tryediblee.com/how-it-works) — How Edible turns groceries into meal plans
 - [FAQ](https://www.tryediblee.com/faq) — Common questions about Edible
+- [5 Best Meal Planning Apps](https://www.tryediblee.com/blog/best-meal-planning-apps) — Comparing popular meal planning apps
 - [Privacy Policy](https://www.tryediblee.com/privacy) — How Edible handles your data
 - [Terms of Service](https://www.tryediblee.com/terms) — Edible's terms of use

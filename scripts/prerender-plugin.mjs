@@ -28,6 +28,7 @@ const ROUTES = [
 	{ path: '/pricing', contentMarker: 'Simple Pricing', h1Prefix: null },
 	{ path: '/how-it-works', contentMarker: 'From groceries to meal plans', h1Prefix: null },
 	{ path: '/faq', contentMarker: 'Frequently Asked Questions', h1Prefix: null },
+	{ path: '/blog/best-meal-planning-apps', contentMarker: '5 Best Meal Planning Apps in 2026', h1Prefix: null },
 ]
 
 const MIME_TYPES = {
