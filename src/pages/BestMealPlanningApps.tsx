@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
 
 const TITLE = '5 Best Meal Planning Apps in 2026 | Edible'
 const DESCRIPTION = 'Comparing five popular meal planning apps — Mealime, AnyList, Edible, Paprika, and PlateJoy — to help you pick the one that fits your household.'
@@ -18,12 +17,26 @@ export default function BestMealPlanningApps() {
 		if (twTitle) twTitle.setAttribute('content', TITLE)
 		const twDesc = document.querySelector('meta[name="twitter:description"]')
 		if (twDesc) twDesc.setAttribute('content', DESCRIPTION)
+		const ogImg = document.querySelector('meta[property="og:image"]')
+		if (ogImg) ogImg.setAttribute('content', 'https://tryediblee.com/blog/best-meal-planning-apps-hero.png')
+		const twImg = document.querySelector('meta[name="twitter:image"]')
+		if (twImg) twImg.setAttribute('content', 'https://tryediblee.com/blog/best-meal-planning-apps-hero.png')
 	}, [])
 
 	return (
 		<article className="max-w-[760px] mx-auto px-5 sm:px-6 py-10 md:py-16 overflow-hidden">
-			<h1 className="text-[1.65rem] sm:text-4xl md:text-5xl font-black text-purple-600 leading-tight mb-4">
-				5 Best Meal Planning Apps in 2026 (and Who Each One Is Actually For)
+			<img
+				src="/blog/best-meal-planning-apps-hero.png"
+				alt="Logos of five popular meal planning apps: Mealime, AnyList, Edible, Paprika, and PlateJoy"
+				width={1600}
+				height={900}
+				loading="eager"
+				className="w-full rounded-2xl shadow-sm mb-6"
+			/>
+
+			<h1 className="text-[1.65rem] sm:text-4xl md:text-5xl font-black text-purple-600 leading-tight mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>
+				5 Best Meal Planning Apps in 2026{' '}
+				<span className="text-[0.95em] sm:text-[0.85em] font-normal text-gray-400">(and Who Each One Is Actually For)</span>
 			</h1>
 
 			<p className="text-sm text-gray-400 mb-6 break-words">
@@ -40,109 +53,56 @@ export default function BestMealPlanningApps() {
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
-			<h2 className="text-xl font-bold text-gray-900 mb-6">At a Glance: The 5 Best Meal Planning Apps in 2026</h2>
+			<h2 className="text-xl font-black text-gray-900 mb-6" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>At a Glance: The 5 Best Meal Planning Apps in 2026</h2>
 
-			<div className="rounded-2xl border border-gray-200 overflow-hidden mb-10">
-				<div className="hidden md:block bg-purple-50 px-6 py-3 border-b border-gray-200">
-					<div className="grid grid-cols-[100px_1fr_1fr_1fr] lg:grid-cols-[120px_1fr_1fr_1fr] gap-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-						<span>App</span>
-						<span>Best For</span>
-						<span>Free Tier</span>
-						<span>Premium Cost</span>
-					</div>
-				</div>
-				<div className="divide-y divide-gray-100">
-					<div className="bg-white px-4 md:px-6 py-4">
-						<div className="grid grid-cols-1 gap-3 md:grid-cols-[100px_1fr_1fr_1fr] lg:grid-cols-[120px_1fr_1fr_1fr] md:gap-4 items-start md:items-center">
-							<span className="font-bold text-gray-900 text-sm">Mealime</span>
-							<div className="flex flex-col">
-								<span className="md:hidden text-[11px] font-semibold text-gray-400 uppercase tracking-wide leading-none mb-0.5">Best For</span>
-								<span className="text-gray-600 text-sm leading-snug">Beginners wanting simple, fast weeknight dinners</span>
-							</div>
-							<div className="flex flex-col">
-								<span className="md:hidden text-[11px] font-semibold text-gray-400 uppercase tracking-wide leading-none mb-0.5">Free Tier</span>
-								<span className="text-gray-600 text-sm">Yes</span>
-							</div>
-							<div className="flex flex-col">
-								<span className="md:hidden text-[11px] font-semibold text-gray-400 uppercase tracking-wide leading-none mb-0.5">Premium Cost</span>
-								<span className="text-gray-600 text-sm">$2.99/mo</span>
-							</div>
-						</div>
-					</div>
-					<div className="bg-gray-50 px-4 md:px-6 py-4">
-						<div className="grid grid-cols-1 gap-3 md:grid-cols-[100px_1fr_1fr_1fr] lg:grid-cols-[120px_1fr_1fr_1fr] md:gap-4 items-start md:items-center">
-							<span className="font-bold text-gray-900 text-sm">AnyList</span>
-							<div className="flex flex-col">
-								<span className="md:hidden text-[11px] font-semibold text-gray-400 uppercase tracking-wide leading-none mb-0.5">Best For</span>
-								<span className="text-gray-600 text-sm leading-snug">Households wanting shared grocery lists first</span>
-							</div>
-							<div className="flex flex-col">
-								<span className="md:hidden text-[11px] font-semibold text-gray-400 uppercase tracking-wide leading-none mb-0.5">Free Tier</span>
-								<span className="text-gray-600 text-sm">Yes</span>
-							</div>
-							<div className="flex flex-col">
-								<span className="md:hidden text-[11px] font-semibold text-gray-400 uppercase tracking-wide leading-none mb-0.5">Premium Cost</span>
-								<span className="text-gray-600 text-sm">$9.99/yr individual, $14.99/yr household</span>
-							</div>
-						</div>
-					</div>
-					<div className="bg-white px-4 md:px-6 py-4">
-						<div className="grid grid-cols-1 gap-3 md:grid-cols-[100px_1fr_1fr_1fr] lg:grid-cols-[120px_1fr_1fr_1fr] md:gap-4 items-start md:items-center">
-							<span className="font-bold text-gray-900 text-sm">Edible</span>
-							<div className="flex flex-col">
-								<span className="md:hidden text-[11px] font-semibold text-gray-400 uppercase tracking-wide leading-none mb-0.5">Best For</span>
-								<span className="text-gray-600 text-sm leading-snug">People who want a plan built from what they already have</span>
-							</div>
-							<div className="flex flex-col">
-								<span className="md:hidden text-[11px] font-semibold text-gray-400 uppercase tracking-wide leading-none mb-0.5">Free Tier</span>
-								<span className="text-gray-600 text-sm leading-snug">Yes, 1 free plan, no account needed</span>
-							</div>
-							<div className="flex flex-col">
-								<span className="md:hidden text-[11px] font-semibold text-gray-400 uppercase tracking-wide leading-none mb-0.5">Premium Cost</span>
-								<span className="text-gray-600 text-sm">$3.99/mo or $30/yr</span>
-							</div>
-						</div>
-					</div>
-					<div className="bg-gray-50 px-4 md:px-6 py-4">
-						<div className="grid grid-cols-1 gap-3 md:grid-cols-[100px_1fr_1fr_1fr] lg:grid-cols-[120px_1fr_1fr_1fr] md:gap-4 items-start md:items-center">
-							<span className="font-bold text-gray-900 text-sm">Paprika</span>
-							<div className="flex flex-col">
-								<span className="md:hidden text-[11px] font-semibold text-gray-400 uppercase tracking-wide leading-none mb-0.5">Best For</span>
-								<span className="text-gray-600 text-sm leading-snug">Recipe collectors organizing saved recipes</span>
-							</div>
-							<div className="flex flex-col">
-								<span className="md:hidden text-[11px] font-semibold text-gray-400 uppercase tracking-wide leading-none mb-0.5">Free Tier</span>
-								<span className="text-gray-600 text-sm">No (one time purchase)</span>
-							</div>
-							<div className="flex flex-col">
-								<span className="md:hidden text-[11px] font-semibold text-gray-400 uppercase tracking-wide leading-none mb-0.5">Premium Cost</span>
-								<span className="text-gray-600 text-sm leading-snug">$4.99 mobile / $29.99 desktop, one time</span>
-							</div>
-						</div>
-					</div>
-					<div className="bg-white px-4 md:px-6 py-4">
-						<div className="grid grid-cols-1 gap-3 md:grid-cols-[100px_1fr_1fr_1fr] lg:grid-cols-[120px_1fr_1fr_1fr] md:gap-4 items-start md:items-center">
-							<span className="font-bold text-gray-900 text-sm">PlateJoy</span>
-							<div className="flex flex-col">
-								<span className="md:hidden text-[11px] font-semibold text-gray-400 uppercase tracking-wide leading-none mb-0.5">Best For</span>
-								<span className="text-gray-600 text-sm leading-snug">Fully personalized menus via detailed quiz</span>
-							</div>
-							<div className="flex flex-col">
-								<span className="md:hidden text-[11px] font-semibold text-gray-400 uppercase tracking-wide leading-none mb-0.5">Free Tier</span>
-								<span className="text-gray-600 text-sm">No (10 day trial only)</span>
-							</div>
-							<div className="flex flex-col">
-								<span className="md:hidden text-[11px] font-semibold text-gray-400 uppercase tracking-wide leading-none mb-0.5">Premium Cost</span>
-								<span className="text-gray-600 text-sm leading-snug">$8.25 to $12.99/mo depending on term</span>
-							</div>
-						</div>
-					</div>
-				</div>
+			<div className="overflow-x-auto mb-10 rounded-2xl border border-gray-200">
+				<table className="w-full text-sm border-collapse">
+					<thead>
+						<tr className="bg-purple-50">
+							<th className="text-left px-4 sm:px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">App</th>
+							<th className="text-left px-4 sm:px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Best For</th>
+							<th className="text-left px-4 sm:px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Free Tier</th>
+							<th className="text-left px-4 sm:px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Premium Cost</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr className="bg-white border-t border-gray-100">
+							<td className="px-4 sm:px-6 py-4 font-bold text-gray-900 whitespace-nowrap">Mealime</td>
+							<td className="px-4 sm:px-6 py-4 text-gray-600">Beginners wanting simple, fast weeknight dinners</td>
+							<td className="px-4 sm:px-6 py-4 text-gray-600">Yes</td>
+							<td className="px-4 sm:px-6 py-4 text-gray-600 whitespace-nowrap">$2.99/mo</td>
+						</tr>
+						<tr className="bg-gray-50 border-t border-gray-100">
+							<td className="px-4 sm:px-6 py-4 font-bold text-gray-900 whitespace-nowrap">AnyList</td>
+							<td className="px-4 sm:px-6 py-4 text-gray-600">Households wanting shared grocery lists first</td>
+							<td className="px-4 sm:px-6 py-4 text-gray-600">Yes</td>
+							<td className="px-4 sm:px-6 py-4 text-gray-600 whitespace-nowrap">$9.99/yr individual, $14.99/yr household</td>
+						</tr>
+						<tr className="bg-white border-t border-gray-100">
+							<td className="px-4 sm:px-6 py-4 font-bold text-gray-900 whitespace-nowrap">Edible</td>
+							<td className="px-4 sm:px-6 py-4 text-gray-600">People who want a plan built from what they already have</td>
+							<td className="px-4 sm:px-6 py-4 text-gray-600 whitespace-nowrap">Yes, 1 free plan, no account needed</td>
+							<td className="px-4 sm:px-6 py-4 text-gray-600 whitespace-nowrap">$3.99/mo or $30/yr</td>
+						</tr>
+						<tr className="bg-gray-50 border-t border-gray-100">
+							<td className="px-4 sm:px-6 py-4 font-bold text-gray-900 whitespace-nowrap">Paprika</td>
+							<td className="px-4 sm:px-6 py-4 text-gray-600">Recipe collectors organizing saved recipes</td>
+							<td className="px-4 sm:px-6 py-4 text-gray-600 whitespace-nowrap">No (one time purchase)</td>
+							<td className="px-4 sm:px-6 py-4 text-gray-600 whitespace-nowrap">$4.99 mobile / $29.99 desktop, one time</td>
+						</tr>
+						<tr className="bg-white border-t border-gray-100">
+							<td className="px-4 sm:px-6 py-4 font-bold text-gray-900 whitespace-nowrap">PlateJoy</td>
+							<td className="px-4 sm:px-6 py-4 text-gray-600">Fully personalized menus via detailed quiz</td>
+							<td className="px-4 sm:px-6 py-4 text-gray-600 whitespace-nowrap">No (10 day trial only)</td>
+							<td className="px-4 sm:px-6 py-4 text-gray-600 whitespace-nowrap">$8.25 to $12.99/mo depending on term</td>
+						</tr>
+					</tbody>
+				</table>
 			</div>
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
-			<h2 className="text-xl font-bold text-gray-900 mb-4">What Is a Meal Planning App?</h2>
+			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>What Is a Meal Planning App?</h2>
 
 			<p className="text-gray-700 leading-relaxed mb-6">
 				A meal planning app helps you decide what to cook for the week ahead, usually pairing recipe suggestions with an auto-generated grocery list so you're not standing in the kitchen every night wondering what's for dinner. Where they differ is how they get you there.
@@ -154,7 +114,7 @@ export default function BestMealPlanningApps() {
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
-			<h2 className="text-xl font-bold text-gray-900 mb-4">
+			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>
 				1. Mealime, Best for Beginners Wanting Simple, Fast Dinners
 			</h2>
 
@@ -170,7 +130,7 @@ export default function BestMealPlanningApps() {
 				href="https://www.mealime.com"
 				target="_blank"
 				rel="noopener noreferrer"
-				className="inline-flex items-center justify-center gap-2 px-6 py-3.5 min-h-[48px] rounded-full border-2 border-purple-200 text-purple-600 font-semibold text-sm hover:bg-purple-50 hover:border-purple-300 active:scale-95 transition-all duration-200"
+				className="inline-flex items-center justify-center gap-2 px-6 py-3.5 min-h-[48px] rounded-full bg-purple-600 text-white font-semibold text-sm hover:bg-purple-700 active:scale-95 transition-all duration-200"
 			>
 				Visit Mealime
 				<span className="text-xs">↗</span>
@@ -178,7 +138,7 @@ export default function BestMealPlanningApps() {
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
-			<h2 className="text-xl font-bold text-gray-900 mb-4">
+			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>
 				2. AnyList, Best for Households That Want Shared Lists First
 			</h2>
 
@@ -194,7 +154,7 @@ export default function BestMealPlanningApps() {
 				href="https://www.anylist.com"
 				target="_blank"
 				rel="noopener noreferrer"
-				className="inline-flex items-center justify-center gap-2 px-6 py-3.5 min-h-[48px] rounded-full border-2 border-purple-200 text-purple-600 font-semibold text-sm hover:bg-purple-50 hover:border-purple-300 active:scale-95 transition-all duration-200"
+				className="inline-flex items-center justify-center gap-2 px-6 py-3.5 min-h-[48px] rounded-full bg-purple-600 text-white font-semibold text-sm hover:bg-purple-700 active:scale-95 transition-all duration-200"
 			>
 				Visit AnyList
 				<span className="text-xs">↗</span>
@@ -202,7 +162,7 @@ export default function BestMealPlanningApps() {
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
-			<h2 className="text-xl font-bold text-gray-900 mb-4">
+			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>
 				3. Edible, Best for Planning From What You Already Have
 			</h2>
 
@@ -216,14 +176,14 @@ export default function BestMealPlanningApps() {
 
 			<Link
 				to="/"
-				className="inline-flex items-center justify-center gap-2 px-6 py-3.5 min-h-[48px] rounded-full border-2 border-purple-200 text-purple-600 font-semibold text-sm hover:bg-purple-50 hover:border-purple-300 active:scale-95 transition-all duration-200"
+				className="inline-flex items-center justify-center gap-2 px-6 py-3.5 min-h-[48px] rounded-full bg-purple-600 text-white font-semibold text-sm hover:bg-purple-700 active:scale-95 transition-all duration-200"
 			>
 				Visit Edible
 			</Link>
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
-			<h2 className="text-xl font-bold text-gray-900 mb-4">
+			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>
 				4. Paprika, Best for Recipe Collectors
 			</h2>
 
@@ -239,7 +199,7 @@ export default function BestMealPlanningApps() {
 				href="https://www.paprikaapp.com"
 				target="_blank"
 				rel="noopener noreferrer"
-				className="inline-flex items-center justify-center gap-2 px-6 py-3.5 min-h-[48px] rounded-full border-2 border-purple-200 text-purple-600 font-semibold text-sm hover:bg-purple-50 hover:border-purple-300 active:scale-95 transition-all duration-200"
+				className="inline-flex items-center justify-center gap-2 px-6 py-3.5 min-h-[48px] rounded-full bg-purple-600 text-white font-semibold text-sm hover:bg-purple-700 active:scale-95 transition-all duration-200"
 			>
 				Visit Paprika
 				<span className="text-xs">↗</span>
@@ -247,7 +207,7 @@ export default function BestMealPlanningApps() {
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
-			<h2 className="text-xl font-bold text-gray-900 mb-4">
+			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>
 				5. PlateJoy, Best for Fully Personalized, Quiz-Driven Menus
 			</h2>
 
@@ -263,7 +223,7 @@ export default function BestMealPlanningApps() {
 				href="https://www.platejoy.com"
 				target="_blank"
 				rel="noopener noreferrer"
-				className="inline-flex items-center justify-center gap-2 px-6 py-3.5 min-h-[48px] rounded-full border-2 border-purple-200 text-purple-600 font-semibold text-sm hover:bg-purple-50 hover:border-purple-300 active:scale-95 transition-all duration-200"
+				className="inline-flex items-center justify-center gap-2 px-6 py-3.5 min-h-[48px] rounded-full bg-purple-600 text-white font-semibold text-sm hover:bg-purple-700 active:scale-95 transition-all duration-200"
 			>
 				Visit PlateJoy
 				<span className="text-xs">↗</span>
@@ -271,7 +231,7 @@ export default function BestMealPlanningApps() {
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
-			<h2 className="text-xl font-bold text-gray-900 mb-4">
+			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>
 				So Which One Should You Actually Use?
 			</h2>
 
@@ -285,30 +245,35 @@ export default function BestMealPlanningApps() {
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
-			<h2 className="text-xl font-bold text-gray-900 mb-6">FAQ</h2>
+			<h2 className="text-xl font-black text-gray-900 mb-6" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>Frequently Asked Questions</h2>
 
 			<div className="space-y-5 mb-12">
 				<div className="bg-gray-50 rounded-xl p-4 sm:p-5 border border-gray-100">
-					<h3 className="font-semibold text-gray-900 mb-2">Are meal planning apps worth it?</h3>
-					<p className="text-gray-600 leading-relaxed text-sm sm:text-base">
+					<h3 className="font-bold text-gray-900 text-base mb-2" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>Are meal planning apps worth it?</h3>
+					<p className="text-gray-400 leading-relaxed text-sm">
 						If deciding what to cook is the part that actually drains you, more than the cooking itself, a meal planning app removes that decision fatigue. If you already enjoy browsing recipes, they may add more friction than they save.
 					</p>
 				</div>
 				<div className="bg-gray-50 rounded-xl p-4 sm:p-5 border border-gray-100">
-					<h3 className="font-semibold text-gray-900 mb-2">Is there a free meal planning app?</h3>
-					<p className="text-gray-600 leading-relaxed text-sm sm:text-base">
+					<h3 className="font-bold text-gray-900 text-base mb-2" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>Is there a free meal planning app?</h3>
+					<p className="text-gray-400 leading-relaxed text-sm">
 						Yes. Mealime, AnyList, and Edible all offer usable free tiers, though what's included varies quite a bit between them (see the comparison table above).
 					</p>
 				</div>
 			</div>
 
-			<div className="max-w-3xl mx-auto px-4 py-10 md:py-12">
+			<div className="bg-purple-50 rounded-2xl border border-purple-100 px-6 sm:px-10 py-10 md:py-12 text-center mb-4">
+				<h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>
+					Ready to build a plan from what's already in your kitchen?
+				</h3>
+				<p className="text-gray-500 text-sm mb-6 max-w-md mx-auto">
+					Edible turns your grocery list, receipt, or a kitchen photo into a full weekly meal plan — no browsing required.
+				</p>
 				<Link
 					to="/"
-					className="inline-flex items-center justify-center gap-2 px-6 py-3.5 min-h-[48px] bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition-all duration-300 shadow-lg shadow-purple-200 active:scale-95"
+					className="inline-flex items-center justify-center gap-2 px-8 py-3.5 min-h-[48px] bg-purple-600 hover:bg-purple-700 text-white font-semibold text-sm rounded-full transition-all duration-200 active:scale-95 shadow-lg shadow-purple-200"
 				>
-					<ArrowLeft className="w-5 h-5" />
-					Back to homepage
+					Try Edible Free
 				</Link>
 			</div>
 		</article>

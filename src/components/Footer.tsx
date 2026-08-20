@@ -72,6 +72,7 @@ const Footer = memo(function Footer() {
 						<div>
 							<h4 className="text-white font-semibold text-sm mb-4">Company</h4>
 							<ul className="space-y-2">
+								<li><a href="/blog" className="text-gray-400 hover:text-purple-400 text-sm transition-colors">Blog</a></li>
 								<li><a href="#contact" className="text-gray-400 hover:text-purple-400 text-sm transition-colors">Contact Us</a></li>
 							</ul>
 						</div>
