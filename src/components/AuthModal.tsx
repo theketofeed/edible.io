@@ -73,7 +73,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 })
                 if (error) throw error
                 setStatus('success')
-                setMessage('Check your inbox — we sent a reset link.')
+                setMessage('Check your inbox, we sent a reset link.')
                 return
             }
 

@@ -215,7 +215,7 @@ function MainContent() {
 			// Show remaining generations if on free plan
 			const { remaining: newRemaining } = checkGenerationLimit()
 			if (newRemaining <= 0) {
-				showToast('info', `Meal plan ready! You've used your free generation — start a free trial to generate more.`)
+				showToast('info', `Meal plan ready! You've used your free generation, start a free trial to generate more.`)
 			} else {
 				showToast('success', 'Your meal plan is ready!')
 			}
@@ -428,7 +428,7 @@ function MainContent() {
 											/>
 											<h3 className="text-2xl font-black text-gray-900 mb-2">Edible is taking a breather</h3>
 											<p className="text-gray-600 mb-8 leading-relaxed">
-												Edible is experiencing high demand right now. This usually fixes itself in a few seconds — give it another try!
+												Edible is experiencing high demand right now. This usually fixes itself in a few seconds, give it another try!
 											</p>
 											<button
 												onClick={() => { track(Events.GENERATE_PLAN_CLICKED, { retry: true, item_count: groceryItems.length, diet }); handleGenerate() }}

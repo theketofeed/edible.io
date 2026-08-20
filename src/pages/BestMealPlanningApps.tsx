@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 
 const TITLE = '5 Best Meal Planning Apps in 2026 | Edible'
-const DESCRIPTION = 'Comparing five popular meal planning apps — Mealime, AnyList, Edible, Paprika, and PlateJoy — to help you pick the one that fits your household.'
+const DESCRIPTION = 'Comparing five popular meal planning apps, including Mealime, AnyList, Edible, Paprika, and PlateJoy, to help you pick the one that fits your household.'
 
 export default function BestMealPlanningApps() {
 	useEffect(() => {
@@ -270,7 +270,7 @@ export default function BestMealPlanningApps() {
 					Ready to build a plan from what's already in your kitchen?
 				</h3>
 				<p className="text-gray-500 text-sm mb-6 max-w-md mx-auto">
-					Edible turns your grocery list, receipt, or a kitchen photo into a full weekly meal plan — no browsing required.
+					Edible turns your grocery list, receipt, or a kitchen photo into a full weekly meal plan. No browsing required.
 				</p>
 				<Link
 					to="/"

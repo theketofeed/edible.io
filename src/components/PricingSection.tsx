@@ -140,7 +140,7 @@ const PricingSection = memo(function PricingSection({ onAuthRequired }: PricingS
 
             <div className="absolute -top-px left-0 right-0 flex justify-center">
               <span className="bg-yellow-400 text-yellow-900 text-[10px] font-black px-4 py-1 rounded-b-xl uppercase tracking-wide">
-                Limited — 100 spots
+                Limited, 100 spots
               </span>
             </div>
 
@@ -160,7 +160,7 @@ const PricingSection = memo(function PricingSection({ onAuthRequired }: PricingS
 
             <ul className="space-y-3 mb-8 flex-1 relative z-10">
               {[
-                'Everything in Pro — forever',
+                'Everything in Pro, forever',
                 'Never pay again',
                 'Early adopter badge',
               ].map((f, i) => (
@@ -175,7 +175,7 @@ const PricingSection = memo(function PricingSection({ onAuthRequired }: PricingS
               disabled={!!loading}
               className="relative z-10 w-full py-3 bg-yellow-400 hover:bg-yellow-300 text-yellow-900 text-sm font-black rounded-xl transition-all disabled:opacity-60 active:scale-[0.98]"
             >
-              {loading === 'founding' ? 'Redirecting...' : 'Claim Spot — $19'}
+              {loading === 'founding' ? 'Redirecting...' : 'Claim Spot, $19'}
             </button>
           </div>
 

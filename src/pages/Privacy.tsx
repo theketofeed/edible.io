@@ -25,7 +25,7 @@ export default function Privacy() {
 
         <section>
           <h2 className="text-xl font-bold text-gray-900 mb-3">4. Third parties we use</h2>
-          <p className="text-gray-600">Supabase stores your account data. Anthropic and Groq power the AI meal generation — your grocery items are sent to these services. Dodo Payments processes payments securely. PostHog collects anonymous usage analytics.</p>
+          <p className="text-gray-600">Supabase stores your account data. Anthropic and Groq power the AI meal generation, and your grocery items are sent to these services. Dodo Payments processes payments securely. PostHog collects anonymous usage analytics.</p>
         </section>
 
         <section>

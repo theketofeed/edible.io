@@ -15,12 +15,12 @@ export default function Terms() {
 
         <section>
           <h2 className="text-xl font-bold text-gray-900 mb-3">2. What we provide</h2>
-          <p className="text-gray-600">Edible provides AI-generated meal plans based on your grocery items. Meal plans are suggestions only — we are not nutritionists and nothing on this platform constitutes dietary or medical advice. Always consult a professional for specific dietary needs.</p>
+          <p className="text-gray-600">Edible provides AI-generated meal plans based on your grocery items. Meal plans are suggestions only. We are not nutritionists and nothing on this platform constitutes dietary or medical advice. Always consult a professional for specific dietary needs.</p>
         </section>
 
         <section>
           <h2 className="text-xl font-bold text-gray-900 mb-3">3. Free and Pro plans</h2>
-          <p className="text-gray-600">The free plan includes 4 meal plan generations per month. Pro and Founding Member plans are paid subscriptions with additional features. Subscriptions are billed as described at checkout. You can cancel your Pro subscription at any time — you'll retain access until the end of your billing period. The Founding Member plan is a one-time payment with lifetime access.</p>
+          <p className="text-gray-600">The free plan includes 4 meal plan generations per month. Pro and Founding Member plans are paid subscriptions with additional features. Subscriptions are billed as described at checkout. You can cancel your Pro subscription at any time, and you'll retain access until the end of your billing period. The Founding Member plan is a one-time payment with lifetime access.</p>
         </section>
 
         <section>

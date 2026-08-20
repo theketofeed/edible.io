@@ -7,15 +7,15 @@ export default function PricingPage() {
 	const navigate = useNavigate()
 
 	useEffect(() => {
-		document.title = 'Edible Pricing — Plans Starting at $3.99/mo'
+		document.title = 'Edible Pricing. Plans Starting at $3.99/mo'
 		const meta = document.querySelector('meta[name="description"]')
 		if (meta) meta.setAttribute('content', 'Choose between Edible Pro ($3.99/mo or $2.50/mo annual) and the Founding Member plan ($19 one-time). Unlimited meal plans, saved recipes, PDF export, and more.')
 		const ogTitle = document.querySelector('meta[property="og:title"]')
-		if (ogTitle) ogTitle.setAttribute('content', 'Edible Pricing — Plans Starting at $3.99/mo')
+		if (ogTitle) ogTitle.setAttribute('content', 'Edible Pricing. Plans Starting at $3.99/mo')
 		const ogDesc = document.querySelector('meta[property="og:description"]')
 		if (ogDesc) ogDesc.setAttribute('content', 'Choose between Edible Pro ($3.99/mo or $2.50/mo annual) and the Founding Member plan ($19 one-time). Unlimited meal plans, saved recipes, PDF export, and more.')
 		const twTitle = document.querySelector('meta[name="twitter:title"]')
-		if (twTitle) twTitle.setAttribute('content', 'Edible Pricing — Plans Starting at $3.99/mo')
+		if (twTitle) twTitle.setAttribute('content', 'Edible Pricing. Plans Starting at $3.99/mo')
 		const twDesc = document.querySelector('meta[name="twitter:description"]')
 		if (twDesc) twDesc.setAttribute('content', 'Choose between Edible Pro ($3.99/mo or $2.50/mo annual) and the Founding Member plan ($19 one-time). Unlimited meal plans, saved recipes, PDF export, and more.')
 	}, [])

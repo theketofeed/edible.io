@@ -49,13 +49,13 @@ export default function PricingModal({ isOpen, onClose, pricingTrigger, onRequir
   ]
 
   const triggerMessage = {
-    generation_limit: "You've used your free meal plan generation. Start your 7-day free trial to get unlimited plans every month — no commitment.",
+    generation_limit: "You've used your free meal plan generation. Start your 7-day free trial to get unlimited plans every month, no commitment.",
     pdf_export: "PDF export is a Pro feature. Start your free trial to download, print, and share beautifully formatted meal plans anytime.",
     bulk_download_recipes: "Downloading all recipes is a Pro feature. Start your free trial to export your entire meal plan as beautifully formatted PDFs.",
     chef_tips: "Chef tips are a Pro feature. Start your free trial to unlock expert cooking techniques on every recipe.",
     recipe_limit: "You've hit the 10-recipe limit on the free plan. Start your free trial to save unlimited recipes.",
     save_plan: "Create a free account and start your 7-day trial to save this meal plan and access it anytime.",
-  }[pricingTrigger || ''] || "Try Edible Pro free for 7 days — unlimited plans, chef tips, PDF exports, and more. Cancel anytime."
+  }[pricingTrigger || ''] || "Try Edible Pro free for 7 days. Unlimited plans, chef tips, PDF exports, and more. Cancel anytime."
 
   return (
     <div
@@ -148,10 +148,10 @@ export default function PricingModal({ isOpen, onClose, pricingTrigger, onRequir
               <span className="text-3xl font-black text-white">$19</span>
             </div>
             <p className="text-yellow-400 text-xs font-semibold mb-1">Pay once. Use forever.</p>
-            <p className="text-white/40 text-[10px] mb-3">Early adopter discount — limited time</p>
+            <p className="text-white/40 text-[10px] mb-3">Early adopter discount, limited time</p>
             <ul className="space-y-2 mb-5 flex-1">
               {[
-                'Everything in Pro — forever',
+                'Everything in Pro, forever',
                 'Never pay again',
                 'Early adopter badge',
               ].map((f, i) => (
@@ -165,7 +165,7 @@ export default function PricingModal({ isOpen, onClose, pricingTrigger, onRequir
               disabled={!!loading}
               className="w-full py-2.5 bg-yellow-400 hover:bg-yellow-300 text-yellow-900 text-sm font-black rounded-xl transition-all disabled:opacity-60 active:scale-[0.98]"
             >
-              {loading === 'founding' ? 'Redirecting...' : 'Claim Spot — $19'}
+              {loading === 'founding' ? 'Redirecting...' : 'Claim Spot, $19'}
             </button>
           </div>
         </div>

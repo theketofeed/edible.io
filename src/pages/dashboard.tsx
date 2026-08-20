@@ -303,7 +303,7 @@ function NotificationBell({ plans, onNav, onUpgrade, selectedPlanId }: {
       id: 'gen_limit_full',
       icon: '🚫',
       title: 'Generation limit reached',
-      body: "You've used your free generation. Start your 7-day free trial — cancel anytime.",
+      body: "You've used your free generation. Start your 7-day free trial to get unlimited plans every month, no commitment.",
       action: { label: 'Upgrade to Pro', nav: 'generate' },
       urgent: true,
     })
@@ -343,7 +343,7 @@ function NotificationBell({ plans, onNav, onUpgrade, selectedPlanId }: {
         id: 'calories',
         icon: '🔥',
         title: `${consumed} kcal planned today`,
-        body: `Across ${todayMeals.length} meal${todayMeals.length !== 1 ? 's' : ''} — ${macroSummary}.`,
+        body: `Across ${todayMeals.length} meal${todayMeals.length !== 1 ? 's' : ''}, ${macroSummary}.`,
       })
     }
   }
@@ -2231,7 +2231,7 @@ export default function EdibleDashboard() {
               <p style={{ fontSize: 11, fontWeight: 700, color: C.accent, letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 8 }}>2 of 3</p>
               <h3 style={{ fontSize: 20, fontWeight: 900, color: C.txt, marginBottom: 10 }}>Generate as many plans as you want</h3>
               <p style={{ fontSize: 14, color: C.muted, lineHeight: 1.6, marginBottom: 24 }}>
-                Every plan you generate gets saved under <strong>Saved Plans</strong>. Switch between them anytime — great for planning different weeks or trying a new diet.
+                Every plan you generate gets saved under <strong>Saved Plans</strong>. Switch between them anytime, great for planning different weeks or trying a new diet.
               </p>
               <div style={{ display: 'flex', gap: 10 }}>
                 <button onClick={finishOnboarding} style={{ flex: 1, padding: '11px 0', borderRadius: 12, border: `1px solid ${C.cardBdr}`, background: 'white', color: C.muted, fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: "'Plus Jakarta Sans',sans-serif" }}>

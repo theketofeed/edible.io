@@ -1,6 +1,6 @@
 # Edible
 
-> Edible is an AI-powered meal planning app that turns your grocery list, receipt, or a photo of your kitchen into a complete, personalized weekly meal plan with recipes — instantly.
+> Edible is an AI-powered meal planning app that turns your grocery list, receipt, or a photo of your kitchen into a complete, personalized weekly meal plan with recipes, instantly.
 
 ## About
 
@@ -8,11 +8,11 @@ Edible helps you stop guessing what to cook. Snap a photo of your groceries or r
 
 ## Key Pages
 
-- [Homepage](https://www.tryediblee.com/) — Upload your groceries and get an instant personalized meal plan
-- [Pricing](https://www.tryediblee.com/pricing) — Edible's plans and pricing
-- [How It Works](https://www.tryediblee.com/how-it-works) — How Edible turns groceries into meal plans
-- [FAQ](https://www.tryediblee.com/faq) — Common questions about Edible
-- [Blog](https://www.tryediblee.com/blog) — Meal planning tips, app comparisons, and guides
-- [5 Best Meal Planning Apps](https://www.tryediblee.com/blog/best-meal-planning-apps) — Comparing popular meal planning apps
-- [Privacy Policy](https://www.tryediblee.com/privacy) — How Edible handles your data
-- [Terms of Service](https://www.tryediblee.com/terms) — Edible's terms of use
+- [Homepage](https://www.tryediblee.com/), Upload your groceries and get an instant personalized meal plan
+- [Pricing](https://www.tryediblee.com/pricing), Edible's plans and pricing
+- [How It Works](https://www.tryediblee.com/how-it-works), How Edible turns groceries into meal plans
+- [FAQ](https://www.tryediblee.com/faq), Common questions about Edible
+- [Blog](https://www.tryediblee.com/blog), Meal planning tips, app comparisons, and guides
+- [5 Best Meal Planning Apps](https://www.tryediblee.com/blog/best-meal-planning-apps), Comparing popular meal planning apps
+- [Privacy Policy](https://www.tryediblee.com/privacy), How Edible handles your data
+- [Terms of Service](https://www.tryediblee.com/terms), Edible's terms of use

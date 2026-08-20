@@ -10,7 +10,7 @@ interface FAQItem {
 const FAQ_ITEMS: FAQItem[] = [
   {
     question: 'Is Edible free?',
-    answer: 'You get 1 free meal plan — no account needed. After that, start a 7-day free trial to keep generating plans. Cancel anytime, no questions asked.',
+    answer: 'You get 1 free meal plan, no account needed. After that, start a 7-day free trial to keep generating plans. Cancel anytime, no questions asked.',
     icon: <Banknote className="w-5 h-5 text-purple-500" />
   },
   {
@@ -20,7 +20,7 @@ const FAQ_ITEMS: FAQItem[] = [
   },
   {
     question: 'Can I edit the meal plan?',
-    answer: 'Yes — you can regenerate your plan with a different diet preference anytime, or tap into any recipe to see the full details. Your saved plans stay in your dashboard so you can switch between them whenever you want.',
+    answer: 'Yes, you can regenerate your plan with a different diet preference anytime, or tap into any recipe to see the full details. Your saved plans stay in your dashboard so you can switch between them whenever you want.',
     icon: <PencilLine className="w-5 h-5 text-purple-500" />
   },
   {
@@ -35,7 +35,7 @@ const FAQ_ITEMS: FAQItem[] = [
   },
   {
     question: "What makes Edible different?",
-    answer: 'Every other meal planner gives you recipes and tells you to go shopping. Edible works the other way — you start with what you already bought, and it builds your week around that. No food waste, no extra trips, meals you can actually make tonight.',
+    answer: 'Every other meal planner gives you recipes and tells you to go shopping. Edible works the other way. You start with what you already bought, and it builds your week around that. No food waste, no extra trips, meals you can actually make tonight.',
     icon: <Sparkles className="w-5 h-5 text-purple-500" />
   }
 ]

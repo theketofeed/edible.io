@@ -226,7 +226,7 @@ export default function BulkDownloadButton({ result, showToast, onUpgradeRequire
                     </div>
                     <div className="mt-16 pt-8 border-t border-gray-100 text-center">
                         <p className="text-sm text-gray-400 font-medium italic">
-                            Made with love by Edible — Your Personal AI Chef
+                            Made with love by Edible. Your Personal AI Chef
                         </p>
                     </div>
                 </div>,

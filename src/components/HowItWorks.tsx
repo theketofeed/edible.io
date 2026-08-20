@@ -96,7 +96,7 @@ const HowItWorks = memo(function HowItWorks() {
 						<span className="text-[#C6A0F6]">3 steps</span>
 					</h2>
 					<p className="text-sm sm:text-base md:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-						No recipe hunting, no extra grocery trips — just tell us what's already in your kitchen and let Edible handle the rest.
+						No recipe hunting, no extra grocery trips. Just tell us what's already in your kitchen and let Edible handle the rest.
 					</p>
 				</div>
 
