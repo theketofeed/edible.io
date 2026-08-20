@@ -24,15 +24,18 @@ export default function BestMealPlanningApps() {
 	}, [])
 
 	return (
-		<article className="max-w-[760px] mx-auto px-5 sm:px-6 py-10 md:py-16 overflow-hidden">
-			<img
-				src="/blog/best-meal-planning-apps-hero.png"
-				alt="Logos of five popular meal planning apps: Mealime, AnyList, Edible, Paprika, and PlateJoy"
-				width={1600}
-				height={900}
-				loading="eager"
-				className="w-full rounded-2xl shadow-sm mb-6"
-			/>
+		<article className="w-full max-w-[760px] mx-auto px-5 sm:px-6 py-10 md:py-16">
+			<picture>
+				<source srcSet="/blog/best-meal-planning-apps-hero.webp" type="image/webp" />
+				<img
+					src="/blog/best-meal-planning-apps-hero.png"
+					alt="Logos of five popular meal planning apps: Mealime, AnyList, Edible, Paprika, and PlateJoy"
+					width={1600}
+					height={900}
+					loading="eager"
+					className="w-full rounded-2xl shadow-sm mb-6"
+				/>
+			</picture>
 
 			<h1 className="text-[1.65rem] sm:text-4xl md:text-5xl font-black text-purple-600 leading-tight mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>
 				5 Best Meal Planning Apps in 2026{' '}
