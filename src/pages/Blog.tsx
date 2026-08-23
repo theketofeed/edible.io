@@ -23,6 +23,20 @@ interface Post {
 
 const posts: Post[] = [
 	{
+		title: 'The Healthy Grocery List: What to Buy and How to Build Your Own',
+		excerpt: 'A categorized healthy grocery list with a free printable checklist, plus budget tips and keto/low-carb swaps.',
+		readingTime: '5 min read',
+		date: 'August 23, 2026',
+		href: '/blog/healthy-grocery-list',
+		thumbnail: {
+			webp: '/blog/healthy-grocery-list-hero.webp',
+			png: '/blog/healthy-grocery-list-hero.png',
+			alt: 'Healthy grocery list staples including fresh produce, proteins, grains, and pantry items',
+			width: 1600,
+			height: 900,
+		},
+	},
+	{
 		title: '5 Best Meal Planning Apps in 2026',
 		excerpt: 'Comparing five popular meal planning apps, including Mealime, AnyList, Edible, Paprika, and PlateJoy, to help you pick the one that fits your household.',
 		readingTime: '4 min read',

@@ -29,8 +29,17 @@ const ROUTES = [
 	{ path: '/how-it-works', contentMarker: 'From groceries to meal plans', h1Prefix: null },
 	{ path: '/faq', contentMarker: 'Frequently Asked Questions', h1Prefix: null },
 	{ path: '/blog/best-meal-planning-apps', contentMarker: '5 Best Meal Planning Apps in 2026', h1Prefix: null },
+	{ path: '/blog/healthy-grocery-list', contentMarker: 'The Healthy Grocery List: What to Buy and How to Build Your Own', h1Prefix: null },
 	{ path: '/blog', contentMarker: 'Blog', h1Prefix: null },
 ]
+
+// @sparticuz/chromium's default args target memory-constrained serverless Linux.
+// On Windows, --single-process / --no-zygote / --in-process-gpu make Chrome unstable:
+// any renderer crash takes down the whole browser mid-prerender. Keep them on Linux
+// (where they're needed) and strip them for local Windows runs.
+const BROWSER_ARGS = process.platform !== 'win32'
+	? chromium.args
+	: chromium.args.filter((arg) => arg !== '--single-process' && arg !== '--no-zygote' && arg !== '--in-process-gpu')
 
 const MIME_TYPES = {
 	'.html': 'text/html; charset=utf-8',
@@ -129,18 +138,12 @@ async function prerenderHomepage(distDir) {
 		const execPath = await resolveBrowserPath()
 		browser = await puppeteer.launch({
 			executablePath: execPath,
-			args: chromium.args,
+			args: BROWSER_ARGS,
 			defaultViewport: chromium.defaultViewport,
 			headless: chromium.headless,
 		})
-		const page = await browser.newPage()
-		await page.setViewport({ width: 1280, height: 900 })
-
-		// Only allow requests to the local preview server. Everything else
-		// (Supabase, PostHog, Sentry, fonts, etc.) is blocked so the prerender
-		// is deterministic and doesn't emit analytics/telemetry.
-		await page.setRequestInterception(true)
-		page.on('request', (request) => {
+	function makeRequestHandler() {
+		return (request) => {
 			try {
 				const { hostname } = new URL(request.url())
 				if (hostname === '127.0.0.1' || hostname === 'localhost') {
@@ -151,14 +154,36 @@ async function prerenderHomepage(distDir) {
 			} catch {
 				request.abort()
 			}
-		})
+		}
+	}
 
-		for (const route of ROUTES) {
-			const url = `http://127.0.0.1:${port}${route.path}`
-			const response = await page.goto(url, { waitUntil: 'networkidle0', timeout: 60000 })
-			if (!response || response.status() !== 200) {
-				throw new Error(`[prerender] ${route.path} returned ${response ? response.status() : 'no response'}`)
+	async function openPage(browserInstance) {
+		const p = await browserInstance.newPage()
+		await p.setViewport({ width: 1280, height: 900 })
+		await p.setRequestInterception(true)
+		p.on('request', makeRequestHandler())
+		return p
+	}
+
+	let page = await openPage(browser)
+
+	for (const route of ROUTES) {
+		const url = `http://127.0.0.1:${port}${route.path}`
+		let response
+		for (let attempt = 1; attempt <= 3; attempt++) {
+			try {
+				response = await page.goto(url, { waitUntil: 'networkidle0', timeout: 60000 })
+				break
+			} catch (err) {
+				if (attempt === 3) throw err
+				console.warn(`[prerender] ${route.path} navigation timed out (attempt ${attempt}/3), retrying with a fresh page`)
+				try { await page.close() } catch {}
+				page = await openPage(browser)
 			}
+		}
+		if (!response || response.status() !== 200) {
+			throw new Error(`[prerender] ${route.path} returned ${response ? response.status() : 'no response'}`)
+		}
 
 			if (route.h1Prefix) {
 				await page.waitForFunction(

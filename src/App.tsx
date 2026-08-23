@@ -42,6 +42,7 @@ import PricingPage from './pages/PricingPage'
 import HowItWorksPage from './pages/HowItWorksPage'
 import FAQPage from './pages/FAQPage'
 import BestMealPlanningApps from './pages/BestMealPlanningApps'
+import HealthyGroceryList from './pages/HealthyGroceryList'
 import Blog from './pages/Blog'
 
 function MainContent() {
@@ -524,6 +525,7 @@ function MainContent() {
 			<Route path="/how-it-works" element={<HowItWorksPage />} />
 			<Route path="/faq" element={<FAQPage />} />
 			<Route path="/blog/best-meal-planning-apps" element={<BestMealPlanningApps />} />
+			<Route path="/blog/healthy-grocery-list" element={<HealthyGroceryList />} />
 			<Route path="/blog" element={<Blog />} />
 			<Route path="/plan/:id" element={<SharedPlan />} />
 			</Routes>
