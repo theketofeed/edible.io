@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import BlogBreadcrumb from '../components/BlogBreadcrumb'
 
 const TITLE = '5 Best Meal Planning Apps in 2026 | Edible'
 const DESCRIPTION = 'Comparing five popular meal planning apps, including Mealime, AnyList, Edible, Paprika, and PlateJoy, to help you pick the one that fits your household.'
@@ -25,6 +26,8 @@ export default function BestMealPlanningApps() {
 
 	return (
 		<article className="w-full max-w-[760px] mx-auto px-5 sm:px-6 py-10 md:py-16">
+			<BlogBreadcrumb title="5 Best Meal Planning Apps in 2026" />
+
 			<picture>
 				<source srcSet="/blog/best-meal-planning-apps-hero.webp" type="image/webp" />
 				<img

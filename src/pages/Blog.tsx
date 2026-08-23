@@ -66,17 +66,19 @@ export default function Blog() {
 						className="group block bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-lg hover:border-purple-200 transition-all duration-200"
 					>
 						{post.thumbnail && (
-							<picture>
-								{post.thumbnail.webp && <source srcSet={post.thumbnail.webp} type="image/webp" />}
-								<img
-									src={post.thumbnail.png}
-									alt={post.thumbnail.alt}
-									width={post.thumbnail.width}
-									height={post.thumbnail.height}
-									loading="lazy"
-									className="w-full object-cover"
-								/>
-							</picture>
+							<div className="border-b border-gray-100 pb-3 sm:pb-4">
+								<picture>
+									{post.thumbnail.webp && <source srcSet={post.thumbnail.webp} type="image/webp" />}
+									<img
+										src={post.thumbnail.png}
+										alt={post.thumbnail.alt}
+										width={post.thumbnail.width}
+										height={post.thumbnail.height}
+										loading="lazy"
+										className="w-full object-cover rounded-t-2xl"
+									/>
+								</picture>
+							</div>
 						)}
 						<div className={post.thumbnail ? 'px-6 py-5 sm:py-6' : 'px-6 py-6 sm:py-8'}>
 							<div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
