@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import BlogBreadcrumb from '../components/BlogBreadcrumb'
+import ShareButtons from '../components/ShareButtons'
 
 const TITLE = '5 Best Meal Planning Apps in 2026 | Edible'
 const DESCRIPTION = 'Comparing five popular meal planning apps, including Mealime, AnyList, Edible, Paprika, and PlateJoy, to help you pick the one that fits your household.'
@@ -40,14 +41,17 @@ export default function BestMealPlanningApps() {
 				/>
 			</picture>
 
-			<h1 className="text-[1.65rem] sm:text-4xl md:text-5xl font-black text-purple-600 leading-tight mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>
+			<h1 className="text-[1.65rem] sm:text-4xl md:text-5xl font-bold text-purple-600 leading-tight mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>
 				5 Best Meal Planning Apps in 2026{' '}
 				<span className="text-[0.95em] sm:text-[0.85em] font-normal text-gray-400">(and Who Each One Is Actually For)</span>
 			</h1>
 
-			<p className="text-sm text-gray-400 mb-6 break-words">
-				By Praise · August 19, 2026 · 4 min read
-			</p>
+			<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 mb-6">
+				<p className="text-sm text-gray-400 break-words">
+					By Praise · August 19, 2026 · 4 min read
+				</p>
+				<ShareButtons title="5 Best Meal Planning Apps in 2026 (and Who Each One Is Actually For)" />
+			</div>
 
 			<div className="border-l-4 border-purple-400 bg-purple-50 rounded-r-lg px-4 sm:px-5 py-4 mb-8 text-sm text-gray-600 italic leading-relaxed">
 				Disclosure: Edible is one of the apps featured below, it's ours. We've placed it based on its actual differentiator rather than ranking it first, and encourage you to compare directly.
@@ -59,7 +63,7 @@ export default function BestMealPlanningApps() {
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
-			<h2 className="text-xl font-black text-gray-900 mb-6" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>At a Glance: The 5 Best Meal Planning Apps in 2026</h2>
+			<h2 className="text-xl font-bold text-gray-900 mb-6" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>At a Glance: The 5 Best Meal Planning Apps in 2026</h2>
 
 			<div className="overflow-x-auto mb-10 rounded-2xl border border-gray-200">
 				<table className="w-full text-sm border-collapse">
@@ -108,7 +112,7 @@ export default function BestMealPlanningApps() {
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
-			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>What Is a Meal Planning App?</h2>
+			<h2 className="text-xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>What Is a Meal Planning App?</h2>
 
 			<p className="text-gray-700 leading-relaxed mb-6">
 				A meal planning app helps you decide what to cook for the week ahead, usually pairing recipe suggestions with an auto-generated grocery list so you're not standing in the kitchen every night wondering what's for dinner. Where they differ is how they get you there.
@@ -120,7 +124,7 @@ export default function BestMealPlanningApps() {
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
-			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>
+			<h2 className="text-xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>
 				1. Mealime, Best for Beginners Wanting Simple, Fast Dinners
 			</h2>
 
@@ -144,7 +148,7 @@ export default function BestMealPlanningApps() {
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
-			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>
+			<h2 className="text-xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>
 				2. AnyList, Best for Households That Want Shared Lists First
 			</h2>
 
@@ -168,7 +172,7 @@ export default function BestMealPlanningApps() {
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
-			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>
+			<h2 className="text-xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>
 				3. Edible, Best for Planning From What You Already Have
 			</h2>
 
@@ -189,7 +193,7 @@ export default function BestMealPlanningApps() {
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
-			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>
+			<h2 className="text-xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>
 				4. Paprika, Best for Recipe Collectors
 			</h2>
 
@@ -213,7 +217,7 @@ export default function BestMealPlanningApps() {
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
-			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>
+			<h2 className="text-xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>
 				5. PlateJoy, Best for Fully Personalized, Quiz-Driven Menus
 			</h2>
 
@@ -237,7 +241,7 @@ export default function BestMealPlanningApps() {
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
-			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>
+			<h2 className="text-xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>
 				So Which One Should You Actually Use?
 			</h2>
 
@@ -251,7 +255,7 @@ export default function BestMealPlanningApps() {
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
-			<h2 className="text-xl font-black text-gray-900 mb-6" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>Frequently Asked Questions</h2>
+			<h2 className="text-xl font-bold text-gray-900 mb-6" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>Frequently Asked Questions</h2>
 
 			<div className="space-y-5 mb-12">
 				<div className="bg-gray-50 rounded-xl p-4 sm:p-5 border border-gray-100">
