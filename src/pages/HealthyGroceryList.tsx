@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import BlogBreadcrumb from '../components/BlogBreadcrumb'
+import ShareButtons from '../components/ShareButtons'
 
 const TITLE = 'The Healthy Grocery List: What to Buy and How to Build Your Own | Edible'
 const DESCRIPTION = 'A complete healthy grocery list organized by food category, with a free printable checklist, budget tips, and keto and low-carb swaps.'
@@ -44,24 +45,27 @@ export default function HealthyGroceryList() {
 				Free Printable
 			</span>
 
-			<h1 className="text-[1.65rem] sm:text-4xl md:text-5xl font-black text-purple-600 leading-tight mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>
+			<h1 className="text-[1.65rem] sm:text-4xl md:text-5xl font-extrabold text-purple-600 leading-tight mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 800 }}>
 				The Healthy Grocery List: What to Buy and How to Build Your Own
 			</h1>
 
-			<p className="text-sm text-gray-400 mb-6 break-words">
-				By Praise · August 23, 2026 · 5 min read
-			</p>
+			<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 mb-6">
+				<p className="text-sm text-gray-400 break-words">
+					By Praise · August 23, 2026 · 5 min read
+				</p>
+				<ShareButtons title="The Healthy Grocery List: What to Buy and How to Build Your Own" />
+			</div>
 
 			<p className="text-gray-700 leading-relaxed mb-6">
 				Most 'healthy grocery list' articles just hand you a wall of ingredients and call it a day. That's useful if you already know why those foods matter, less useful if you don't. This one covers both: what to actually put in your cart, why each category earns a spot, and a free printable checklist you can take to the store with you.
 			</p>
 
-			<div className="bg-purple-50 rounded-2xl border border-purple-100 px-6 sm:px-8 py-8 mb-10">
+			<div className="bg-gray-50 rounded-2xl border border-gray-200 px-6 sm:px-8 py-8 mb-10">
 				<h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>
 					Get the printable checklist
 				</h3>
 				<p className="text-gray-500 text-sm mb-6 leading-relaxed">
-					The same list below, formatted to print and check off as you shop.
+					Print it, stick it on the fridge, or keep it on your phone. Either way, you'll always know what to grab.
 				</p>
 				<a
 					href="/blog/healthy-grocery-list.pdf"
@@ -74,78 +78,114 @@ export default function HealthyGroceryList() {
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
+			<p className="text-gray-700 leading-relaxed mb-8">
+				Here's what to stock up on, organized by category.
+			</p>
+
 			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>Vegetables</h2>
 
+			<p className="text-gray-700 leading-relaxed mb-4">
+				Aim for a mix of leafy greens and colorful produce, they're where most of your fiber and micronutrients come from.
+			</p>
+
 			<p className="text-gray-700 leading-relaxed mb-6">
-				Aim for a mix of leafy greens and colorful produce, they're where most of your fiber and micronutrients come from. Reliable staples to keep on hand: spinach, broccoli, bell peppers, carrots, onions, garlic, tomatoes, cucumber, zucchini, sweet potatoes, kale, and green beans. Buy what's in season when you can, it's usually cheaper and fresher.
+				Reliable staples to keep on hand: spinach, broccoli, bell peppers, carrots, onions, garlic, tomatoes, cucumber, zucchini, sweet potatoes, kale, and green beans. Buy what's in season when you can, it's usually cheaper and fresher.
 			</p>
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
 			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>Fruits</h2>
 
+			<p className="text-gray-700 leading-relaxed mb-4">
+				Fruit covers your sweeter cravings while still bringing fiber and vitamins to the table.
+			</p>
+
 			<p className="text-gray-700 leading-relaxed mb-6">
-				Fruit covers your sweeter cravings while still bringing fiber and vitamins to the table. Apples, bananas, berries, oranges, avocados, lemons or limes, grapes, pears, pineapple, and watermelon are all good staples to rotate through depending on the season.
+				Apples, bananas, berries, oranges, avocados, lemons or limes, grapes, pears, pineapple, and watermelon are all good staples to rotate through depending on the season.
 			</p>
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
 			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>Proteins</h2>
 
+			<p className="text-gray-700 leading-relaxed mb-4">
+				This is the category worth being most intentional about, protein keeps you fuller for longer and matters for basically every goal, whether that's muscle, weight management, or just steady energy through the day.
+			</p>
+
 			<p className="text-gray-700 leading-relaxed mb-6">
-				This is the category worth being most intentional about, protein keeps you fuller for longer and matters for basically every goal, whether that's muscle, weight management, or just steady energy through the day. Good options: chicken breast, eggs, salmon or white fish, ground turkey, tofu or tempeh, Greek yogurt, canned beans, lentils, canned tuna, and chickpeas.
+				Good options: chicken breast, eggs, salmon or white fish, ground turkey, tofu or tempeh, Greek yogurt, canned beans, lentils, canned tuna, and chickpeas.
 			</p>
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
 			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>Whole Grains &amp; Carbs</h2>
 
+			<p className="text-gray-700 leading-relaxed mb-4">
+				Carbs aren't the enemy, the type matters more than avoiding them entirely. Whole grains keep more fiber and nutrients intact than refined versions.
+			</p>
+
 			<p className="text-gray-700 leading-relaxed mb-6">
-				Carbs aren't the enemy, the type matters more than avoiding them entirely. Whole grains keep more fiber and nutrients intact than refined versions. Stock up on brown rice, oats, quinoa, whole wheat bread, whole wheat pasta, potatoes, sourdough bread, and barley.
+				Stock up on brown rice, oats, quinoa, whole wheat bread, whole wheat pasta, potatoes, sourdough bread, and barley.
 			</p>
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
 			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>Healthy Fats</h2>
 
+			<p className="text-gray-700 leading-relaxed mb-4">
+				Fat is essential, not something to minimize across the board.
+			</p>
+
 			<p className="text-gray-700 leading-relaxed mb-6">
-				Fat is essential, not something to minimize across the board. Olive oil, nuts like almonds and walnuts, nut butter, chia or flax seeds, avocado oil, coconut oil, and sesame oil are all solid, versatile picks for cooking and snacking.
+				Olive oil, nuts like almonds and walnuts, nut butter, chia or flax seeds, avocado oil, coconut oil, and sesame oil are all solid, versatile picks for cooking and snacking.
 			</p>
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
 			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>Dairy &amp; Alternatives</h2>
 
+			<p className="text-gray-700 leading-relaxed mb-4">
+				Whether or not you eat dairy, this category is mostly about protein and calcium.
+			</p>
+
 			<p className="text-gray-700 leading-relaxed mb-6">
-				Whether or not you eat dairy, this category is mostly about protein and calcium. Milk or a plant-based alternative, plain yogurt, cheese, cottage cheese, kefir, parmesan, and almond milk cover most needs.
+				Milk or a plant-based alternative, plain yogurt, cheese, cottage cheese, kefir, parmesan, and almond milk cover most needs.
 			</p>
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
 			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>Pantry &amp; Condiments</h2>
 
+			<p className="text-gray-700 leading-relaxed mb-4">
+				The stuff that makes everything else actually taste good.
+			</p>
+
 			<p className="text-gray-700 leading-relaxed mb-6">
-				The stuff that makes everything else actually taste good. Canned tomatoes, low-sodium broth, vinegar, herbs and spices, whole grain mustard, low-sugar salsa, honey, and apple cider vinegar are worth always having stocked.
+				Canned tomatoes, low-sodium broth, vinegar, herbs and spices, whole grain mustard, low-sugar salsa, honey, and apple cider vinegar are worth always having stocked.
 			</p>
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
 			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>Beverages</h2>
 
+			<p className="text-gray-700 leading-relaxed mb-4">
+				What you drink matters as much as what you eat.
+			</p>
+
 			<p className="text-gray-700 leading-relaxed mb-6">
-				What you drink matters as much as what you eat. Water (still or sparkling), unsweetened tea, black coffee, unsweetened plant milk, green tea, herbal tea, and sparkling water keep added sugar out of the equation without making things boring.
+				Water (still or sparkling), unsweetened tea, black coffee, unsweetened plant milk, green tea, herbal tea, and sparkling water keep added sugar out of the equation without making things boring.
 			</p>
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
-			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>Budget Tips</h2>
+			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>Healthy Eating on a Budget</h2>
 
 			<ul className="list-disc pl-5 space-y-3 text-gray-700 leading-relaxed mb-10">
-				<li>Buy produce in season. It's cheaper and usually fresher than out-of-season imports.</li>
-				<li>Frozen isn't a downgrade. Frozen fruits and vegetables are typically flash-frozen at peak ripeness, often more nutritious than 'fresh' produce that's traveled a long way.</li>
-				<li>Check unit price, not just the sticker price. Larger sizes are often cheaper per ounce, especially for pantry staples.</li>
-				<li>Buy proteins in bulk when on sale, and freeze portions. Chicken, ground turkey, and fish all freeze well.</li>
-				<li>Canned and dried beans are some of the cheapest protein sources available, and they last a long time in the pantry.</li>
+				<li>Produce prices swing with the seasons, buying what's in season instead of what's out of season usually means paying less for something that tastes better too.</li>
+				<li>Frozen fruits and vegetables get flash-frozen at peak ripeness, so you're not actually losing nutrition by choosing them, and they last far longer than fresh produce sitting in the fridge.</li>
+				<li>The sticker price doesn't tell the whole story. Checking the unit price (cost per ounce or pound) often reveals that the larger size is the better deal, even when the upfront number looks higher.</li>
+				<li>Meat and fish prices fluctuate a lot week to week. When chicken, turkey, or fish go on sale, buying extra and freezing individual portions means you're not paying full price every time you cook.</li>
+				<li>Canned and dried beans are some of the cheapest protein around, and because they store for months, there's no pressure to use them before they go bad.</li>
 			</ul>
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
@@ -190,19 +230,19 @@ export default function HealthyGroceryList() {
 			<div className="space-y-5 mb-12">
 				<div className="bg-gray-50 rounded-xl p-4 sm:p-5 border border-gray-100">
 					<h3 className="font-bold text-gray-900 text-base mb-2" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>What should be on a healthy grocery list?</h3>
-					<p className="text-gray-400 leading-relaxed text-sm">
+					<p className="text-gray-800 leading-relaxed text-sm">
 						A mix of vegetables, fruits, protein sources, whole grains, healthy fats, and dairy or alternatives, plus a few pantry staples to tie meals together. Variety within each category matters more than any single 'superfood.'
 					</p>
 				</div>
 				<div className="bg-gray-50 rounded-xl p-4 sm:p-5 border border-gray-100">
 					<h3 className="font-bold text-gray-900 text-base mb-2" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>What foods should I avoid at the grocery store?</h3>
-					<p className="text-gray-400 leading-relaxed text-sm">
+					<p className="text-gray-800 leading-relaxed text-sm">
 						You don't need to eliminate anything completely, but it's worth watching out for foods with added sugar listed in the first few ingredients, refined vegetable oils, and heavily processed snacks that are more filler than nutrition. Reading the ingredient list, not just the front-of-package claims, is the simplest way to catch these.
 					</p>
 				</div>
 				<div className="bg-gray-50 rounded-xl p-4 sm:p-5 border border-gray-100">
 					<h3 className="font-bold text-gray-900 text-base mb-2" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>How can I eat healthy on a budget?</h3>
-					<p className="text-gray-400 leading-relaxed text-sm">
+					<p className="text-gray-800 leading-relaxed text-sm">
 						Buying produce in season, choosing frozen over fresh when it's cheaper, checking unit prices instead of sticker prices, and stocking up on proteins like beans and lentils all help keep a healthy list affordable. See the budget tips above for the full breakdown.
 					</p>
 				</div>
