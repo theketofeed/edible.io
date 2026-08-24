@@ -260,13 +260,13 @@ export default function BestMealPlanningApps() {
 			<div className="space-y-5 mb-12">
 				<div className="bg-gray-50 rounded-xl p-4 sm:p-5 border border-gray-100">
 					<h3 className="font-bold text-gray-900 text-base mb-2" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>Are meal planning apps worth it?</h3>
-					<p className="text-gray-400 leading-relaxed text-sm">
+					<p className="text-gray-800 leading-relaxed text-sm">
 						If deciding what to cook is the part that actually drains you, more than the cooking itself, a meal planning app removes that decision fatigue. If you already enjoy browsing recipes, they may add more friction than they save.
 					</p>
 				</div>
 				<div className="bg-gray-50 rounded-xl p-4 sm:p-5 border border-gray-100">
 					<h3 className="font-bold text-gray-900 text-base mb-2" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>Is there a free meal planning app?</h3>
-					<p className="text-gray-400 leading-relaxed text-sm">
+					<p className="text-gray-800 leading-relaxed text-sm">
 						Yes. Mealime, AnyList, and Edible all offer usable free tiers, though what's included varies quite a bit between them (see the comparison table above).
 					</p>
 				</div>
