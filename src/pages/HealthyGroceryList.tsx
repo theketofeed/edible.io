@@ -45,7 +45,7 @@ export default function HealthyGroceryList() {
 				Free Printable
 			</span>
 
-			<h1 className="text-[1.65rem] sm:text-4xl md:text-5xl font-extrabold text-purple-600 leading-tight mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 800 }}>
+			<h1 className="text-[1.65rem] sm:text-4xl md:text-5xl font-bold text-purple-600 leading-tight mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>
 				The Healthy Grocery List: What to Buy and How to Build Your Own
 			</h1>
 
@@ -82,7 +82,7 @@ export default function HealthyGroceryList() {
 				Here's what to stock up on, organized by category.
 			</p>
 
-			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>Vegetables</h2>
+			<h2 className="text-xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>Vegetables</h2>
 
 			<p className="text-gray-700 leading-relaxed mb-4">
 				Aim for a mix of leafy greens and colorful produce, they're where most of your fiber and micronutrients come from.
@@ -94,7 +94,7 @@ export default function HealthyGroceryList() {
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
-			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>Fruits</h2>
+			<h2 className="text-xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>Fruits</h2>
 
 			<p className="text-gray-700 leading-relaxed mb-4">
 				Fruit covers your sweeter cravings while still bringing fiber and vitamins to the table.
@@ -106,7 +106,7 @@ export default function HealthyGroceryList() {
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
-			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>Proteins</h2>
+			<h2 className="text-xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>Proteins</h2>
 
 			<p className="text-gray-700 leading-relaxed mb-4">
 				This is the category worth being most intentional about, protein keeps you fuller for longer and matters for basically every goal, whether that's muscle, weight management, or just steady energy through the day.
@@ -118,7 +118,7 @@ export default function HealthyGroceryList() {
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
-			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>Whole Grains &amp; Carbs</h2>
+			<h2 className="text-xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>Whole Grains &amp; Carbs</h2>
 
 			<p className="text-gray-700 leading-relaxed mb-4">
 				Carbs aren't the enemy, the type matters more than avoiding them entirely. Whole grains keep more fiber and nutrients intact than refined versions.
@@ -130,7 +130,7 @@ export default function HealthyGroceryList() {
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
-			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>Healthy Fats</h2>
+			<h2 className="text-xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>Healthy Fats</h2>
 
 			<p className="text-gray-700 leading-relaxed mb-4">
 				Fat is essential, not something to minimize across the board.
@@ -142,7 +142,7 @@ export default function HealthyGroceryList() {
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
-			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>Dairy &amp; Alternatives</h2>
+			<h2 className="text-xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>Dairy &amp; Alternatives</h2>
 
 			<p className="text-gray-700 leading-relaxed mb-4">
 				Whether or not you eat dairy, this category is mostly about protein and calcium.
@@ -154,7 +154,7 @@ export default function HealthyGroceryList() {
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
-			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>Pantry &amp; Condiments</h2>
+			<h2 className="text-xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>Pantry &amp; Condiments</h2>
 
 			<p className="text-gray-700 leading-relaxed mb-4">
 				The stuff that makes everything else actually taste good.
@@ -166,7 +166,7 @@ export default function HealthyGroceryList() {
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
-			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>Beverages</h2>
+			<h2 className="text-xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>Beverages</h2>
 
 			<p className="text-gray-700 leading-relaxed mb-4">
 				What you drink matters as much as what you eat.
@@ -178,7 +178,7 @@ export default function HealthyGroceryList() {
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
-			<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>Healthy Eating on a Budget</h2>
+			<h2 className="text-xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>Healthy Eating on a Budget</h2>
 
 			<ul className="list-disc pl-5 space-y-3 text-gray-700 leading-relaxed mb-10">
 				<li>Produce prices swing with the seasons, buying what's in season instead of what's out of season usually means paying less for something that tastes better too.</li>
@@ -191,7 +191,7 @@ export default function HealthyGroceryList() {
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
 			<div className="border-l-4 border-purple-400 bg-purple-50 rounded-r-lg px-4 sm:px-6 py-6 mb-10">
-				<h2 className="text-xl font-black text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>Keto &amp; Low-Carb Swaps</h2>
+				<h2 className="text-xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>Keto &amp; Low-Carb Swaps</h2>
 
 				<p className="text-gray-700 leading-relaxed mb-4">
 					If you're following a lower-carb approach, most of the list above still applies, you'll just want to swap a few categories:
@@ -225,7 +225,7 @@ export default function HealthyGroceryList() {
 				</Link>
 			</div>
 
-			<h2 className="text-xl font-black text-gray-900 mb-6" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>Frequently Asked Questions</h2>
+			<h2 className="text-xl font-bold text-gray-900 mb-6" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>Frequently Asked Questions</h2>
 
 			<div className="space-y-5 mb-12">
 				<div className="bg-gray-50 rounded-xl p-4 sm:p-5 border border-gray-100">
