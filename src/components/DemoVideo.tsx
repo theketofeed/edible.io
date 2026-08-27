@@ -18,7 +18,7 @@ export default function DemoVideo() {
 					Watch a real grocery list turn into a full week of meals in seconds.
 				</p>
 
-				<div className="w-full max-w-[380px] mx-auto aspect-[9/16] rounded-2xl overflow-hidden shadow-sm bg-gray-100">
+				<div className="w-full max-w-[380px] mx-auto aspect-[9/16] rounded-2xl overflow-hidden border border-gray-200 shadow-lg bg-gray-100">
 					{isPlaying ? (
 						<iframe
 							className="w-full h-full"
