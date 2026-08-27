@@ -13,6 +13,7 @@ import Results from './components/Results'
 import RecipeDetail from './components/RecipeDetail'
 import ErrorBoundary from './components/ErrorBoundary'
 import HowItWorks from './components/HowItWorks'
+import DemoVideo from './components/DemoVideo'
 import ComparisonSection from './components/ComparisonSection'
 import Testimonials from './components/Testimonials'
 import FinalCTA from './components/FinalCTA'
@@ -444,6 +445,7 @@ function MainContent() {
 								
 								<div className={`transition-all duration-700 ${isLoading ? 'opacity-20 blur-[2px] pointer-events-none' : ''}`}>
 									<HowItWorks />
+									<DemoVideo />
 									<ComparisonSection />
 									<Testimonials />
 									<PricingSection onAuthRequired={() => setAuthOpen(true)} />
