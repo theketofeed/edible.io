@@ -4,7 +4,7 @@ import BlogBreadcrumb from '../components/BlogBreadcrumb'
 import ShareButtons from '../components/ShareButtons'
 import JsonLd from '../components/JsonLd'
 
-const TITLE = 'The Healthy Grocery List: What to Buy and How to Build Your Own | Edible'
+const TITLE = 'The Healthy Grocery List: What to Buy & Build Your Own'
 const DESCRIPTION = 'A complete healthy grocery list organized by food category, with a free printable checklist, budget tips, and keto and low-carb swaps.'
 const ARTICLE_TITLE = 'The Healthy Grocery List: What to Buy and How to Build Your Own'
 const FAQ_ITEMS = [
@@ -34,7 +34,7 @@ const STRUCTURED_DATA = [
 			name: 'Edible',
 			logo: { '@type': 'ImageObject', url: 'https://www.tryediblee.com/logo.png' },
 		},
-		datePublished: '2026-08-23',
+		datePublished: '2026-08-23T09:00:00-05:00',
 		mainEntityOfPage: 'https://www.tryediblee.com/blog/healthy-grocery-list',
 	},
 	{

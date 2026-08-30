@@ -22,7 +22,7 @@ export default function PricingPage() {
 
 	return (
 		<div>
-			<PricingSection onAuthRequired={() => navigate('/')} />
+			<PricingSection headingLevel="h1" onAuthRequired={() => navigate('/')} />
 			<div className="max-w-3xl mx-auto px-4 py-12">
 				<Link
 					to="/"

@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, type ElementType } from 'react'
 import { track, Events } from '../lib/analytics'
 import { Check, Zap, Crown, Shield, Sparkles, Lock } from 'lucide-react'
 import { useState, useCallback } from 'react'
@@ -8,9 +8,11 @@ import type { ProductType } from '../lib/checkout'
 
 interface PricingSectionProps {
   onAuthRequired?: () => void
+  headingLevel?: 'h1' | 'h2'
 }
 
-const PricingSection = memo(function PricingSection({ onAuthRequired }: PricingSectionProps) {
+const PricingSection = memo(function PricingSection({ onAuthRequired, headingLevel = 'h2' }: PricingSectionProps) {
+  const Heading: ElementType = headingLevel
   const { user } = useAuth()
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual')
   const [loading, setLoading] = useState<ProductType | null>(null)
@@ -58,9 +60,9 @@ const PricingSection = memo(function PricingSection({ onAuthRequired }: PricingS
             <Sparkles className="w-3 h-3" />
             Simple Pricing
           </div>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 mb-4 tracking-tight leading-tight">
+          <Heading className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 mb-4 tracking-tight leading-tight">
             Stop planning meals from scratch.
-          </h2>
+          </Heading>
           <p className="text-base sm:text-lg text-gray-500 max-w-xl mx-auto">
             The meal planner that starts with what you already have.
           </p>

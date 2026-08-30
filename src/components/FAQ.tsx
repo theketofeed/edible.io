@@ -1,4 +1,4 @@
-import { memo, useState, useCallback } from 'react'
+import { memo, useState, useCallback, type ElementType } from 'react'
 import { Store, PencilLine, Salad, Banknote, RefreshCw, Sparkles } from 'lucide-react'
 
 interface FAQItem {
@@ -87,8 +87,9 @@ const FAQRow = memo(function FAQRow({
 	)
 })
 
-const FAQ = memo(function FAQ() {
+const FAQ = memo(function FAQ({ headingLevel = 'h2' }: { headingLevel?: 'h1' | 'h2' }) {
 	const [openIndex, setOpenIndex] = useState<number | null>(0)
+	const Heading: ElementType = headingLevel
 
 	const handleToggle = useCallback((index: number) => {
 		setOpenIndex(openIndex === index ? null : index)
@@ -99,9 +100,9 @@ const FAQ = memo(function FAQ() {
 			<div className="max-w-3xl mx-auto px-4">
 				{/* Section Header */}
 				<div className="text-center">
-					<h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">
+					<Heading className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">
 						Frequently Asked Questions
-					</h2>
+					</Heading>
 					<p className="text-gray-500 text-center mb-8 md:mb-12 mt-2 md:mt-3 text-sm md:text-base">
 						Everything you need to know about turning your groceries into great meals.
 					</p>

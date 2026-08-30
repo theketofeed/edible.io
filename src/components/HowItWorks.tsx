@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, type ElementType } from 'react'
 
 interface Step {
 	number: number
@@ -82,7 +82,8 @@ const PlanIllustration = () => (
 
 const ILLUSTRATIONS = [ReceiptIllustration, DietIllustration, PlanIllustration]
 
-const HowItWorks = memo(function HowItWorks() {
+const HowItWorks = memo(function HowItWorks({ headingLevel = 'h2' }: { headingLevel?: 'h1' | 'h2' }) {
+	const Heading: ElementType = headingLevel
 	return (
 		<section id="how-it-works" className="py-10 md:py-16 bg-gradient-to-b from-purple-50 via-purple-50/50 to-white">
 			<div className="max-w-6xl mx-auto px-6 sm:px-6 md:px-8">
@@ -91,10 +92,10 @@ const HowItWorks = memo(function HowItWorks() {
 						<span className="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-[0_0_0_3px_rgba(168,85,247,0.15)]" />
 						<span className="text-[11px] sm:text-[12px] font-medium text-gray-900">How Edible works</span>
 					</div>
-					<h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-4 sm:mb-6">
-						From groceries to meal plans in{' '}
-						<span className="text-[#C6A0F6]">3 steps</span>
-					</h2>
+<Heading className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-4 sm:mb-6">
+					From groceries to meal plans in{' '}
+					<span className="text-[#C6A0F6]">3 steps</span>
+				</Heading>
 					<p className="text-sm sm:text-base md:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
 						No recipe hunting, no extra grocery trips. Just tell us what's already in your kitchen and let Edible handle the rest.
 					</p>

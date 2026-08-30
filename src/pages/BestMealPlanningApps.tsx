@@ -30,7 +30,7 @@ const STRUCTURED_DATA = [
 			name: 'Edible',
 			logo: { '@type': 'ImageObject', url: 'https://www.tryediblee.com/logo.png' },
 		},
-		datePublished: '2026-08-19',
+		datePublished: '2026-08-19T09:00:00-05:00',
 		mainEntityOfPage: 'https://www.tryediblee.com/blog/best-meal-planning-apps',
 	},
 	{
