@@ -5,7 +5,7 @@ import ShareButtons from '../components/ShareButtons'
 import JsonLd from '../components/JsonLd'
 
 const TITLE = '5 Best Meal Planning Apps in 2026 | Edible'
-const DESCRIPTION = 'Comparing five popular meal planning apps, including Mealime, AnyList, Edible, Paprika, and PlateJoy, to help you pick the one that fits your household.'
+const DESCRIPTION = 'Comparing five popular meal planning apps, including Mealime, AnyList, Edible, Paprika, and Samsung Food, to help you pick the one that fits your household.'
 const ARTICLE_TITLE = '5 Best Meal Planning Apps in 2026 (and Who Each One Is Actually For)'
 const FAQ_ITEMS = [
 	{
@@ -72,7 +72,7 @@ export default function BestMealPlanningApps() {
 				<source srcSet="/blog/best-meal-planning-apps-hero.webp" type="image/webp" />
 				<img
 					src="/blog/best-meal-planning-apps-hero.png"
-					alt="Logos of five popular meal planning apps: Mealime, AnyList, Edible, Paprika, and PlateJoy"
+					alt="Logos of five popular meal planning apps: Mealime, AnyList, Edible, Paprika, and Samsung Food"
 					width={1600}
 					height={900}
 					loading="eager"
@@ -140,10 +140,10 @@ export default function BestMealPlanningApps() {
 							<td className="px-4 sm:px-6 py-4 text-gray-600 whitespace-nowrap">$4.99 mobile / $29.99 desktop, one time</td>
 						</tr>
 						<tr className="bg-white border-t border-gray-100">
-							<td className="px-4 sm:px-6 py-4 font-bold text-gray-900 whitespace-nowrap">PlateJoy</td>
-							<td className="px-4 sm:px-6 py-4 text-gray-600">Fully personalized menus via detailed quiz</td>
-							<td className="px-4 sm:px-6 py-4 text-gray-600 whitespace-nowrap">No (10 day trial only)</td>
-							<td className="px-4 sm:px-6 py-4 text-gray-600 whitespace-nowrap">$8.25 to $12.99/mo depending on term</td>
+							<td className="px-4 sm:px-6 py-4 font-bold text-gray-900 whitespace-nowrap">Samsung Food</td>
+							<td className="px-4 sm:px-6 py-4 text-gray-600">Importing recipes from anywhere</td>
+							<td className="px-4 sm:px-6 py-4 text-gray-600">Yes</td>
+							<td className="px-4 sm:px-6 py-4 text-gray-600 whitespace-nowrap">$6.99/mo or $59.99/yr</td>
 						</tr>
 					</tbody>
 				</table>
@@ -257,24 +257,24 @@ export default function BestMealPlanningApps() {
 			<hr className="border-t border-gray-200 my-8 md:my-10" />
 
 			<h2 className="text-xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>
-				5. PlateJoy, Best for Fully Personalized, Quiz-Driven Menus
+				5. Samsung Food, Best for Importing Recipes From Anywhere
 			</h2>
 
 			<p className="text-gray-700 leading-relaxed mb-6">
-				PlateJoy asks over fifty questions about your preferences, then builds a weekly menu around the answers, with one click ordering through Instacart or Amazon Fresh.
+				Samsung Food pulls recipes in from almost any source, social media videos, websites, even photos of handwritten recipe cards, and organizes them into one place alongside meal planning and grocery lists.
 			</p>
 
 			<p className="text-gray-700 leading-relaxed mb-6">
-				It's the most done for you option on this list in terms of decision making, but that personalization is quiz based rather than built from your actual current groceries. Best for people happy to answer a detailed questionnaire once and get hands off menus going forward.
+				It's a strong pick if you're the type who saves recipes from fifteen different places and never looks at them again. The tradeoff is it's more of a recipe hub with planning features bolted on than a dedicated meal-planning-first tool, and some of its smart features work best if you're already in the Samsung device ecosystem. The free tier is generous, recipes, meal planning, and grocery lists all work without paying, though it does show ads and gates AI-personalized features and advanced nutrition tracking behind the $6.99/mo Food+ subscription.
 			</p>
 
 			<a
-				href="https://www.platejoy.com"
+				href="https://samsungfood.com"
 				target="_blank"
 				rel="noopener noreferrer"
 				className="inline-flex items-center justify-center gap-2 px-6 py-3.5 min-h-[48px] rounded-full bg-purple-600 text-white font-semibold text-sm hover:bg-purple-700 active:scale-95 transition-all duration-200"
 			>
-				Visit PlateJoy
+				Visit Samsung Food
 				<span className="text-xs">↗</span>
 			</a>
 
@@ -289,7 +289,7 @@ export default function BestMealPlanningApps() {
 			</p>
 
 			<p className="text-gray-700 leading-relaxed mb-6">
-				If you're organizing recipes you already collect, Paprika fits. If you'd rather answer a quiz once and let the app decide everything, PlateJoy is built for that.
+				If you're organizing recipes you already collect, Paprika fits. If you save recipes from everywhere and want them all in one place, Samsung Food is built for that.
 			</p>
 
 			<hr className="border-t border-gray-200 my-8 md:my-10" />

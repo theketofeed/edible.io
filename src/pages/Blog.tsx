@@ -38,14 +38,14 @@ const posts: Post[] = [
 	},
 	{
 		title: '5 Best Meal Planning Apps in 2026',
-		excerpt: 'Comparing five popular meal planning apps, including Mealime, AnyList, Edible, Paprika, and PlateJoy, to help you pick the one that fits your household.',
+		excerpt: 'Comparing five popular meal planning apps, including Mealime, AnyList, Edible, Paprika, and Samsung Food, to help you pick the one that fits your household.',
 		readingTime: '4 min read',
 		date: 'August 19, 2026',
 		href: '/blog/best-meal-planning-apps',
 		thumbnail: {
 			webp: '/blog/best-meal-planning-apps-hero.webp',
 			png: '/blog/best-meal-planning-apps-hero.png',
-			alt: 'Logos of five popular meal planning apps: Mealime, AnyList, Edible, Paprika, and PlateJoy',
+			alt: 'Logos of five popular meal planning apps: Mealime, AnyList, Edible, Paprika, and Samsung Food',
 			width: 1600,
 			height: 900,
 		},
