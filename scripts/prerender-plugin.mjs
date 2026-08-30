@@ -74,8 +74,10 @@ function startStaticServer(rootDir) {
 		const filePath = path.join(rootDir, pathname === '/' ? 'index.html' : pathname)
 		fs.readFile(filePath, (err, data) => {
 			if (err) {
-				// SPA fallback: serve index.html for client-side routing
-				fs.readFile(path.join(rootDir, 'index.html'), (err2, indexData) => {
+				// SPA fallback: serve the original (unprerendered) shell so each
+				// route is rendered from a clean base rather than inheriting the
+				// prerendered homepage's head (title, meta, JSON-LD).
+				fs.readFile(path.join(rootDir, 'shell.html'), (err2, indexData) => {
 					if (err2) {
 						res.writeHead(404)
 						res.end('Not found')

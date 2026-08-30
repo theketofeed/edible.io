@@ -2,9 +2,47 @@ import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import BlogBreadcrumb from '../components/BlogBreadcrumb'
 import ShareButtons from '../components/ShareButtons'
+import JsonLd from '../components/JsonLd'
 
 const TITLE = '5 Best Meal Planning Apps in 2026 | Edible'
 const DESCRIPTION = 'Comparing five popular meal planning apps, including Mealime, AnyList, Edible, Paprika, and PlateJoy, to help you pick the one that fits your household.'
+const ARTICLE_TITLE = '5 Best Meal Planning Apps in 2026 (and Who Each One Is Actually For)'
+const FAQ_ITEMS = [
+	{
+		question: 'Are meal planning apps worth it?',
+		answer: 'If deciding what to cook is the part that actually drains you, more than the cooking itself, a meal planning app removes that decision fatigue. If you already enjoy browsing recipes, they may add more friction than they save.',
+	},
+	{
+		question: 'Is there a free meal planning app?',
+		answer: "Yes. Mealime, AnyList, and Edible all offer usable free tiers, though what's included varies quite a bit between them (see the comparison table above).",
+	},
+]
+
+const STRUCTURED_DATA = [
+	{
+		'@context': 'https://schema.org',
+		'@type': 'Article',
+		headline: ARTICLE_TITLE,
+		image: 'https://www.tryediblee.com/blog/best-meal-planning-apps-hero.png',
+		author: { '@type': 'Person', name: 'Praise' },
+		publisher: {
+			'@type': 'Organization',
+			name: 'Edible',
+			logo: { '@type': 'ImageObject', url: 'https://www.tryediblee.com/logo.png' },
+		},
+		datePublished: '2026-08-19',
+		mainEntityOfPage: 'https://www.tryediblee.com/blog/best-meal-planning-apps',
+	},
+	{
+		'@context': 'https://schema.org',
+		'@type': 'FAQPage',
+		mainEntity: FAQ_ITEMS.map((item) => ({
+			'@type': 'Question',
+			name: item.question,
+			acceptedAnswer: { '@type': 'Answer', text: item.answer },
+		})),
+	},
+]
 
 export default function BestMealPlanningApps() {
 	useEffect(() => {
@@ -27,6 +65,7 @@ export default function BestMealPlanningApps() {
 
 	return (
 		<article className="w-full max-w-[760px] mx-auto px-5 sm:px-6 py-10 md:py-16">
+			<JsonLd data={STRUCTURED_DATA} />
 			<BlogBreadcrumb title="5 Best Meal Planning Apps in 2026" />
 
 			<picture>
@@ -259,15 +298,15 @@ export default function BestMealPlanningApps() {
 
 			<div className="space-y-5 mb-12">
 				<div className="bg-gray-50 rounded-xl p-4 sm:p-5 border border-gray-100">
-					<h3 className="font-bold text-gray-900 text-base mb-2" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>Are meal planning apps worth it?</h3>
+					<h3 className="font-bold text-gray-900 text-base mb-2" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>{FAQ_ITEMS[0].question}</h3>
 					<p className="text-gray-800 leading-relaxed text-sm">
-						If deciding what to cook is the part that actually drains you, more than the cooking itself, a meal planning app removes that decision fatigue. If you already enjoy browsing recipes, they may add more friction than they save.
+						{FAQ_ITEMS[0].answer}
 					</p>
 				</div>
 				<div className="bg-gray-50 rounded-xl p-4 sm:p-5 border border-gray-100">
-					<h3 className="font-bold text-gray-900 text-base mb-2" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>Is there a free meal planning app?</h3>
+					<h3 className="font-bold text-gray-900 text-base mb-2" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>{FAQ_ITEMS[1].question}</h3>
 					<p className="text-gray-800 leading-relaxed text-sm">
-						Yes. Mealime, AnyList, and Edible all offer usable free tiers, though what's included varies quite a bit between them (see the comparison table above).
+						{FAQ_ITEMS[1].answer}
 					</p>
 				</div>
 			</div>

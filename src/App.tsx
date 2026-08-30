@@ -45,6 +45,16 @@ import FAQPage from './pages/FAQPage'
 import BestMealPlanningApps from './pages/BestMealPlanningApps'
 import HealthyGroceryList from './pages/HealthyGroceryList'
 import Blog from './pages/Blog'
+import JsonLd from './components/JsonLd'
+
+const ORGANIZATION_SCHEMA = {
+	'@context': 'https://schema.org',
+	'@type': 'Organization',
+	name: 'Edible',
+	url: 'https://www.tryediblee.com',
+	logo: 'https://www.tryediblee.com/logo.png',
+	description: 'Edible is an AI-powered meal planning app that turns your grocery list, receipt, or a photo of your kitchen into a complete, personalized weekly meal plan with recipes, instantly.',
+}
 
 function MainContent() {
 	const navigate = useNavigate()
@@ -323,6 +333,7 @@ function MainContent() {
 			<Routes>
 				<Route path="/" element={
 					<>
+						<JsonLd data={ORGANIZATION_SCHEMA} />
 						{(!result || isLoading) && (
 							<div className="flex-1">
 								<div className="max-w-5xl mx-auto px-4 py-8 md:py-12">

@@ -2,9 +2,51 @@ import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import BlogBreadcrumb from '../components/BlogBreadcrumb'
 import ShareButtons from '../components/ShareButtons'
+import JsonLd from '../components/JsonLd'
 
 const TITLE = 'The Healthy Grocery List: What to Buy and How to Build Your Own | Edible'
 const DESCRIPTION = 'A complete healthy grocery list organized by food category, with a free printable checklist, budget tips, and keto and low-carb swaps.'
+const ARTICLE_TITLE = 'The Healthy Grocery List: What to Buy and How to Build Your Own'
+const FAQ_ITEMS = [
+	{
+		question: 'What should be on a healthy grocery list?',
+		answer: "A mix of vegetables, fruits, protein sources, whole grains, healthy fats, and dairy or alternatives, plus a few pantry staples to tie meals together. Variety within each category matters more than any single 'superfood.'",
+	},
+	{
+		question: 'What foods should I avoid at the grocery store?',
+		answer: "You don't need to eliminate anything completely, but it's worth watching out for foods with added sugar listed in the first few ingredients, refined vegetable oils, and heavily processed snacks that are more filler than nutrition. Reading the ingredient list, not just the front-of-package claims, is the simplest way to catch these.",
+	},
+	{
+		question: 'How can I eat healthy on a budget?',
+		answer: 'Buying produce in season, choosing frozen over fresh when it\'s cheaper, checking unit prices instead of sticker prices, and stocking up on proteins like beans and lentils all help keep a healthy list affordable. See the budget tips above for the full breakdown.',
+	},
+]
+
+const STRUCTURED_DATA = [
+	{
+		'@context': 'https://schema.org',
+		'@type': 'Article',
+		headline: ARTICLE_TITLE,
+		image: 'https://www.tryediblee.com/blog/healthy-grocery-list-hero.png',
+		author: { '@type': 'Person', name: 'Praise' },
+		publisher: {
+			'@type': 'Organization',
+			name: 'Edible',
+			logo: { '@type': 'ImageObject', url: 'https://www.tryediblee.com/logo.png' },
+		},
+		datePublished: '2026-08-23',
+		mainEntityOfPage: 'https://www.tryediblee.com/blog/healthy-grocery-list',
+	},
+	{
+		'@context': 'https://schema.org',
+		'@type': 'FAQPage',
+		mainEntity: FAQ_ITEMS.map((item) => ({
+			'@type': 'Question',
+			name: item.question,
+			acceptedAnswer: { '@type': 'Answer', text: item.answer },
+		})),
+	},
+]
 
 export default function HealthyGroceryList() {
 	useEffect(() => {
@@ -27,6 +69,7 @@ export default function HealthyGroceryList() {
 
 	return (
 		<article className="w-full max-w-[760px] mx-auto px-5 sm:px-6 py-10 md:py-16">
+			<JsonLd data={STRUCTURED_DATA} />
 			<BlogBreadcrumb title="The Healthy Grocery List" />
 
 			<picture>
@@ -229,21 +272,21 @@ export default function HealthyGroceryList() {
 
 			<div className="space-y-5 mb-12">
 				<div className="bg-gray-50 rounded-xl p-4 sm:p-5 border border-gray-100">
-					<h3 className="font-bold text-gray-900 text-base mb-2" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>What should be on a healthy grocery list?</h3>
+					<h3 className="font-bold text-gray-900 text-base mb-2" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>{FAQ_ITEMS[0].question}</h3>
 					<p className="text-gray-800 leading-relaxed text-sm">
-						A mix of vegetables, fruits, protein sources, whole grains, healthy fats, and dairy or alternatives, plus a few pantry staples to tie meals together. Variety within each category matters more than any single 'superfood.'
+						{FAQ_ITEMS[0].answer}
 					</p>
 				</div>
 				<div className="bg-gray-50 rounded-xl p-4 sm:p-5 border border-gray-100">
-					<h3 className="font-bold text-gray-900 text-base mb-2" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>What foods should I avoid at the grocery store?</h3>
+					<h3 className="font-bold text-gray-900 text-base mb-2" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>{FAQ_ITEMS[1].question}</h3>
 					<p className="text-gray-800 leading-relaxed text-sm">
-						You don't need to eliminate anything completely, but it's worth watching out for foods with added sugar listed in the first few ingredients, refined vegetable oils, and heavily processed snacks that are more filler than nutrition. Reading the ingredient list, not just the front-of-package claims, is the simplest way to catch these.
+						{FAQ_ITEMS[1].answer}
 					</p>
 				</div>
 				<div className="bg-gray-50 rounded-xl p-4 sm:p-5 border border-gray-100">
-					<h3 className="font-bold text-gray-900 text-base mb-2" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>How can I eat healthy on a budget?</h3>
+					<h3 className="font-bold text-gray-900 text-base mb-2" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 700 }}>{FAQ_ITEMS[2].question}</h3>
 					<p className="text-gray-800 leading-relaxed text-sm">
-						Buying produce in season, choosing frozen over fresh when it's cheaper, checking unit prices instead of sticker prices, and stocking up on proteins like beans and lentils all help keep a healthy list affordable. See the budget tips above for the full breakdown.
+						{FAQ_ITEMS[2].answer}
 					</p>
 				</div>
 			</div>
