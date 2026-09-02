@@ -138,7 +138,11 @@ app.post('/api/claude', async (req, res) => {
 				console.log(`[Claude Backend] Attempt ${attempt} — sending to Claude...`)
 				console.log('[Claude Backend] API Key prefix:', apiKey.substring(0, 15) + '...')
 
-				const res = await fetch('https://api.anthropic.com/v1/messages', {
+				// NOTE: named claudeRes, NOT res — using `res` would shadow the
+				// Express response parameter (server.mjs, app.post('/api/claude', ...))
+				// and .json()/.text() on it would throw "Body has already been read"
+				// on success, discarding every valid Claude response.
+				const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',
@@ -156,11 +160,11 @@ app.post('/api/claude', async (req, res) => {
 				})
 
 				clearTimeout(attemptTimeout)
-				console.log(`[Claude Backend] Attempt ${attempt} status:`, res.status)
+				console.log(`[Claude Backend] Attempt ${attempt} status:`, claudeRes.status)
 
-				if (res.ok) {
+				if (claudeRes.ok) {
 					console.log('[Claude Backend] ✅ Success')
-					const json = await res.json()
+					const json = await claudeRes.json()
 
 					const rawContent = json.content || ''
 					let text
@@ -177,18 +181,18 @@ app.post('/api/claude', async (req, res) => {
 					return res.json({ content: [{ type: 'text', text }] })
 				}
 
-				const text = await res.text().catch(() => '')
-				console.error(`[Claude Backend] Attempt ${attempt} HTTP ${res.status}: ${text}`)
+				const text = await claudeRes.text().catch(() => '')
+				console.error(`[Claude Backend] Attempt ${attempt} HTTP ${claudeRes.status}: ${text}`)
 
 				// Fast transient failures: retry once. 4xx client errors: don't.
-				const retryable = res.status === 429 || res.status >= 500
+				const retryable = claudeRes.status === 429 || claudeRes.status >= 500
 				if (retryable && attempt === 1) {
 					console.warn('[Claude Backend] Transient error — retrying...')
 					await new Promise(r => setTimeout(r, 1000))
 					continue
 				}
 
-				return res.status(res.status).json({ error: `Claude API error: ${res.status}`, details: text })
+				return res.status(claudeRes.status).json({ error: `Claude API error: ${claudeRes.status}`, details: text })
 			} catch (err) {
 				clearTimeout(attemptTimeout)
 				// Timeout / abort = do NOT retry (a repeat of the same large request
