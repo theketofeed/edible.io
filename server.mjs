@@ -103,58 +103,98 @@ app.use(express.urlencoded({ limit: '25mb', extended: true }))
 
 // ─── Claude API proxy ──────────────────────────────────────────────────────
 app.post('/api/claude', async (req, res) => {
-	const controller = new AbortController()
-	const timeoutId = setTimeout(() => {
-		controller.abort()
-		console.warn('[Claude Backend] Request timed out after 25s')
-	}, 25000)
+	const deadline = Date.now() + 35000
 
 	try {
 		const { prompt } = req.body
 
 		if (!prompt) {
-			clearTimeout(timeoutId)
 			return res.status(400).json({ error: 'Missing prompt' })
 		}
 
 		const apiKey = process.env.CLAUDE_API_KEY || process.env.VITE_CLAUDE_API_KEY
 		if (!apiKey || apiKey.trim() === '' || apiKey === 'your_key_here') {
-			clearTimeout(timeoutId)
 			console.warn('[Claude Backend] No valid Claude API key found.')
 			return res.status(401).json({ error: 'Claude API key not configured' })
 		}
 
-		console.log('[Claude Backend] Sending to Claude...')
-		console.log('[Claude Backend] API Key prefix:', apiKey.substring(0, 15) + '...')
+		// One retry on transient failures (timeout / 429 / 5xx) so we don't
+		// immediately abandon Claude (main) and fall through to Groq.
+		let attempts = 0
+		let response = null
+		let lastError = null
 
-		const response = await fetch('https://api.anthropic.com/v1/messages', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				'x-api-key': apiKey,
-				'anthropic-version': '2023-06-01'
-			},
-			body: JSON.stringify({
-				model: 'claude-haiku-4-5-20251001',
-				max_tokens: 4096,
-				system: 'You output JSON only. No code fences. No commentary.',
-				messages: [{ role: 'user', content: prompt }],
-				temperature: 0.55
-			}),
-			signal: controller.signal
-		})
+		while (attempts < 2) {
+			attempts++
 
-		clearTimeout(timeoutId)
-		console.log('[Claude Backend] Response status:', response.status)
+			const attemptController = new AbortController()
+			const remaining = Math.max(2000, deadline - Date.now())
+			const attemptTimeout = setTimeout(() => {
+				attemptController.abort()
+				lastError = { name: 'AbortError', message: 'Claude API timed out' }
+				console.warn(`[Claude Backend] Attempt ${attempts} timed out`)
+			}, remaining)
 
-		if (!response.ok) {
-			const text = await response.text().catch(() => '')
-			console.error(`[Claude Backend] HTTP ${response.status}: ${text}`)
-			return res.status(response.status).json({ error: `Claude API error: ${response.status}`, details: text })
+			try {
+				console.log(`[Claude Backend] Attempt ${attempts} — sending to Claude...`)
+				console.log('[Claude Backend] API Key prefix:', apiKey.substring(0, 15) + '...')
+
+				const res = await fetch('https://api.anthropic.com/v1/messages', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'x-api-key': apiKey,
+						'anthropic-version': '2023-06-01'
+					},
+					body: JSON.stringify({
+						model: 'claude-haiku-4-5-20251001',
+						max_tokens: 4096,
+						system: 'You output JSON only. No code fences. No commentary.',
+						messages: [{ role: 'user', content: prompt }],
+						temperature: 0.55
+					}),
+					signal: attemptController.signal
+				})
+
+				clearTimeout(attemptTimeout)
+				console.log(`[Claude Backend] Attempt ${attempts} status:`, res.status)
+
+				if (res.ok) {
+					response = res
+					break
+				}
+
+				const text = await res.text().catch(() => '')
+				console.error(`[Claude Backend] Attempt ${attempts} HTTP ${res.status}: ${text}`)
+
+				// Retry only on transient errors, not on 4xx client errors
+				const retryable = res.status === 429 || res.status >= 500
+				if (retryable && attempts === 1) {
+					lastError = { message: `Claude API error: ${res.status}` }
+					console.warn('[Claude Backend] Transient error — retrying...')
+					await new Promise(r => setTimeout(r, 1000))
+					continue
+				}
+
+				return res.status(res.status).json({ error: `Claude API error: ${res.status}`, details: text })
+			} catch (err) {
+				clearTimeout(attemptTimeout)
+				console.error(`[Claude Backend] Attempt ${attempts} error:`, err?.message || err)
+				if (attempts === 1) {
+					lastError = err
+					await new Promise(r => setTimeout(r, 500))
+					continue
+				}
+				throw err
+			}
 		}
 
-		const json = await response.json()
+		if (!response) {
+			throw lastError || new Error('Claude request failed')
+		}
+
 		console.log('[Claude Backend] ✅ Success')
+		const json = await response.json()
 
 		const rawContent = json.content || ''
 		let text
@@ -170,7 +210,6 @@ app.post('/api/claude', async (req, res) => {
 
 		res.json({ content: [{ type: 'text', text }] })
 	} catch (err) {
-		clearTimeout(timeoutId)
 		console.error('[Claude Backend] Error:', err)
 		if (err.name === 'AbortError' || err.message?.includes('aborted') || err.message?.includes('timed out')) {
 			return res.status(504).json({ error: 'Claude API timed out' })
@@ -272,7 +311,12 @@ app.post('/api/groq', aiLimiter, async (req, res) => {
 				model: model || 'openai/gpt-oss-120b',
 				messages,
 				temperature: temperature ?? 0.5,
-				response_format: { type: 'json_object' }
+				// NOTE: intentionally omitting response_format: { type: 'json_object' }.
+				// Groq's strict JSON validation rejects large meal-plan outputs that
+				// contain markdown, emoji (❤️), or escapable characters
+				// ("json_validate_failed"). The prompt + client-side JSON.parse
+				// already handle stripping fences and parsing, so the validator is
+				// unnecessary and only causes failures.
 			}),
 			signal: controller.signal
 		})

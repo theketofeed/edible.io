@@ -295,7 +295,9 @@ async function callGroq(prompt: string): Promise<{ totalDays: number; days: DayM
     const content = json.choices?.[0]?.message?.content
     if (!content) throw new Error('Missing content in Groq response')
 
-    const parsed = JSON.parse(content)
+    // Strip markdown code fences if present (validator was removed on backend)
+    const cleaned = content.replace(/```json\n?|\n?```/g, '').trim()
+    const parsed = JSON.parse(cleaned)
     const result = coerceDaysStructure(parsed)
     console.log('[Groq] ✅ Success —', result.days.length, 'days')
     return result
