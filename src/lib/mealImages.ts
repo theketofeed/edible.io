@@ -75,8 +75,9 @@ function getCategoryFallback(mealTitle: string): string {
   return 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&h=500&fit=crop'
 }
 
-// ─── Backend Image Proxy (Spoonacular → Pexels fallback) ─────────────────────
-// Backend tries Spoonacular first (real food photos), falls back to Pexels API.
+// ─── Backend Image Pipeline ─────────────────────────────────────────────────
+// Backend: DB cache → Pexels → Pixabay → Wikimedia → fallback (all server-side)
+// Returns JSON { imageUrl, source, attribution?, license? }
 async function fetchImageFromBackend(mealTitle: string): Promise<string | null> {
   const key = titleToKey(mealTitle)
   
@@ -90,12 +91,12 @@ async function fetchImageFromBackend(mealTitle: string): Promise<string | null> 
     const backendUrl = (import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:3001'
     
     try {
-      console.log(`[MealImages] Requesting AI generation for: "${mealTitle}"`)
+      console.log(`[MealImages] Requesting image for: "${mealTitle}"`)
       const response = await fetch(`${backendUrl}/api/generate-meal-image`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mealTitle }),
-        signal: AbortSignal.timeout(45000),
+        signal: AbortSignal.timeout(30000),
       })
 
       if (!response.ok) {
@@ -104,17 +105,16 @@ async function fetchImageFromBackend(mealTitle: string): Promise<string | null> 
         return null
       }
 
-      const blob = await response.blob()
-      if (blob.size === 0) {
-        console.warn('[MealImages] Backend returned empty blob')
+      const data = await response.json()
+      if (!data?.imageUrl) {
+        console.log(`[MealImages] Backend returned no image (source: ${data?.source || 'unknown'})`)
         return null
       }
 
-      const objectUrl = URL.createObjectURL(blob)
-      console.log(`[MealImages] ✅ Generated image (${blob.size} bytes) for: "${mealTitle}"`)
-      return objectUrl
+      console.log(`[MealImages] ✅ Got image from ${data.source} for: "${mealTitle}"`)
+      return data.imageUrl as string
     } catch (err) {
-      console.warn('[MealImages] Generation failed:', err instanceof Error ? err.message : err)
+      console.warn('[MealImages] Fetch failed:', err instanceof Error ? err.message : err)
       return null
     } finally {
       inFlightRequests.delete(key)
@@ -129,13 +129,16 @@ async function fetchImageFromBackend(mealTitle: string): Promise<string | null> 
 /**
  * Returns a food image URL for a meal title.
  *
- * Strategy:
- * 1. Session memory cache → instant (if previously fetched)
- * 2. Backend fetch        → Spoonacular real food photo → Pexels fallback
- *                           Returns null while loading so the SVG meal-type
- *                           placeholder stays visible until a real photo arrives.
+ * Strategy (all server-side, no API keys in client bundle):
+ * 1. Session memory cache → instant (if previously fetched this session)
+ * 2. Backend pipeline → DB cache → Pexels → Pixabay → Wikimedia → fallback
+ *    Returns null while loading so the SVG meal-type placeholder stays visible
+ *    until a real photo arrives.
  *
- * Setup: Add SPOONACULAR_API_KEY to .env.local (free at spoonacular.com/food-api)
+ * Env vars needed on the backend:
+ *   PEXELS_API_KEY   — pexels.com/auth (free tier: 200 req/hr)
+ *   PIXABAY_API_KEY  — pixabay.com/api/docs (free tier: 5000 req/day)
+ *   (Wikimedia Commons requires no API key)
  */
 export async function fetchMealImage(mealTitle: string): Promise<string | null> {
   if (!mealTitle?.trim()) return null
@@ -149,7 +152,7 @@ export async function fetchMealImage(mealTitle: string): Promise<string | null> 
     return cached
   }
 
-  // 2. Fetch real food image from backend (Spoonacular → Pexels)
+  // 2. Fetch real image from backend (DB cache → Pexels → Pixabay → Wikimedia)
   //    Returns null immediately — the calling component shows an SVG placeholder
   //    until this resolves. Once resolved, the URL is cached for future use.
   console.log(`[MealImages] Fetching real image for: "${mealTitle}" (SVG placeholder shown until ready)`)

@@ -438,122 +438,15 @@ app.post('/api/webhooks/dodo', async (req, res) => {
   }
 })
 
-// ─── Meal Image Cache & Queue ──────────────────────────────────────────────
-const imageCache = new Map() // key → { buffer, contentType, timestamp }
-const IMAGE_CACHE_TTL = 60 * 60 * 1000 // 1 hour
+// ─── Meal Image Pipeline ──────────────────────────────────────────────────
+// DB cache (Supabase meal_images) → Pexels → Pixabay → Wikimedia → fallback
+// All image fetching is server-side; no API keys exposed to the client.
+import { normalizeMealTitle } from './server/lib/normalizeTitle.js'
+import { getCachedImage, cacheImage } from './server/lib/imageCache.js'
+import { fetchPexelsImage } from './server/lib/pexels.js'
+import { fetchPixabayImage } from './server/lib/pixabay.js'
+import { fetchWikimediaImage } from './server/lib/wikimedia.js'
 
-function getImageCacheKey(title) {
-	return title.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().replace(/\s+/g, '-').slice(0, 80)
-}
-
-// ─── Food Query Sanitizer ──────────────────────────────────────────────────
-// Strips cooking adjectives/techniques that confuse general image search
-// and extracts core food terms for better search accuracy.
-const NOISE_WORDS = new Set([
-	// Cooking techniques
-	'baked', 'grilled', 'roasted', 'pan-seared', 'seared', 'sauteed', 'sautéed',
-	'fried', 'deep-fried', 'braised', 'steamed', 'poached', 'smoked', 'charred',
-	'broiled', 'blanched', 'caramelized', 'glazed', 'marinated', 'stuffed',
-	'slow-cooked', 'pressure-cooked', 'air-fried', 'stir-fried',
-	// Descriptive adjectives that don't help image search
-	'homemade', 'classic', 'traditional', 'rustic', 'simple', 'easy', 'quick',
-	'healthy', 'hearty', 'light', 'fresh', 'creamy', 'crispy', 'crunchy',
-	'tender', 'juicy', 'savory', 'zesty', 'tangy', 'spicy', 'mild', 'bold',
-	'rich', 'decadent', 'delicious', 'flavorful', 'aromatic', 'fragrant',
-	'golden', 'perfect', 'ultimate', 'best', 'amazing', 'favorite',
-	// Preparation descriptors
-	'herb-crusted', 'crusted', 'seasoned', 'infused', 'topped', 'loaded',
-	'drizzled', 'tossed', 'whipped', 'mashed', 'diced', 'sliced', 'chopped',
-	// Filler words
-	'with', 'and', 'in', 'on', 'a', 'the', 'style', 'inspired',
-])
-
-function sanitizeFoodQuery(mealTitle) {
-	// 1. Remove parenthetical notes like "(Keto-Friendly)" or "(serves 4)"
-	let cleaned = mealTitle.replace(/\([^)]*\)/g, '').trim()
-
-	// 2. Split into words and filter out noise
-	const words = cleaned.split(/[\s-]+/).filter(w => {
-		const lower = w.toLowerCase().replace(/[^a-z]/g, '')
-		return lower.length > 1 && !NOISE_WORDS.has(lower) && !NOISE_WORDS.has(w.toLowerCase())
-	})
-
-	// 3. If we stripped too much, fall back to the original (minus parentheticals)
-	const result = words.length >= 1 ? words.join(' ') : cleaned
-
-	return result.trim()
-}
-
-// Check if a Pexels photo alt text / URL is food-related
-const FOOD_INDICATORS = /\b(food|dish|meal|plate|bowl|cook|recipe|eat|cuisine|salad|soup|steak|chicken|fish|pasta|rice|bread|cake|dessert|fruit|vegetable|meat|seafood|sandwich|burger|pizza|taco|sushi|curry|noodle|breakfast|lunch|dinner|appetizer|snack|sauce|grill|roast|bake|fry|serve|kitchen|restaurant|dining|delicious|tasty|yummy|homemade|ingredient)\b/i
-
-function isProbablyFoodPhoto(photo) {
-	// Check alt text
-	if (photo.alt && FOOD_INDICATORS.test(photo.alt)) return true
-	// Check URL path for food-related terms
-	if (photo.url && FOOD_INDICATORS.test(photo.url)) return true
-	// Check image URL
-	if (photo.src?.original && FOOD_INDICATORS.test(photo.src.original)) return true
-	// If alt text is very short or generic, it's uncertain — allow it if no red flags
-	const NON_FOOD = /\b(book|cover|page|author|library|shelf|reading|laptop|computer|phone|screen|office|desk|building|car|vehicle|fashion|model|portrait|selfie|abstract|pattern|texture|landscape|mountain|ocean|beach|city|skyline|person|people|crowd|sport|gym)\b/i
-	if (photo.alt && NON_FOOD.test(photo.alt)) return false
-	// No strong signal either way — accept it (Pexels food searches are usually correct)
-	return true
-}
-
-async function fetchPexelsImage(mealTitle) {
-	const pexelsKey = process.env.VITE_PEXELS_API_KEY || process.env.PEXELS_API_KEY
-	if (!pexelsKey) return null
-
-	try {
-		// Sanitize the query and append food context for Pexels
-		const foodQuery = sanitizeFoodQuery(mealTitle)
-		const searchTerm = `${foodQuery} food dish`
-		console.log(`[MealImages] 📸 Pexels search: "${mealTitle}" → query: "${searchTerm}"`)
-		const query = encodeURIComponent(searchTerm)
-		const searchUrl = `https://api.pexels.com/v1/search?query=${query}&per_page=5`
-
-		const pexelsRes = await fetch(searchUrl, {
-			headers: { 'Authorization': pexelsKey },
-			signal: AbortSignal.timeout(8000)
-		})
-
-		if (pexelsRes.ok) {
-			const data = await pexelsRes.json()
-			const photos = data?.photos || []
-
-			// Pick the first photo that passes food-relevance checks
-			const foodPhoto = photos.find(p => p?.src?.large && isProbablyFoodPhoto(p))
-			if (foodPhoto) {
-				const imageUrl = foodPhoto.src.large
-				console.log(`[MealImages] ✅ Pexels found food image for: "${mealTitle}" (alt: "${foodPhoto.alt || 'n/a'}")`)
-
-				const imgRes = await fetch(imageUrl, { signal: AbortSignal.timeout(8000) })
-				if (imgRes.ok) {
-					const arrayBuffer = await imgRes.arrayBuffer()
-					const blob = Buffer.from(arrayBuffer)
-					if (blob.length > 0) {
-						const contentType = imgRes.headers.get('content-type') || 'image/jpeg'
-						return { buffer: blob, contentType }
-					}
-				}
-			} else {
-				console.log(`[MealImages] Pexels returned no food-relevant results for: "${mealTitle}" (${photos.length} total results filtered out)`)
-			}
-		} else {
-			console.warn(`[MealImages] Pexels search failed (${pexelsRes.status})`)
-		}
-	} catch (err) {
-		console.warn(`[MealImages] Pexels error: ${err.message}`)
-	}
-	return null
-}
-
-// ─── Meal Image Proxy: Spoonacular → Pexels fallback ─────────────────
-// Strategy:
-//   1. Server-side cache      — instant response for repeated requests
-//   2. Spoonacular complexSearch — real food photos, instant, free tier (150 req/day)
-//   3. Pexels API           — beautiful stock photography fallback
 app.post('/api/generate-meal-image', imageLimiter, async (req, res) => {
 	const { mealTitle } = req.body
 
@@ -561,88 +454,90 @@ app.post('/api/generate-meal-image', imageLimiter, async (req, res) => {
 		return res.status(400).json({ error: 'Missing or invalid mealTitle' })
 	}
 
-	const cacheKey = getImageCacheKey(mealTitle)
-
-	// ── Step 0: Check server-side cache ──────────────────────────────────────
-	const cached = imageCache.get(cacheKey)
-	if (cached && (Date.now() - cached.timestamp) < IMAGE_CACHE_TTL) {
-		console.log(`[MealImages] 💾 Cache hit for: "${mealTitle}" (${cached.buffer.length} bytes)`)
-		res.set('Content-Type', cached.contentType)
-		return res.send(cached.buffer)
+	// ── Step 0: Normalize title ──────────────────────────────────────────────
+	const { raw, normalized } = normalizeMealTitle(mealTitle)
+	if (!normalized) {
+		return res.status(400).json({ error: 'Meal title too short after normalization' })
 	}
 
-	const spoonacularKey = process.env.SPOONACULAR_API_KEY?.trim()
-
-	// ── Step 1: Spoonacular complexSearch ────────────────────────────────────
-	if (spoonacularKey && spoonacularKey !== 'your_key_here') {
-		try {
-			// Sanitize the query for better Spoonacular matches
-			const foodQuery = sanitizeFoodQuery(mealTitle)
-			console.log(`[MealImages] 🔍 Spoonacular search: "${mealTitle}" → query: "${foodQuery}"`)
-			const query = encodeURIComponent(foodQuery)
-			const spoonUrl = `https://api.spoonacular.com/recipes/complexSearch?query=${query}&number=3&apiKey=${spoonacularKey}`
-
-			const spoonRes = await fetch(spoonUrl, {
-				signal: AbortSignal.timeout(8000),
-				headers: { 'Accept': 'application/json' }
-			})
-
-			if (spoonRes.ok) {
-				const data = await spoonRes.json()
-				// Pick the first result with a valid image
-				const recipe = (data?.results || []).find(r => r?.image)
-				if (recipe?.image) {
-					let imageUrl = recipe.image
-					if (!imageUrl.startsWith('http')) {
-						imageUrl = `https://img.spoonacular.com/recipes/${imageUrl}`
-					}
-					console.log(`[MealImages] ✅ Spoonacular found image for: "${mealTitle}" → ${imageUrl}`)
-
-					const imgRes = await fetch(imageUrl, { signal: AbortSignal.timeout(8000) })
-					if (imgRes.ok) {
-						const arrayBuffer = await imgRes.arrayBuffer()
-						const blob = Buffer.from(arrayBuffer)
-						if (blob.length > 0) {
-							const contentType = imgRes.headers.get('content-type') || 'image/jpeg'
-							// Cache the result
-							imageCache.set(cacheKey, { buffer: blob, contentType, timestamp: Date.now() })
-							res.set('Content-Type', contentType)
-							console.log(`[MealImages] ✅ Served Spoonacular image (${blob.length} bytes)`)
-							return res.send(blob)
-						}
-					}
-				} else {
-					console.log(`[MealImages] Spoonacular returned no results for: "${mealTitle}"`)
-				}
-			} else {
-				const errText = await spoonRes.text().catch(() => '')
-				console.warn(`[MealImages] Spoonacular failed (${spoonRes.status}): ${errText.substring(0, 100)}`)
-			}
-		} catch (err) {
-			console.warn(`[MealImages] Spoonacular error: ${err.message}`)
-		}
-	} else {
-		console.log('[MealImages] No SPOONACULAR_API_KEY — skipping to Pexels')
-	}
-
-	// ── Step 2: Pexels API fallback ──────────────────
+	// ── Step 1: Check Supabase DB cache ──────────────────────────────────────
 	try {
-		const result = await fetchPexelsImage(mealTitle)
-		if (result) {
-			// Cache the result
-			imageCache.set(cacheKey, { buffer: result.buffer, contentType: result.contentType, timestamp: Date.now() })
-			res.set('Content-Type', result.contentType)
-			return res.send(result.buffer)
+		const cached = await getCachedImage(normalized)
+		if (cached) {
+			console.log(`[MealImages] 💾 DB cache hit for: "${raw}" (source: ${cached.source})`)
+			return res.json({
+				imageUrl: cached.image_url,
+				source: cached.source,
+				attribution: cached.attribution || null,
+				license: cached.license || null,
+			})
 		}
 	} catch (err) {
-		console.warn(`[MealImages] Pexels fetch error: ${err.message}`)
+		console.warn('[MealImages] DB cache read error:', err.message)
 	}
 
-	// ── All sources exhausted ─────────────────────────────────────────────────
-	console.error(`[MealImages] ❌ All sources failed for: "${mealTitle}"`)
-	res.status(500).json({
-		error: 'Image generation unavailable',
-		details: 'Spoonacular and Pexels both failed.'
+	// ── Step 2: Pexels API (store URL directly — permanent, no expiry) ──────
+	const searchQuery = `${normalized} food dish`
+	try {
+		const pexelsResult = await fetchPexelsImage(searchQuery)
+		if (pexelsResult) {
+			await cacheImage(normalized, {
+				imageUrl: pexelsResult.imageUrl,
+				source: 'pexels',
+			})
+			console.log(`[MealImages] ✅ Pexels hit for: "${raw}"`)
+			return res.json({ imageUrl: pexelsResult.imageUrl, source: 'pexels' })
+		}
+	} catch (err) {
+		console.warn('[MealImages] Pexels error:', err.message)
+	}
+
+	// ── Step 3: Pixabay API (download + re-upload to our storage) ────────────
+	try {
+		const pixabayResult = await fetchPixabayImage(searchQuery, normalized)
+		if (pixabayResult) {
+			await cacheImage(normalized, {
+				imageUrl: pixabayResult.imageUrl,
+				source: 'pixabay',
+			})
+			console.log(`[MealImages] ✅ Pixabay hit for: "${raw}"`)
+			return res.json({ imageUrl: pixabayResult.imageUrl, source: 'pixabay' })
+		}
+	} catch (err) {
+		console.warn('[MealImages] Pixabay error:', err.message)
+	}
+
+	// ── Step 4: Wikimedia Commons (store URL + attribution/license) ──────────
+	try {
+		const wikiResult = await fetchWikimediaImage(normalized)
+		if (wikiResult) {
+			await cacheImage(normalized, {
+				imageUrl: wikiResult.imageUrl,
+				source: 'wikimedia',
+				attribution: wikiResult.attribution,
+				license: wikiResult.license,
+			})
+			console.log(`[MealImages] ✅ Wikimedia hit for: "${raw}"`)
+			return res.json({
+				imageUrl: wikiResult.imageUrl,
+				source: 'wikimedia',
+				attribution: wikiResult.attribution,
+				license: wikiResult.license,
+			})
+		}
+	} catch (err) {
+		console.warn('[MealImages] Wikimedia error:', err.message)
+	}
+
+	// ── Step 5: All sources exhausted — serve fallback (NOT cached) ──────────
+	// Do NOT write to meal_images — the next request will retry the full pipeline.
+	// This prevents being permanently stuck on fallback if an API's library grows.
+	console.log(`[MealImages] ⚠️  All sources missed for: "${raw}" — serving uncached fallback`)
+	res.json({
+		imageUrl: null,
+		source: 'fallback',
+		attribution: null,
+		license: null,
 	})
 })
 
