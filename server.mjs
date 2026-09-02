@@ -103,8 +103,6 @@ app.use(express.urlencoded({ limit: '25mb', extended: true }))
 
 // ─── Claude API proxy ──────────────────────────────────────────────────────
 app.post('/api/claude', async (req, res) => {
-	const deadline = Date.now() + 35000
-
 	try {
 		const { prompt } = req.body
 
@@ -118,25 +116,26 @@ app.post('/api/claude', async (req, res) => {
 			return res.status(401).json({ error: 'Claude API key not configured' })
 		}
 
-		// One retry on transient failures (timeout / 429 / 5xx) so we don't
-		// immediately abandon Claude (main) and fall through to Groq.
-		let attempts = 0
-		let response = null
+		// Retry only on FAST, transient failures (HTTP 429 rate-limit or 5xx),
+		// where a retry genuinely helps and is essentially instantaneous.
+		// Do NOT retry after a full per-attempt timeout — a second attempt of an
+		// identical, large request will just time out again (confirmed in prod:
+		// attempt 1 burned the full window, then attempt 2 aborted in ~2s). For
+		// those, fail fast so we fall through to Groq without added latency.
+		// Each attempt gets its OWN fixed timeout; they do not share a budget.
+		const ATTEMPT_TIMEOUT = 30000
+
 		let lastError = null
 
-		while (attempts < 2) {
-			attempts++
-
+		for (let attempt = 1; attempt <= 2; attempt++) {
 			const attemptController = new AbortController()
-			const remaining = Math.max(2000, deadline - Date.now())
 			const attemptTimeout = setTimeout(() => {
 				attemptController.abort()
-				lastError = { name: 'AbortError', message: 'Claude API timed out' }
-				console.warn(`[Claude Backend] Attempt ${attempts} timed out`)
-			}, remaining)
+				console.warn(`[Claude Backend] Attempt ${attempt} timed out after ${ATTEMPT_TIMEOUT}ms`)
+			}, ATTEMPT_TIMEOUT)
 
 			try {
-				console.log(`[Claude Backend] Attempt ${attempts} — sending to Claude...`)
+				console.log(`[Claude Backend] Attempt ${attempt} — sending to Claude...`)
 				console.log('[Claude Backend] API Key prefix:', apiKey.substring(0, 15) + '...')
 
 				const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -157,20 +156,33 @@ app.post('/api/claude', async (req, res) => {
 				})
 
 				clearTimeout(attemptTimeout)
-				console.log(`[Claude Backend] Attempt ${attempts} status:`, res.status)
+				console.log(`[Claude Backend] Attempt ${attempt} status:`, res.status)
 
 				if (res.ok) {
-					response = res
-					break
+					console.log('[Claude Backend] ✅ Success')
+					const json = await res.json()
+
+					const rawContent = json.content || ''
+					let text
+
+					if (Array.isArray(rawContent)) {
+						const textBlock = rawContent.find((b) => b.type === 'text')
+						text = textBlock?.text || rawContent[0]?.text || ''
+					} else if (typeof rawContent === 'string') {
+						text = rawContent
+					} else {
+						text = JSON.stringify(rawContent)
+					}
+
+					return res.json({ content: [{ type: 'text', text }] })
 				}
 
 				const text = await res.text().catch(() => '')
-				console.error(`[Claude Backend] Attempt ${attempts} HTTP ${res.status}: ${text}`)
+				console.error(`[Claude Backend] Attempt ${attempt} HTTP ${res.status}: ${text}`)
 
-				// Retry only on transient errors, not on 4xx client errors
+				// Fast transient failures: retry once. 4xx client errors: don't.
 				const retryable = res.status === 429 || res.status >= 500
-				if (retryable && attempts === 1) {
-					lastError = { message: `Claude API error: ${res.status}` }
+				if (retryable && attempt === 1) {
 					console.warn('[Claude Backend] Transient error — retrying...')
 					await new Promise(r => setTimeout(r, 1000))
 					continue
@@ -179,8 +191,14 @@ app.post('/api/claude', async (req, res) => {
 				return res.status(res.status).json({ error: `Claude API error: ${res.status}`, details: text })
 			} catch (err) {
 				clearTimeout(attemptTimeout)
-				console.error(`[Claude Backend] Attempt ${attempts} error:`, err?.message || err)
-				if (attempts === 1) {
+				// Timeout / abort = do NOT retry (a repeat of the same large request
+				// won't be faster). Fall through to error so Groq takes over.
+				if (err.name === 'AbortError' || err.message?.includes('aborted')) {
+					console.error(`[Claude Backend] Attempt ${attempt} aborted (timeout) — not retrying`)
+					throw err
+				}
+				console.error(`[Claude Backend] Attempt ${attempt} error:`, err?.message || err)
+				if (attempt === 1) {
 					lastError = err
 					await new Promise(r => setTimeout(r, 500))
 					continue
@@ -189,26 +207,7 @@ app.post('/api/claude', async (req, res) => {
 			}
 		}
 
-		if (!response) {
-			throw lastError || new Error('Claude request failed')
-		}
-
-		console.log('[Claude Backend] ✅ Success')
-		const json = await response.json()
-
-		const rawContent = json.content || ''
-		let text
-
-		if (Array.isArray(rawContent)) {
-			const textBlock = rawContent.find((b) => b.type === 'text')
-			text = textBlock?.text || rawContent[0]?.text || ''
-		} else if (typeof rawContent === 'string') {
-			text = rawContent
-		} else {
-			text = JSON.stringify(rawContent)
-		}
-
-		res.json({ content: [{ type: 'text', text }] })
+		throw lastError || new Error('Claude request failed')
 	} catch (err) {
 		console.error('[Claude Backend] Error:', err)
 		if (err.name === 'AbortError' || err.message?.includes('aborted') || err.message?.includes('timed out')) {

@@ -12,10 +12,11 @@
 
 let _supabase = null
 
+// ESM import (backend runs with "type": "module"; require() is not available)
+import { createClient } from '@supabase/supabase-js'
+
 function getSupabase() {
   if (_supabase) return _supabase
-  // Lazy-import so the module can be required before supabase is configured
-  const { createClient } = require('@supabase/supabase-js')
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_KEY || process.env.VITE_SUPABASE_SERVICE_KEY
   if (!url || !key) {
