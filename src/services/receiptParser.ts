@@ -29,7 +29,7 @@ Output format (array only, no wrapper object):
 ]`
 
 export async function parseReceiptWithGemini(rawText: string): Promise<ParsedItem[]> {
-	// Gemini removed — using Groq (llama-3.3-70b) directly
+	// Gemini removed — using Groq (openai/gpt-oss-120b) directly
 	return parseReceiptWithGroq(rawText)
 }
 
