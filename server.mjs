@@ -123,7 +123,13 @@ app.post('/api/claude', async (req, res) => {
 		// attempt 1 burned the full window, then attempt 2 aborted in ~2s). For
 		// those, fail fast so we fall through to Groq without added latency.
 		// Each attempt gets its OWN fixed timeout; they do not share a budget.
-		const ATTEMPT_TIMEOUT = 30000
+		// Grounded in real latency data collected 2026-09-03 on /api/claude
+		// (13 clean serial calls, no concurrency): median ~24s, max ~29s.
+		// 37s sits ~8s above the observed max so genuinely slow-but-successful
+		// calls aren't cut off, while still trimming requests that are hung.
+		// Env-configurable (CLAUDE_ATTEMPT_TIMEOUT_MS) so it can be re-tuned
+		// without a code change.
+		const ATTEMPT_TIMEOUT = parseInt(process.env.CLAUDE_ATTEMPT_TIMEOUT_MS || '37000', 10)
 
 		let lastError = null
 
@@ -136,7 +142,6 @@ app.post('/api/claude', async (req, res) => {
 
 			try {
 				console.log(`[Claude Backend] Attempt ${attempt} — sending to Claude...`)
-				console.log('[Claude Backend] API Key prefix:', apiKey.substring(0, 15) + '...')
 
 				// NOTE: named claudeRes, NOT res — using `res` would shadow the
 				// Express response parameter (server.mjs, app.post('/api/claude', ...))
@@ -160,10 +165,8 @@ app.post('/api/claude', async (req, res) => {
 				})
 
 				clearTimeout(attemptTimeout)
-				console.log(`[Claude Backend] Attempt ${attempt} status:`, claudeRes.status)
 
-				if (claudeRes.ok) {
-					console.log('[Claude Backend] ✅ Success')
+			if (claudeRes.ok) {
 					const json = await claudeRes.json()
 
 					const rawContent = json.content || ''

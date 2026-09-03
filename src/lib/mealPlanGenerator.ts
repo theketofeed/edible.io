@@ -237,7 +237,15 @@ async function callClaude(prompt: string): Promise<{ totalDays: number; days: Da
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt }),
-      signal: AbortSignal.timeout(40000),
+      // Frontend timeout covers the FULL failover chain so the browser never
+      // aborts while the backend is still legitimately working (this was the
+      // race condition: 40s frontend < Claude 37s attempt + Groq 15s fallback).
+      // Math (grounded in real latency data 2026-09-03):
+      //   37s Claude per-attempt (server.mjs, median ~24s / max ~29s observed)
+      // + 15s Groq frontend cap (backend allows 25s, Groq logs 3-7s typical)
+      // +  8s buffer
+      // = 60s
+      signal: AbortSignal.timeout(60000),
     })
 
     if (!response.ok) throw new Error(`Backend HTTP ${response.status}`)
