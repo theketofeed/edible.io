@@ -152,6 +152,7 @@ app.post('/api/claude', async (req, res) => {
 		for (let attempt = 1; attempt <= 2; attempt++) {
 			const attemptController = new AbortController()
 			const attemptTimeout = setTimeout(() => {
+				console.error(`[Claude Backend] Attempt ${attempt} — TIMEOUT FIRED: aborting after ${ATTEMPT_TIMEOUT}ms`)
 				attemptController.abort()
 			}, ATTEMPT_TIMEOUT)
 
@@ -212,7 +213,7 @@ app.post('/api/claude', async (req, res) => {
 			}
 
 			console.warn(`[Claude Backend] Attempt ${attempt} failed with non-retryable HTTP ${claudeRes.status} — falling back to Groq`)
-				return res.status(claudeRes.status).json({ error: `Claude API error: ${claudeRes.status}`, details: text })
+			return res.status(claudeRes.status).json({ error: `Claude API error: ${claudeRes.status}`, details: text })
 			} catch (err) {
 				clearTimeout(attemptTimeout)
 				// Timeout / abort = do NOT retry (a repeat of the same large request
@@ -231,12 +232,15 @@ app.post('/api/claude', async (req, res) => {
 			}
 		}
 
+		console.error('[Claude Backend] ❌ Both attempts exhausted — throwing to trigger fallback')
 		throw lastError || new Error('Claude request failed')
 	} catch (err) {
-		console.error('[Claude Backend] Error:', err)
+		console.error('[Claude Backend] Outer catch — final error:', err?.message || String(err), '— triggering frontend fallback')
 		if (err.name === 'AbortError' || err.message?.includes('aborted') || err.message?.includes('timed out')) {
+			console.error('[Claude Backend] ❌ FALLBACK TRIGGERED: Sending 504 (timeout) to frontend')
 			return res.status(504).json({ error: 'Claude API timed out' })
 		}
+		console.error('[Claude Backend] ❌ FALLBACK TRIGGERED: Sending 500 (other error) to frontend')
 		res.status(500).json({ error: err.message })
 	}
 })

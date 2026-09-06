@@ -252,6 +252,7 @@ async function callClaude(prompt: string, days: number): Promise<{ totalDays: nu
   // so neither end can out-of-budget a generation the other would finish.
   // Small plans get a short tight budget; large (6-7 day) plans get 45s + room.
   const plan = claudePlanConfig(days)
+  console.log(`[Claude] Frontend timeout: ${plan.frontendTimeoutMs}ms (backend ${plan.attemptTimeoutMs}ms + ${60000 - plan.attemptTimeoutMs}ms margin)`)
   try {
     const response = await fetch(`${backendUrl}/api/claude`, {
       method: 'POST',
@@ -264,7 +265,10 @@ async function callClaude(prompt: string, days: number): Promise<{ totalDays: nu
       signal: AbortSignal.timeout(plan.frontendTimeoutMs),
     })
 
-    if (!response.ok) throw new Error(`Backend HTTP ${response.status}`)
+    if (!response.ok) {
+      console.error(`[Claude] Backend returned non-ok status: ${response.status}`)
+      throw new Error(`Backend HTTP ${response.status}`)
+    }
 
     const json = await response.json()
     
@@ -289,7 +293,7 @@ async function callClaude(prompt: string, days: number): Promise<{ totalDays: nu
     console.log('[Claude] ✅ Success —', result.days.length, 'days')
     return result
   } catch (err) {
-    console.error('[Claude] ❌', err)
+    console.error('[Claude] ❌ Failed:', err?.message || String(err))
     return null
   }
 }
@@ -374,9 +378,11 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
   let result = await callClaude(prompt, effectiveDays)
 
   if (!result || !result.days.length) {
+    console.log('[Generator] 🔄 Claude returned no result — triggering Groq fallback')
     onStep?.(1) // Groq fallback kicking in — advance bar
     result = await callGroq(prompt)
   } else {
+    console.log('[Generator] ✅ Claude succeeded')
     onStep?.(1) // Claude succeeded
   }
 
