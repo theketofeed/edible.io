@@ -16,6 +16,10 @@ const app = express()
 app.set('trust proxy', 1) // Render uses a single reverse proxy; trust 1 hop for correct IP identification
 const PORT = process.env.PORT || 3001
 
+// *** DEPLOYMENT VERIFICATION MARKER: b794f80-enhanced-logging ***
+console.log(`[Init] Server starting at PORT ${PORT} (commit b794f80 with enhanced Claude fallback logging)`)
+// *** END MARKER ***
+
 const dodo = new DodoPayments({ 
   bearerToken: process.env.DODO_API_KEY,
   environment: process.env.DODO_ENV || 'test_mode',
