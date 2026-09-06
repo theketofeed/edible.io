@@ -13,6 +13,7 @@ dotenv.config({ path: '.env.local' })
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 const app = express()
+app.set('trust proxy', 1) // Render uses a single reverse proxy; trust 1 hop for correct IP identification
 const PORT = process.env.PORT || 3001
 
 const dodo = new DodoPayments({ 
@@ -152,11 +153,10 @@ app.post('/api/claude', async (req, res) => {
 			const attemptController = new AbortController()
 			const attemptTimeout = setTimeout(() => {
 				attemptController.abort()
-				console.warn(`[Claude Backend] Attempt ${attempt} timed out after ${ATTEMPT_TIMEOUT}ms`)
 			}, ATTEMPT_TIMEOUT)
 
 			try {
-				console.log(`[Claude Backend] Attempt ${attempt} — sending to Claude...`)
+				console.log(`[Claude Backend] Attempt ${attempt} — plan size ${days} days, timeout ${ATTEMPT_TIMEOUT}ms, max_tokens ${planCfg.maxTokens}, sending to Claude...`)
 
 				// NOTE: named claudeRes, NOT res — using `res` would shadow the
 				// Express response parameter (server.mjs, app.post('/api/claude', ...))
@@ -200,26 +200,28 @@ app.post('/api/claude', async (req, res) => {
 				}
 
 				const text = await claudeRes.text().catch(() => '')
-				console.error(`[Claude Backend] Attempt ${attempt} HTTP ${claudeRes.status}: ${text}`)
+			const shortBody = text.length > 100 ? text.substring(0, 100) + '...' : text
+			console.error(`[Claude Backend] Attempt ${attempt} failed: HTTP ${claudeRes.status} — ${shortBody}`)
 
-				// Fast transient failures: retry once. 4xx client errors: don't.
-				const retryable = claudeRes.status === 429 || claudeRes.status >= 500
-				if (retryable && attempt === 1) {
-					console.warn('[Claude Backend] Transient error — retrying...')
-					await new Promise(r => setTimeout(r, 1000))
-					continue
-				}
+			// Fast transient failures: retry once. 4xx client errors: don't.
+			const retryable = claudeRes.status === 429 || claudeRes.status >= 500
+			if (retryable && attempt === 1) {
+				console.warn(`[Claude Backend] Attempt ${attempt} failed with transient error (${claudeRes.status}) — retrying...`)
+				await new Promise(r => setTimeout(r, 1000))
+				continue
+			}
 
+			console.warn(`[Claude Backend] Attempt ${attempt} failed with non-retryable HTTP ${claudeRes.status} — falling back to Groq`)
 				return res.status(claudeRes.status).json({ error: `Claude API error: ${claudeRes.status}`, details: text })
 			} catch (err) {
 				clearTimeout(attemptTimeout)
 				// Timeout / abort = do NOT retry (a repeat of the same large request
 				// won't be faster). Fall through to error so Groq takes over.
 				if (err.name === 'AbortError' || err.message?.includes('aborted')) {
-					console.error(`[Claude Backend] Attempt ${attempt} aborted (timeout) — not retrying`)
+					console.error(`[Claude Backend] Attempt ${attempt} failed: timeout after ${ATTEMPT_TIMEOUT}ms — not retrying, falling back to Groq`)
 					throw err
 				}
-				console.error(`[Claude Backend] Attempt ${attempt} error:`, err?.message || err)
+				console.error(`[Claude Backend] Attempt ${attempt} failed: ${err?.message || String(err)}`)
 				if (attempt === 1) {
 					lastError = err
 					await new Promise(r => setTimeout(r, 500))
