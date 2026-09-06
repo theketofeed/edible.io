@@ -2,6 +2,7 @@ import Tesseract from 'tesseract.js'
 import { track, Events } from './analytics'
 import type { DietType, GenerateMealPlanParams, MealPlanResult, DayMeals, Meal, OcrResult } from '../utils/types'
 import { extractGroceryItems, cleanGroceryList } from '../utils/grocery'
+import { TIMEOUTS, claudePlanConfig } from '../../shared/timeouts.mjs'
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -57,6 +58,24 @@ function buildPrompt(items: string[], diet: DietType, days: number): string {
     ? `\nFORBIDDEN for ${diet}: ${forbidden.join(', ')}`
     : ''
 
+  // A) Task A (approved): 7-day plans tighten only per-meal DEPTH (instruction
+  // steps + tips), keeping the format, measured ingredients and full nutrition
+  // intact. This cuts ~20-25% of output tokens on the largest cases without
+  // touching 1-5 day output quality.
+  const requirements = days === 7
+    ? `Requirements per recipe (compact — 7 days must fit a tight output budget):
+- 3-5 concise instruction steps (last step always "ENJOY!❤️")
+- Every ingredient MUST include a specific quantity and unit (e.g. '2 large eggs', '1 tbsp olive oil', '200g chicken breast', '1/2 tsp paprika'). Never list a bare ingredient name without a measurement.
+- Include 1 specific chef tip per recipe — timing, temperature, texture cue, or common mistake to avoid. No generic freshness advice.
+- Realistic nutrition data
+- Use ingredients creatively — combine them with pantry staples`
+    : `Requirements per recipe:
+- 4-7 detailed instruction steps (last step always "ENJOY!❤️")
+- Every ingredient MUST include a specific quantity and unit (e.g. '2 large eggs', '1 tbsp olive oil', '200g chicken breast', '1/2 tsp paprika'). Never list a bare ingredient name without a measurement.
+- Chef tips must be specific to the exact technique used in THIS recipe. Never use generic freshness advice like 'use fresh X for best flavor'. Instead give technique tips like timing, temperature, texture cues, or common mistakes to avoid for this specific dish.
+- Realistic nutrition data
+- Use ingredients creatively — combine them with pantry staples`
+
   return `You are a Michelin-star meal planning chef. Create a ${days}-day ${diet} meal plan.
 
 DIET RULE: ${dietRule}${forbiddenNote}
@@ -93,12 +112,7 @@ If ingredients are insufficient to create a meaningful meal for a slot, use null
   ]
 }
 
-Requirements per recipe:
-- 4-7 detailed instruction steps (last step always "ENJOY!❤️")
-- Every ingredient MUST include a specific quantity and unit (e.g. '2 large eggs', '1 tbsp olive oil', '200g chicken breast', '1/2 tsp paprika'). Never list a bare ingredient name without a measurement.
-- Chef tips must be specific to the exact technique used in THIS recipe. Never use generic freshness advice like 'use fresh X for best flavor'. Instead give technique tips like timing, temperature, texture cues, or common mistakes to avoid for this specific dish.
-- Realistic nutrition data
-- Use ingredients creatively — combine them with pantry staples`
+${requirements}`
 }
 
 // ─── Response coercion ────────────────────────────────────────────────────────
@@ -229,23 +243,25 @@ function validatePlan(plan: { days: DayMeals[] }, allowedItems: string[]): boole
 }
 
 // ─── AI Callers ───────────────────────────────────────────────────────────────
-async function callClaude(prompt: string): Promise<{ totalDays: number; days: DayMeals[] } | null> {
+async function callClaude(prompt: string, days: number): Promise<{ totalDays: number; days: DayMeals[] } | null> {
   console.log('[Claude] Calling backend proxy...')
   const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
+  // B-lite: the whole pipe uses one per-plan-size budget derived from the same
+  // shared claudePlanConfig() the backend computes from — frontend timer, the
+  // backend's per-attempt timeout AND max_tokens all scale with effectiveDays,
+  // so neither end can out-of-budget a generation the other would finish.
+  // Small plans get a short tight budget; large (6-7 day) plans get 45s + room.
+  const plan = claudePlanConfig(days)
   try {
     const response = await fetch(`${backendUrl}/api/claude`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt }),
-      // Frontend timeout covers the FULL failover chain so the browser never
-      // aborts while the backend is still legitimately working (this was the
-      // race condition: 40s frontend < Claude 37s attempt + Groq 15s fallback).
-      // Math (grounded in real latency data 2026-09-03):
-      //   37s Claude per-attempt (server.mjs, median ~24s / max ~29s observed)
-      // + 15s Groq frontend cap (backend allows 25s, Groq logs 3-7s typical)
-      // +  8s buffer
-      // = 60s
-      signal: AbortSignal.timeout(60000),
+      body: JSON.stringify({ prompt, days }),
+      // This timer wraps ONLY the /api/claude fetch, not the Groq fallback:
+      // once Claude fails, callGroq() starts a fresh GROQ_FRONTEND_MS timer.
+      // frontendTimeoutMs = backend attempt timeout for this size + margin, so
+      // the browser never aborts a response the backend would have delivered.
+      signal: AbortSignal.timeout(plan.frontendTimeoutMs),
     })
 
     if (!response.ok) throw new Error(`Backend HTTP ${response.status}`)
@@ -293,8 +309,11 @@ async function callGroq(prompt: string): Promise<{ totalDays: number; days: DayM
           { role: 'system', content: 'You output JSON only. No markdown fences. No commentary.' },
           { role: 'user', content: prompt },
         ],
+        purpose: 'meal_plan',
       }),
-      signal: AbortSignal.timeout(15000), // 15s timeout
+      // Aligned above the backend ceiling (GROQ_BACKEND_MS = 25s) so the
+      // browser never cuts off a slow-but-valid large-plan response.
+      signal: AbortSignal.timeout(TIMEOUTS.GROQ_FRONTEND_MS), // 30s
     })
 
     if (!res.ok) throw new Error(`Groq HTTP ${res.status}`)
@@ -352,7 +371,7 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
   const prompt = buildPrompt(effectiveItems, diet, effectiveDays)
 
   // Try Claude first, then Groq
-  let result = await callClaude(prompt)
+  let result = await callClaude(prompt, effectiveDays)
 
   if (!result || !result.days.length) {
     onStep?.(1) // Groq fallback kicking in — advance bar

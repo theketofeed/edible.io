@@ -7,6 +7,7 @@ import DodoPayments from 'dodopayments'
 import { Webhook } from 'standardwebhooks'
 import crypto from 'crypto'
 import rateLimit from 'express-rate-limit'
+import { TIMEOUTS, claudePlanConfig } from './shared/timeouts.mjs'
 
 dotenv.config({ path: '.env.local' })
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -64,10 +65,21 @@ async function capturePostHogEvent(distinctId, event, properties = {}) {
   }
 }
 
-const aiLimiter = rateLimit({
+// AI rate-limit buckets, SPLIT by purpose so receipt-parsing and meal-plan
+// fallback never starve each other inside one user flow. They used to share a
+// single 10/min/IP bucket, meaning one flow's parse + fallback + validation
+// retry could self-inflict a 429 on the very next call. Each purpose keeps its
+// own independent 10/min/IP budget.
+const parseLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 10, // 10 AI calls per minute per IP
-  message: { error: 'AI rate limit reached. Please wait a moment.' }
+  max: 10, // 10 receipt-parse calls per minute per IP
+  message: { error: 'Receipt parsing rate limit reached. Please wait a moment.' }
+})
+
+const planLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // 10 meal-plan calls per minute per IP
+  message: { error: 'Meal plan generation rate limit reached. Please wait a moment.' }
 })
 
 const imageLimiter = rateLimit({
@@ -104,7 +116,7 @@ app.use(express.urlencoded({ limit: '25mb', extended: true }))
 // ─── Claude API proxy ──────────────────────────────────────────────────────
 app.post('/api/claude', async (req, res) => {
 	try {
-		const { prompt } = req.body
+		const { prompt, days } = req.body
 
 		if (!prompt) {
 			return res.status(400).json({ error: 'Missing prompt' })
@@ -123,13 +135,16 @@ app.post('/api/claude', async (req, res) => {
 		// attempt 1 burned the full window, then attempt 2 aborted in ~2s). For
 		// those, fail fast so we fall through to Groq without added latency.
 		// Each attempt gets its OWN fixed timeout; they do not share a budget.
-		// Grounded in real latency data collected 2026-09-03 on /api/claude
-		// (13 clean serial calls, no concurrency): median ~24s, max ~29s.
-		// 37s sits ~8s above the observed max so genuinely slow-but-successful
-		// calls aren't cut off, while still trimming requests that are hung.
-		// Env-configurable (CLAUDE_ATTEMPT_TIMEOUT_MS) so it can be re-tuned
-		// without a code change.
-		const ATTEMPT_TIMEOUT = parseInt(process.env.CLAUDE_ATTEMPT_TIMEOUT_MS || '37000', 10)
+		// That budget is no longer a single value for all plan sizes: it scales
+		// with the requested days via the same claudePlanConfig() the frontend
+		// uses for its own timer, so neither end can out-of-budget a generation
+		// the other would finish. Grounded in real latency data: 13 clean serial
+		// calls 2026-09-03 gave a median ~24s / max ~29s, and a live 7-day run
+		// measured 35.5s (old fixed 37s cap had ~1.5s of headroom — the bug).
+		// CLAUDE_ATTEMPT_TIMEOUT_MS env still wins as a global emergency override.
+		const envOverride = parseInt(process.env.CLAUDE_ATTEMPT_TIMEOUT_MS || '', 10)
+		const planCfg = claudePlanConfig(days)
+		const ATTEMPT_TIMEOUT = Number.isFinite(envOverride) && envOverride > 0 ? envOverride : planCfg.attemptTimeoutMs
 
 		let lastError = null
 
@@ -156,7 +171,7 @@ app.post('/api/claude', async (req, res) => {
 					},
 					body: JSON.stringify({
 						model: 'claude-haiku-4-5-20251001',
-						max_tokens: 4096,
+						max_tokens: planCfg.maxTokens,
 						system: 'You output JSON only. No code fences. No commentary.',
 						messages: [{ role: 'user', content: prompt }],
 						temperature: 0.55
@@ -250,7 +265,7 @@ app.post('/api/ocr', async (req, res) => {
 		formBody.append('OCREngine', ocrEngine || '2')
 
 		const controller = new AbortController()
-		const timeoutId = setTimeout(() => controller.abort(), 30000)
+		const timeoutId = setTimeout(() => controller.abort(), TIMEOUTS.OCR_BACKEND_MS)
 
 		const response = await fetch('https://api.ocr.space/parse/image', {
 			method: 'POST',
@@ -283,12 +298,17 @@ app.post('/api/ocr', async (req, res) => {
 })
 
 // ─── Groq API proxy ───────────────────────────────────────────────────────
-app.post('/api/groq', aiLimiter, async (req, res) => {
+// The limiter is chosen by the caller-provided `purpose` (see limiters above)
+// so receipt parsing and meal-plan fallback each keep their own bucket.
+app.post('/api/groq', (req, res, next) => {
+	const limiter = req.body?.purpose === 'meal_plan' ? planLimiter : parseLimiter
+	limiter(req, res, next)
+}, async (req, res) => {
 	const controller = new AbortController()
 	const timeoutId = setTimeout(() => {
 		controller.abort()
-		console.warn('[Groq Backend] Request timed out after 25s')
-	}, 25000)
+		console.warn(`[Groq Backend] Request timed out after ${TIMEOUTS.GROQ_BACKEND_MS}ms`)
+	}, TIMEOUTS.GROQ_BACKEND_MS)
 
 	try {
 		const apiKey = process.env.GROQ_API_KEY

@@ -4,6 +4,8 @@
  * Terms: Store the URL directly + include attribution/license in the DB record.
  */
 
+import { TIMEOUTS } from '../../shared/timeouts.mjs'
+
 /**
  * Search Wikimedia Commons for a food image.
  * @param {string} searchTerm - the normalized meal title
@@ -16,7 +18,7 @@ export async function fetchWikimediaImage(searchTerm) {
 
     const res = await fetch(apiUrl, {
       headers: { 'User-Agent': 'Edible.io/1.0 (meal-image-pipeline)' },
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(TIMEOUTS.WIKIMEDIA_SEARCH_MS),
     })
 
     if (!res.ok) {

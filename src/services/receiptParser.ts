@@ -2,6 +2,8 @@
 // Groq calls must go through your backend proxy, not the frontend
 // The GROQ_API_KEY lives on the server only
 
+import { TIMEOUTS } from '../../shared/timeouts.mjs'
+
 export interface ParsedItem {
 	id: string
 	original: string
@@ -49,9 +51,10 @@ async function parseReceiptWithGroq(rawText: string): Promise<ParsedItem[]> {
 					{ role: 'system', content: PARSER_PROMPT },
 					{ role: 'user', content: `RAW OCR TEXT:\n"""\n${rawText}\n"""` }
 				],
-				temperature: 0.1
+				temperature: 0.1,
+				purpose: 'receipt_parse'
 			}),
-			signal: AbortSignal.timeout(20000)
+			signal: AbortSignal.timeout(TIMEOUTS.GROQ_FRONTEND_MS)
 		})
 
 		if (!response.ok) {

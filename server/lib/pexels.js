@@ -4,6 +4,8 @@
  * Terms: Store the returned URL directly in the DB cache (permanent, no expiry).
  */
 
+import { TIMEOUTS } from '../../shared/timeouts.mjs'
+
 const FOOD_INDICATORS = /\b(food|dish|meal|plate|bowl|cook|recipe|eat|cuisine|salad|soup|steak|chicken|fish|pasta|rice|bread|cake|dessert|fruit|vegetable|meat|seafood|sandwich|burger|pizza|taco|sushi|curry|noodle|breakfast|lunch|dinner|appetizer|snack|sauce|grill|roast|bake|fry|serve|kitchen|restaurant|dining|delicious|tasty|yummy|homemade|ingredient)\b/i
 const NON_FOOD = /\b(book|cover|page|author|library|shelf|reading|laptop|computer|phone|screen|office|desk|building|car|vehicle|fashion|model|portrait|selfie|abstract|pattern|texture|landscape|mountain|ocean|beach|city|skyline|person|people|crowd|sport|gym)\b/i
 
@@ -33,7 +35,7 @@ export async function fetchPexelsImage(searchTerm) {
 
     const res = await fetch(searchUrl, {
       headers: { Authorization: pexelsKey },
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(TIMEOUTS.PEXELS_SEARCH_MS),
     })
 
     if (!res.ok) {

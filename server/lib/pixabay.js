@@ -9,6 +9,7 @@
  */
 
 import { uploadToStorage } from './imageCache.js'
+import { TIMEOUTS } from '../../shared/timeouts.mjs'
 
 /**
  * Search Pixabay for a food image, download it, re-host on our storage.
@@ -27,7 +28,7 @@ export async function fetchPixabayImage(searchTerm, normalizedTitle) {
     const query = encodeURIComponent(searchTerm)
     const searchUrl = `https://pixabay.com/api/?key=${pixabayKey}&q=${query}&image_type=photo&per_page=5&category=food`
 
-    const res = await fetch(searchUrl, { signal: AbortSignal.timeout(8000) })
+    const res = await fetch(searchUrl, { signal: AbortSignal.timeout(TIMEOUTS.PIXABAY_SEARCH_MS) })
 
     if (!res.ok) {
       console.warn(`[Pixabay] API error: ${res.status}`)
@@ -48,7 +49,7 @@ export async function fetchPixabayImage(searchTerm, normalizedTitle) {
     console.log(`[Pixabay] Found image (id: ${hit.id}, tags: "${hit.tags}")`)
 
     // Download the actual image bytes
-    const imgRes = await fetch(pixabayUrl, { signal: AbortSignal.timeout(15000) })
+    const imgRes = await fetch(pixabayUrl, { signal: AbortSignal.timeout(TIMEOUTS.PIXABAY_DOWNLOAD_MS) })
     if (!imgRes.ok) {
       console.warn(`[Pixabay] Image download failed: ${imgRes.status}`)
       return null

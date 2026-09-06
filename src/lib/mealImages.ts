@@ -1,4 +1,6 @@
 // ─── In-memory cache (session level) ─────────────────────────────────────────
+import { TIMEOUTS } from '../../shared/timeouts.mjs'
+
 export const sessionCache = new Map<string, string>()
 
 // ─── In-flight requests (deduplication) ────────────────────────────────────────
@@ -96,7 +98,7 @@ async function fetchImageFromBackend(mealTitle: string): Promise<string | null> 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mealTitle }),
-        signal: AbortSignal.timeout(30000),
+        signal: AbortSignal.timeout(TIMEOUTS.MEAL_IMAGE_FRONTEND_MS),
       })
 
       if (!response.ok) {

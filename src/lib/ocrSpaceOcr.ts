@@ -1,4 +1,5 @@
 import { extractGroceryItems } from '../utils/grocery'
+import { TIMEOUTS } from '../../shared/timeouts.mjs'
 
 interface OcrSpaceResponse {
     ParsedResults?: Array<{
@@ -34,7 +35,7 @@ export async function runOcrSpace(file: File) {
         console.log('[OCR] Sending request to backend OCR proxy...')
 
         const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 35000) // 35s (server has 30s internal timeout)
+        const timeoutId = setTimeout(() => controller.abort(), TIMEOUTS.OCR_FRONTEND_MS) // frontend tripwire only — backend aborts first at OCR_BACKEND_MS
 
         try {
             const response = await fetch(`${backendUrl}/api/ocr`, {
@@ -89,7 +90,7 @@ export async function runOcrSpace(file: File) {
         } catch (fetchError: any) {
             clearTimeout(timeoutId)
             if (fetchError.name === 'AbortError' || (fetchError instanceof DOMException && fetchError.name === 'AbortError')) {
-                throw new Error('OCR request timed out after 35 seconds. Please check your internet connection.')
+                throw new Error(`OCR request timed out after ${TIMEOUTS.OCR_FRONTEND_MS / 1000} seconds. Please check your internet connection.`)
             }
             throw fetchError
         }
