@@ -201,7 +201,11 @@ app.post('/api/claude', async (req, res) => {
 						text = JSON.stringify(rawContent)
 					}
 
-					return res.json({ content: [{ type: 'text', text }] })
+					const cleanedText = typeof text === 'string'
+						? text.replace(/^\s*```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
+						: text
+
+					return res.json({ content: [{ type: 'text', text: cleanedText }] })
 				}
 
 				const text = await claudeRes.text().catch(() => '')

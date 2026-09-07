@@ -46,7 +46,11 @@ export const TIMEOUTS = {
 // their values from claudePlanConfig(days), so they can never disagree about
 // how long a plan is allowed to run or how much output it may produce.
 export const CLAUDE_PLAN_SIZES = [
-  { maxDays: 3, maxTokens: 2048, attemptTimeoutMs: 25000 },
+  // Verified against a realistic 2-day, detailed meal-plan prompt: 2048 and 2500
+  // tokens truncated mid-JSON; 3000+ completed cleanly. We keep the 1-3 day
+  // tier at 3500 for margin and to avoid edge cases from unusually detailed
+  // grocery lists or longer instructional output.
+  { maxDays: 3, maxTokens: 3500, attemptTimeoutMs: 25000 },
   { maxDays: 5, maxTokens: 3072, attemptTimeoutMs: 30000 },
   { maxDays: 7, maxTokens: 8192, attemptTimeoutMs: 75000 },
 ]

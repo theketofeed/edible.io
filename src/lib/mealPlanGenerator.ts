@@ -243,6 +243,15 @@ function validatePlan(plan: { days: DayMeals[] }, allowedItems: string[]): boole
 }
 
 // ─── AI Callers ───────────────────────────────────────────────────────────────
+function stripMarkdownJsonFence(text: string): string {
+  if (typeof text !== 'string') return ''
+
+  return text
+    .replace(/^\s*```(?:json)?\s*/i, '')
+    .replace(/\s*```\s*$/i, '')
+    .trim()
+}
+
 async function callClaude(prompt: string, days: number): Promise<{ totalDays: number; days: DayMeals[] } | null> {
   console.log('[Claude] Calling backend proxy...')
   const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
@@ -287,7 +296,7 @@ async function callClaude(prompt: string, days: number): Promise<{ totalDays: nu
       return null
     }
 
-    const cleaned = content.replace(/```json\n?|\n?```/g, '').trim()
+    const cleaned = stripMarkdownJsonFence(content)
     const parsed = JSON.parse(cleaned)
     const result = coerceDaysStructure(parsed)
     console.log('[Claude] ✅ Success —', result.days.length, 'days')
@@ -327,7 +336,7 @@ async function callGroq(prompt: string): Promise<{ totalDays: number; days: DayM
     if (!content) throw new Error('Missing content in Groq response')
 
     // Strip markdown code fences if present (validator was removed on backend)
-    const cleaned = content.replace(/```json\n?|\n?```/g, '').trim()
+    const cleaned = stripMarkdownJsonFence(content)
     const parsed = JSON.parse(cleaned)
     const result = coerceDaysStructure(parsed)
     console.log('[Groq] ✅ Success —', result.days.length, 'days')
