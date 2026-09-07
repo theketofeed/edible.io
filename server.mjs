@@ -205,6 +205,9 @@ app.post('/api/claude', async (req, res) => {
 						? text.replace(/^\s*```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
 						: text
 
+					const outputTokens = Number(json?.usage?.output_tokens ?? 0)
+					console.log(`[Claude Backend] Attempt ${attempt} succeeded — output_tokens: ${outputTokens}, response length: ${cleanedText.length} chars`)
+
 					return res.json({ content: [{ type: 'text', text: cleanedText }] })
 				}
 
