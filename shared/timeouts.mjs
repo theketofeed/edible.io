@@ -49,8 +49,10 @@ export const CLAUDE_PLAN_SIZES = [
   // Verified against a realistic 2-day, detailed meal-plan prompt: 2048 and 2500
   // tokens truncated mid-JSON; 3000+ completed cleanly. We keep the 1-3 day
   // tier at 3500 for margin and to avoid edge cases from unusually detailed
-  // grocery lists or longer instructional output.
-  { maxDays: 3, maxTokens: 3500, attemptTimeoutMs: 25000 },
+  // grocery lists or longer instructional output. The 4-5 day tier is ~30s for
+  // 3072 tokens, which scales to ~34.2s for 3500 tokens; we round up to 40s to
+  // leave headroom without breaching the shared frontend margin pattern.
+  { maxDays: 3, maxTokens: 3500, attemptTimeoutMs: 40000 },
   { maxDays: 5, maxTokens: 3072, attemptTimeoutMs: 30000 },
   { maxDays: 7, maxTokens: 8192, attemptTimeoutMs: 75000 },
 ]
