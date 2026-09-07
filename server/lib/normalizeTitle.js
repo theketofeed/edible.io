@@ -23,7 +23,63 @@ const FILLER_WORDS = new Set([
   'cup', 'cups', 'tablespoon', 'teaspoon', 'lb', 'lbs', 'oz',
 ])
 
-const TRUNCATION_RE = /\b(?:\s+with\b|\s+and\b)/i
+const DESTRUCTIVE_CONNECTORS = /\b(?:with|and|plus|in)\b/i
+
+function uniqueStrings(values) {
+  const seen = new Set()
+  return values.filter(value => {
+    const key = value.trim().toLowerCase()
+    if (!key || seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
+function sanitizeTitle(rawTitle) {
+  return rawTitle
+    .replace(/\([^)]*\)/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+export function generateMealImageSearchCandidates(rawTitle) {
+  if (!rawTitle || typeof rawTitle !== 'string') {
+    return []
+  }
+
+  const base = sanitizeTitle(rawTitle)
+  if (!base) return []
+
+  const candidates = [base]
+
+  const noConnectors = base.replace(DESTRUCTIVE_CONNECTORS, ' ')
+  if (noConnectors && noConnectors !== base) candidates.push(noConnectors)
+
+  const beforeConnector = base.replace(/\s+\b(?:with|and|plus|in)\b\s+.+$/i, '').trim()
+  if (beforeConnector && beforeConnector !== base) candidates.push(beforeConnector)
+
+  const words = base.split(/\s+/).filter(word => {
+    const lower = word.toLowerCase().replace(/[^a-z]/g, '')
+    if (!lower || lower.length < 2) return false
+    if (FILLER_WORDS.has(lower)) return false
+    if (/^\d+$/.test(lower)) return false
+    return true
+  })
+
+  const mainProteinStyle = words.slice(0, 4).join(' ').trim()
+  if (mainProteinStyle && !candidates.includes(mainProteinStyle)) candidates.push(mainProteinStyle)
+
+  const mainIngredient = words.slice(-2).join(' ').trim()
+  if (mainIngredient && !candidates.includes(mainIngredient)) candidates.push(mainIngredient)
+
+  const singleWord = words.find(word => {
+    const lower = word.toLowerCase().replace(/[^a-z]/g, '')
+    return lower && !['with', 'and', 'plus', 'in'].includes(lower)
+  }) || words[0]
+  if (singleWord && !candidates.includes(singleWord)) candidates.push(singleWord)
+
+  return uniqueStrings(candidates)
+}
 
 /**
  * Normalize a meal title for image cache lookups.
@@ -37,31 +93,17 @@ export function normalizeMealTitle(rawTitle) {
     return { raw: rawTitle || '', normalized: '' }
   }
 
-  let cleaned = rawTitle.trim()
+  let cleaned = sanitizeTitle(rawTitle)
 
-  // 1. Remove parenthetical notes like "(Keto-Friendly)" or "(serves 4)"
-  cleaned = cleaned.replace(/\([^)]*\)/g, '').trim()
-
-  // 2. Truncate at first " with " or " and " — keep the primary dish name
-  const truncMatch = cleaned.match(TRUNCATION_RE)
-  if (truncMatch) {
-    cleaned = cleaned.slice(0, truncMatch.index).trim()
-  }
-
-  // 3. Split into words, filter out filler words and very short tokens
-  const words = cleaned.split(/[\s,]+/).filter(w => {
+  const words = cleaned.split(/\s+/).filter(w => {
     const lower = w.toLowerCase().replace(/[^a-z]/g, '')
     if (lower.length < 2) return false
     if (FILLER_WORDS.has(lower)) return false
-    // Also skip pure numbers
     if (/^\d+$/.test(lower)) return false
     return true
   })
 
-  // 4. If we stripped too much, fall back to original (minus parentheticals)
-  const normalized = words.length >= 1
-    ? words.join(' ').trim()
-    : cleaned
+  const normalized = words.length >= 1 ? words.join(' ').trim() : cleaned
 
   console.log(`[NormalizeTitle] raw="${rawTitle}" → normalized="${normalized}"`)
 

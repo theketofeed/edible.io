@@ -528,7 +528,7 @@ app.post('/api/webhooks/dodo', async (req, res) => {
 // ─── Meal Image Pipeline ──────────────────────────────────────────────────
 // DB cache (Supabase meal_images) → Pexels → Pixabay → Wikimedia → fallback
 // All image fetching is server-side; no API keys exposed to the client.
-import { normalizeMealTitle } from './server/lib/normalizeTitle.js'
+import { normalizeMealTitle, generateMealImageSearchCandidates } from './server/lib/normalizeTitle.js'
 import { getCachedImage, cacheImage } from './server/lib/imageCache.js'
 import { fetchPexelsImage } from './server/lib/pexels.js'
 import { fetchPixabayImage } from './server/lib/pixabay.js'
@@ -541,11 +541,14 @@ app.post('/api/generate-meal-image', imageLimiter, async (req, res) => {
 		return res.status(400).json({ error: 'Missing or invalid mealTitle' })
 	}
 
-	// ── Step 0: Normalize title ──────────────────────────────────────────────
+	// ── Step 0: Build a tiered search plan instead of stripping early ───────
 	const { raw, normalized } = normalizeMealTitle(mealTitle)
 	if (!normalized) {
 		return res.status(400).json({ error: 'Meal title too short after normalization' })
 	}
+
+	const searchCandidates = generateMealImageSearchCandidates(mealTitle)
+	console.log(`[MealImages] Search candidates for "${raw}": ${searchCandidates.map(v => `"${v}"`).join(' -> ')}`)
 
 	// ── Step 1: Check Supabase DB cache ──────────────────────────────────────
 	try {
@@ -563,58 +566,39 @@ app.post('/api/generate-meal-image', imageLimiter, async (req, res) => {
 		console.warn('[MealImages] DB cache read error:', err.message)
 	}
 
-	// ── Step 2: Pexels API (store URL directly — permanent, no expiry) ──────
-	const searchQuery = `${normalized} food dish`
-	try {
-		const pexelsResult = await fetchPexelsImage(searchQuery)
-		if (pexelsResult) {
-			await cacheImage(normalized, {
-				imageUrl: pexelsResult.imageUrl,
-				source: 'pexels',
-			})
-			console.log(`[MealImages] ✅ Pexels hit for: "${raw}"`)
-			return res.json({ imageUrl: pexelsResult.imageUrl, source: 'pexels' })
+	const providerSearches = [
+		{ name: 'pexels', run: async (query) => fetchPexelsImage(`${query} food dish`) },
+		{ name: 'pixabay', run: async (query) => fetchPixabayImage(`${query} food dish`, normalized) },
+		{ name: 'wikimedia', run: async (query) => fetchWikimediaImage(query) },
+	]
+
+	for (const query of searchCandidates) {
+		for (const provider of providerSearches) {
+			try {
+				console.log(`[MealImages] Trying ${provider.name} for query: "${query}"`)
+				const result = await provider.run(query)
+				if (!result) continue
+
+				await cacheImage(normalized, {
+					imageUrl: result.imageUrl,
+					source: provider.name,
+					attribution: result.attribution || null,
+					license: result.license || null,
+				})
+				console.log(`[MealImages] ✅ ${provider.name} hit for: "${raw}" with query "${query}"`)
+				return res.json({
+					imageUrl: result.imageUrl,
+					source: provider.name,
+					attribution: result.attribution || null,
+					license: result.license || null,
+				})
+			} catch (err) {
+				console.warn(`[MealImages] ${provider.name} error for "${query}":`, err.message)
+			}
 		}
-	} catch (err) {
-		console.warn('[MealImages] Pexels error:', err.message)
 	}
 
-	// ── Step 3: Pixabay API (download + re-upload to our storage) ────────────
-	try {
-		const pixabayResult = await fetchPixabayImage(searchQuery, normalized)
-		if (pixabayResult) {
-			await cacheImage(normalized, {
-				imageUrl: pixabayResult.imageUrl,
-				source: 'pixabay',
-			})
-			console.log(`[MealImages] ✅ Pixabay hit for: "${raw}"`)
-			return res.json({ imageUrl: pixabayResult.imageUrl, source: 'pixabay' })
-		}
-	} catch (err) {
-		console.warn('[MealImages] Pixabay error:', err.message)
-	}
-
-	// ── Step 4: Wikimedia Commons (store URL + attribution/license) ──────────
-	try {
-		const wikiResult = await fetchWikimediaImage(normalized)
-		if (wikiResult) {
-			await cacheImage(normalized, {
-				imageUrl: wikiResult.imageUrl,
-				source: 'wikimedia',
-				attribution: wikiResult.attribution,
-				license: wikiResult.license,
-			})
-			console.log(`[MealImages] ✅ Wikimedia hit for: "${raw}"`)
-			return res.json({
-				imageUrl: wikiResult.imageUrl,
-				source: 'wikimedia',
-				attribution: wikiResult.attribution,
-				license: wikiResult.license,
-			})
-		}
-	} catch (err) {
-		console.warn('[MealImages] Wikimedia error:', err.message)
-	}
+	// ── Step 5: All sources exhausted — serve fallback (NOT cached) ──────────
 
 	// ── Step 5: All sources exhausted — serve fallback (NOT cached) ──────────
 	// Do NOT write to meal_images — the next request will retry the full pipeline.
