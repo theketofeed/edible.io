@@ -131,6 +131,9 @@ const Loading = memo(function Loading({ step }: { step?: number }) {
           >
             {current.message}
           </p>
+          <p className="text-gray-400/70 text-xs font-medium mt-1">
+            Hang tight — this can take a minute. Your meal plan will be ready soon.
+          </p>
         </div>
 
         {/* Progress bar — creeps forward in real time */}

@@ -459,9 +459,9 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
   // Validate ingredient usage (soft check)
   const isValid = validatePlan(result, effectiveItems)
   if (!isValid) {
-    // Try once more with Groq before giving up
-    console.warn('[Generator] Plan failed validation — retrying with Groq...')
-    const retryResult = await callGroq(prompt)
+    // Try once more with Gemini (it can complete large plans — Groq's 6144 cap cannot)
+    console.warn('[Generator] Plan failed validation — retrying with Gemini...')
+    const retryResult = await callGemini(prompt, effectiveDays)
     if (retryResult && retryResult.days.length) {
       result = retryResult
     }
