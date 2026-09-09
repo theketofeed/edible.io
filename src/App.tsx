@@ -142,7 +142,31 @@ function MainContent() {
 		return 1
 	}, [groceryItems])
 
-	const effectivePlanDays = planDaysSelection === 'auto' ? autoPlanDays : planDaysSelection
+	// Ceiling on the selectable plan length, derived from how many ingredients
+	// the list can realistically support. The generator estimates ~3 items/day
+	// (Math.floor(items/3), clamped 1-7); autoPlanDays above already tightens
+	// further. Without a ceiling, a 6-item list could still pick a 7-day plan,
+	// producing a thin/repetitive plan and wasting an entire (expensive) generation
+	// run. Bands (loosened one step over auto for headroom):
+	//   <8 items → up to 3 days, 8-15 items → up to 5 days, 16+ items → up to 7.
+	const recommendedMaxPlanDays = useMemo(() => {
+		const n = groceryItems.length
+		if (n < 8) return 3
+		if (n < 16) return 5
+		return 7
+	}, [groceryItems])
+
+	const planDayOptions = useMemo(
+		() => [3, 5, 7].filter((days) => days <= recommendedMaxPlanDays),
+		[recommendedMaxPlanDays]
+	)
+	const hasHiddenPlanLengths = planDayOptions.length < 3
+
+	// A manual selection can never out-pace the ceiling (options are filtered
+	// below), but guard against stale state left over from an earlier, longer list.
+	const clampedPlanDaysSelection = planDaysSelection === 'auto' ? 'auto' : Math.min(planDaysSelection, recommendedMaxPlanDays)
+
+	const effectivePlanDays = clampedPlanDaysSelection === 'auto' ? autoPlanDays : clampedPlanDaysSelection
 
 	const onItemsDetected = useCallback(async (items: string[], rawText: string) => {
 		setError(null)
@@ -402,14 +426,19 @@ function MainContent() {
 															</div>
 															<select
 																className="w-48 px-3.5 py-2.5 rounded-xl border-2 border-gray-200 text-sm font-semibold text-gray-900 bg-gray-50/50 hover:bg-gray-50 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200/50 transition-all cursor-pointer"
-																value={planDaysSelection}
+																value={clampedPlanDaysSelection}
 																onChange={(e) => setPlanDaysSelection(e.target.value === 'auto' ? 'auto' : Number(e.target.value))}
 															>
 																<option value="auto">Auto ({autoPlanDays} days)</option>
-																<option value={3}>3 days</option>
-																<option value={5}>5 days</option>
-																<option value={7}>7 days</option>
+																{planDayOptions.map((days) => (
+																	<option key={days} value={days}>{days} days</option>
+																))}
 															</select>
+															{hasHiddenPlanLengths && (
+																<p className="text-xs text-gray-400 font-medium mt-1.5">
+																	Add more items to your list to unlock longer plans
+																</p>
+															)}
 														</div>
 														<button
 															className={`px-6 py-3 rounded-lg font-semibold transition-all ${canGenerate && !isLoading ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-purple-600/50 text-white cursor-not-allowed'}`}

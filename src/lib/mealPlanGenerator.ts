@@ -256,12 +256,13 @@ async function callClaude(prompt: string, days: number): Promise<{ totalDays: nu
   console.log('[Claude] Calling backend proxy...')
   const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
   // B-lite: the whole pipe uses one per-plan-size budget derived from the same
-  // shared claudePlanConfig() the backend computes from — frontend timer, the
-  // backend's per-attempt timeout AND max_tokens all scale with effectiveDays,
-  // so neither end can out-of-budget a generation the other would finish.
-  // Small plans get a short tight budget; large (6-7 day) plans get 45s + room.
+  // shared claudePlanConfig() the backend computes from — the frontend timer and
+  // the backend's per-attempt timeout scale with effectiveDays. max_tokens is a
+  // SINGLE shared ceiling (CLAUDE_MAX_TOKENS = 16384) for every plan size: it's
+  // a cap, not a target, so it can never truncate a legitimate plan.
+  // Small plans get a short tight budget; large (6-7 day) plans get 145s + room.
   const plan = claudePlanConfig(days)
-  console.log(`[Claude] Frontend timeout: ${plan.frontendTimeoutMs}ms (backend ${plan.attemptTimeoutMs}ms + ${60000 - plan.attemptTimeoutMs}ms margin)`)
+  console.log(`[Claude] Frontend timeout: ${plan.frontendTimeoutMs}ms (backend ${plan.attemptTimeoutMs}ms + ${plan.frontendTimeoutMs - plan.attemptTimeoutMs}ms margin)`)
   try {
     const response = await fetch(`${backendUrl}/api/claude`, {
       method: 'POST',
@@ -303,6 +304,53 @@ async function callClaude(prompt: string, days: number): Promise<{ totalDays: nu
     return result
   } catch (err) {
     console.error('[Claude] ❌ Failed:', err?.message || String(err))
+    return null
+  }
+}
+
+async function callGemini(prompt: string, days: number): Promise<{ totalDays: number; days: DayMeals[] } | null> {
+  console.log('[Gemini] Calling backend proxy...')
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
+
+  try {
+    const response = await fetch(`${backendUrl}/api/gemini`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, days }),
+      // Own fresh timer (backend 60s + 15s margin), independent of the Groq timer
+      // so Gemini never eats into Groq's budget when it falls through.
+      signal: AbortSignal.timeout(TIMEOUTS.GEMINI_FRONTEND_MS), // 75s
+    })
+
+    if (!response.ok) {
+      console.error(`[Gemini] Backend returned non-ok status: ${response.status}`)
+      throw new Error(`Backend HTTP ${response.status}`)
+    }
+
+    const json = await response.json()
+
+    let content: string
+    if (json.content && Array.isArray(json.content)) {
+      const textBlock = json.content.find((b: any) => b.type === 'text')
+      content = textBlock?.text || json.content[0]?.text || ''
+    } else if (typeof json.content === 'string') {
+      content = json.content
+    } else {
+      content = ''
+    }
+
+    if (!content) {
+      console.warn('[Gemini] Empty response content')
+      return null
+    }
+
+    const cleaned = stripMarkdownJsonFence(content)
+    const parsed = JSON.parse(cleaned)
+    const result = coerceDaysStructure(parsed)
+    console.log('[Gemini] ✅ Success —', result.days.length, 'days')
+    return result
+  } catch (err) {
+    console.error('[Gemini] ❌ Failed:', err?.message || String(err))
     return null
   }
 }
@@ -383,19 +431,27 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
 
   const prompt = buildPrompt(effectiveItems, diet, effectiveDays)
 
-  // Try Claude first, then Groq
+  // Try Claude first, then Gemini, then Groq (last resort)
   let result = await callClaude(prompt, effectiveDays)
 
   if (!result || !result.days.length) {
-    console.log('[Generator] 🔄 Claude returned no result — triggering Groq fallback')
-    onStep?.(1) // Groq fallback kicking in — advance bar
-    result = await callGroq(prompt)
+    console.log('[Generator] 🔄 Claude returned no result — trying Gemini')
+    onStep?.(1) // Gemini fallback kicking in — advance bar
+    result = await callGemini(prompt, effectiveDays)
+
+    if (!result || !result.days.length) {
+      console.log('[Generator] 🔄 Gemini returned no result — triggering Groq fallback')
+      onStep?.(1) // Groq fallback kicking in — advance bar
+      result = await callGroq(prompt)
+    } else {
+      console.log('[Generator] ✅ Gemini succeeded')
+    }
   } else {
     console.log('[Generator] ✅ Claude succeeded')
     onStep?.(1) // Claude succeeded
   }
 
-  // Both failed — throw so UI can show retry
+  // All providers failed — throw so UI can show retry
   if (!result || !result.days.length) {
     throw new Error('AI_UNAVAILABLE')
   }

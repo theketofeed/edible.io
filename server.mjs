@@ -7,7 +7,7 @@ import DodoPayments from 'dodopayments'
 import { Webhook } from 'standardwebhooks'
 import crypto from 'crypto'
 import rateLimit from 'express-rate-limit'
-import { TIMEOUTS, claudePlanConfig } from './shared/timeouts.mjs'
+import { TIMEOUTS, claudePlanConfig, GROQ_MAX_TOKENS, GEMINI_MODEL, GEMINI_MAX_OUTPUT_TOKENS } from './shared/timeouts.mjs'
 
 dotenv.config({ path: '.env.local' })
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -206,7 +206,26 @@ app.post('/api/claude', async (req, res) => {
 						: text
 
 					const outputTokens = Number(json?.usage?.output_tokens ?? 0)
-					console.log(`[Claude Backend] Attempt ${attempt} succeeded — output_tokens: ${outputTokens}, response length: ${cleanedText.length} chars`)
+					const stopReason = json?.stop_reason || null
+					// A 200 is NOT automatically a success. If the response hit the
+					// max_tokens ceiling mid-generation (stop_reason="max_tokens" or
+					// output_tokens >= ceiling) the JSON is truncated and the frontend
+					// will reject it and fall back to Groq — we log that as the failure
+					// it is, not a success. Success requires a complete, valid JSON plan.
+					const atCeiling = stopReason === 'max_tokens' || outputTokens >= planCfg.maxTokens
+					let jsonParseOk = false
+					try {
+						JSON.parse(cleanedText)
+						jsonParseOk = true
+					} catch {
+						jsonParseOk = false
+					}
+
+					if (atCeiling || !jsonParseOk) {
+						console.warn(`[Claude Backend] Attempt ${attempt} INCOMPLETE — output_tokens ${outputTokens}/${planCfg.maxTokens} (stop_reason=${stopReason}), valid JSON: ${jsonParseOk} (${cleanedText.length} chars). Response is truncated/unusable — frontend will fall back to Groq`)
+					} else {
+						console.log(`[Claude Backend] Attempt ${attempt} succeeded — output_tokens: ${outputTokens}, stop_reason: ${stopReason}, response length: ${cleanedText.length} chars`)
+					}
 
 					return res.json({ content: [{ type: 'text', text: cleanedText }] })
 				}
@@ -253,6 +272,103 @@ app.post('/api/claude', async (req, res) => {
 		}
 		console.error('[Claude Backend] ❌ FALLBACK TRIGGERED: Sending 500 (other error) to frontend')
 		res.status(500).json({ error: err.message })
+	}
+})
+
+// ─── Gemini API proxy (middle fallback: Claude → Gemini → Groq) ────────────
+app.post('/api/gemini', async (req, res) => {
+	try {
+		const { prompt, days } = req.body
+		if (!prompt) {
+			return res.status(400).json({ error: 'Missing prompt' })
+		}
+
+		const apiKey = process.env.GEMINI_API_KEY
+		if (!apiKey || apiKey.trim() === '') {
+			console.warn('[Gemini Backend] No GEMINI_API_KEY found — frontend will fall through to Groq')
+			return res.status(401).json({ error: 'Gemini API key not configured' })
+		}
+
+		// Dedicated ceiling (GEMINI_MAX_OUTPUT_TOKENS, default 20000) with env override.
+		const envGeminiMax = parseInt(process.env.GEMINI_MAX_OUTPUT_TOKENS || '', 10)
+		const geminiMaxOutput = Number.isFinite(envGeminiMax) && envGeminiMax > 0 ? envGeminiMax : GEMINI_MAX_OUTPUT_TOKENS
+
+		const controller = new AbortController()
+		const timeout = setTimeout(() => {
+			console.error(`[Gemini Backend] Request timed out after ${TIMEOUTS.GEMINI_BACKEND_MS}ms`)
+			controller.abort()
+		}, TIMEOUTS.GEMINI_BACKEND_MS)
+
+		try {
+			const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`
+			console.log(`[Gemini Backend] Sending ${days}-day plan to ${GEMINI_MODEL} (max_output_tokens ${geminiMaxOutput}, timeout ${TIMEOUTS.GEMINI_BACKEND_MS}ms)...`)
+
+			const geminiRes = await fetch(url, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					system_instruction: { parts: [{ text: 'You output JSON only. No code fences. No commentary.' }] },
+					contents: [{ role: 'user', parts: [{ text: prompt }] }],
+					generationConfig: {
+						// JSON mode is the reason Gemini works here where it failed before:
+						// no markdown, no prose, plus thinking is disabled so reasoning
+						// tokens never pollute the plan or inflate latency.
+						responseMimeType: 'application/json',
+						maxOutputTokens: geminiMaxOutput,
+						temperature: 0.55,
+						thinkingConfig: { thinkingBudget: 0 },
+					},
+				}),
+				signal: controller.signal
+			})
+
+			clearTimeout(timeout)
+
+			if (!geminiRes.ok) {
+				const text = await geminiRes.text().catch(() => '')
+				const shortBody = text.length > 200 ? text.substring(0, 200) + '...' : text
+				console.error(`[Gemini Backend] HTTP ${geminiRes.status} — ${shortBody}`)
+				return res.status(geminiRes.status).json({ error: `Gemini API error: ${geminiRes.status}`, details: text })
+			}
+
+			const json = await geminiRes.json()
+			const candidate = json?.candidates?.[0]
+			const finishReason = candidate?.finishReason || 'UNKNOWN'
+			const rawText = candidate?.content?.parts?.map((p) => p.text || '').join('') || ''
+			const outputTokens = Number(json?.usageMetadata?.candidatesTokenCount ?? 0)
+			const cleanedText = rawText.replace(/^\s*```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
+
+			// A 200 is NOT automatically a success (mirror Claude/Groq): success
+			// requires a natural STOP (not MAX_TOKENS) AND cleanly parseable JSON.
+			const atCeiling = finishReason !== 'STOP' || outputTokens >= geminiMaxOutput
+			let jsonParseOk = false
+			try {
+				JSON.parse(cleanedText)
+				jsonParseOk = true
+			} catch {
+				jsonParseOk = false
+			}
+
+			if (atCeiling || !jsonParseOk) {
+				console.warn(`[Gemini Backend] INCOMPLETE — output_tokens ${outputTokens}/${geminiMaxOutput} (finish_reason=${finishReason}), valid JSON: ${jsonParseOk} (${cleanedText.length} chars). Response truncated/unusable — frontend will fall to Groq`)
+			} else {
+				console.log(`[Gemini Backend] Success — output_tokens: ${outputTokens}, finish_reason: ${finishReason}, response length: ${cleanedText.length} chars`)
+			}
+
+			// Same response contract as /api/claude so the frontend parses both identically.
+			return res.json({ content: [{ type: 'text', text: cleanedText }] })
+		} catch (err) {
+			clearTimeout(timeout)
+			if (err.name === 'AbortError' || err.message?.includes('aborted')) {
+				console.error(`[Gemini Backend] Timed out after ${TIMEOUTS.GEMINI_BACKEND_MS}ms — frontend will fall to Groq`)
+				return res.status(504).json({ error: 'Gemini API timed out' })
+			}
+			console.error('[Gemini Backend] Error:', err?.message || String(err))
+			return res.status(500).json({ error: err.message })
+		}
+	} catch (err) {
+		console.error('[Gemini Backend] Outer catch:', err?.message || String(err))
+		return res.status(500).json({ error: err.message })
 	}
 })
 
@@ -341,7 +457,16 @@ app.post('/api/groq', (req, res, next) => {
 			return res.status(400).json({ error: 'Missing or invalid messages array' })
 		}
 
-		console.log('[Groq Backend] Forwarding request to Groq...')
+		// Explicit output ceiling (was previously omitted — behaviour silently fell
+		// back to whatever the provider defaults to for the model). Sized to the
+		// account's 8K TPM on_demand tier: input + max_tokens is checked as one
+		// "Requested" budget at admission, so this must stay well under 8000 with
+		// the worst realistic prompt (~800 input → ~7.0K total). GROQ_MAX_TOKENS
+		// env override wins; see shared/timeouts.mjs.
+		const envGroqMaxTokens = parseInt(process.env.GROQ_MAX_TOKENS || '', 10)
+		const groqMaxTokens = Number.isFinite(envGroqMaxTokens) && envGroqMaxTokens > 0 ? envGroqMaxTokens : GROQ_MAX_TOKENS
+
+		console.log(`[Groq Backend] Forwarding request to Groq... (max_tokens ${groqMaxTokens})`)
 		console.log('[Groq Backend] API Key prefix:', apiKey.substring(0, 10) + '...')
 
 		const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -353,6 +478,7 @@ app.post('/api/groq', (req, res, next) => {
 			body: JSON.stringify({
 				model: model || 'openai/gpt-oss-120b',
 				messages,
+				max_tokens: groqMaxTokens,
 				temperature: temperature ?? 0.5,
 				// NOTE: intentionally omitting response_format: { type: 'json_object' }.
 				// Groq's strict JSON validation rejects large meal-plan outputs that
@@ -369,12 +495,44 @@ app.post('/api/groq', (req, res, next) => {
 
 		if (!response.ok) {
 			const text = await response.text().catch(() => '')
-			console.error(`[Groq Backend] HTTP ${response.status}: ${text}`)
+			// 429 / 413 are rate-limit rejections — surface the budget so we can
+			// see (and size around) remaining TPM instead of guessing.
+			const remainingTokens = response.headers.get('x-ratelimit-remaining-tokens')
+			const limitTokens = response.headers.get('x-ratelimit-limit-tokens')
+			const retryAfter = response.headers.get('retry-after')
+			if (response.status === 429 || response.status === 413) {
+				console.warn(`[Groq Backend] Rate limited: HTTP ${response.status} — TPM remaining ${remainingTokens ?? '?'}/${limitTokens ?? '?'}${retryAfter ? `, retry-after ${retryAfter}s` : ''}, body: ${text.slice(0, 200)}`)
+			} else {
+				console.error(`[Groq Backend] HTTP ${response.status}: ${text}`)
+			}
 			return res.status(response.status).json({ error: `Groq API error: ${response.status}`, details: text })
 		}
 
 		const json = await response.json()
-		console.log('[Groq Backend] ✅ Success')
+		const usageTokens = Number(json?.usage?.completion_tokens ?? 0)
+		const finishReason = json?.choices?.[0]?.finish_reason || null
+		const content = json?.choices?.[0]?.message?.content ?? ''
+		// A 200 is NOT automatically a success — mirror the Claude path. If the
+		// model hit the ceiling (finish_reason="length" / completion_tokens >= cap)
+		// the JSON is truncated and the frontend will reject it (and there is
+		// nothing after Groq except AI_UNAVAILABLE), so log it as the failure it is.
+		const atCeiling = finishReason === 'length' || usageTokens >= groqMaxTokens
+		let jsonParseOk = false
+		try {
+			const stripped = typeof content === 'string'
+				? content.replace(/^\s*```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
+				: content
+			JSON.parse(stripped)
+			jsonParseOk = true
+		} catch {
+			jsonParseOk = false
+		}
+
+		if (atCeiling || !jsonParseOk) {
+			console.warn(`[Groq Backend] INCOMPLETE — completion_tokens ${usageTokens}/${groqMaxTokens} (finish_reason=${finishReason}), valid JSON: ${jsonParseOk} (${typeof content === 'string' ? content.length : 0} chars). Output truncated/unusable — meal plan will fail`)
+		} else {
+			console.log(`[Groq Backend] Success — completion_tokens: ${usageTokens}, finish_reason: ${finishReason}, response length: ${typeof content === 'string' ? content.length : 0} chars`)
+		}
 		res.json(json)
 	} catch (err) {
 		clearTimeout(timeoutId)

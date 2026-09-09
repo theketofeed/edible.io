@@ -9,11 +9,19 @@ export declare const TIMEOUTS: {
   readonly PIXABAY_SEARCH_MS: number
   readonly PIXABAY_DOWNLOAD_MS: number
   readonly WIKIMEDIA_SEARCH_MS: number
+  readonly GEMINI_BACKEND_MS: number
+  readonly GEMINI_FRONTEND_MS: number
 }
+
+export declare const CLAUDE_MAX_TOKENS: number
+
+export declare const GROQ_MAX_TOKENS: number
+
+export declare const GEMINI_MODEL: string
+export declare const GEMINI_MAX_OUTPUT_TOKENS: number
 
 export declare const CLAUDE_PLAN_SIZES: ReadonlyArray<{
   readonly maxDays: number
-  readonly maxTokens: number
   readonly attemptTimeoutMs: number
 }>
 

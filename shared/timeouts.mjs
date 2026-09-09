@@ -37,24 +37,43 @@ export const TIMEOUTS = {
   PIXABAY_SEARCH_MS: 8000,
   PIXABAY_DOWNLOAD_MS: 15000,
   WIKIMEDIA_SEARCH_MS: 8000,
+
+  // Gemini /api/gemini — middle fallback (Claude → Gemini → Groq).
+  // Live-verified against the worst-case 7-day/25-item prompt: gemini-2.5-flash
+  // finished naturally in 33.5s at 7,713 output tokens. Backend 60s gives a
+  // 26s+ cushion for free-tier slowness; frontend 75s = backend + 15s margin.
+  GEMINI_BACKEND_MS: 60000,
+  GEMINI_FRONTEND_MS: 75000,
 }
 
-// ─── Claude per-plan-size generation budget (B-lite) ─────────────────────────
-// One fixed maxTokens/attempt-timeout for every plan size was provably wrong
-// both ways: too tight for 6-7 day plans (measured 35.5s against an old 37s
-// cap) and wasteful for 1-3 day plans. The frontend and backend both derive
-// their values from claudePlanConfig(days), so they can never disagree about
-// how long a plan is allowed to run or how much output it may produce.
+// ─── Claude per-plan-size generation budget ─────────────────────────────────
+// MAX_TOKENS is a cap, NOT a target: Anthropic bills per actual token emitted,
+// so unused ceiling costs nothing and the model never "pads up" to it. A single
+// high ceiling shared by every plan size is therefore the correct design —
+// per-plan-size output needs vary wildly (measured live: a worst-case 3-day
+// plan naturally ends at ~5,239 output tokens, a worst-case 5-day at ~8,533),
+// and segmenting max_tokens is how this failure class was born (3500/3500 and
+// 3072/3072 both truncated mid-JSON). One ceiling of 16384 sits far above the
+// worst legitimate output of ANY size (incl. compact 6-7 day prompts), so a
+// natural plan can never hit it. Runaway generations are instead bounded by
+// each tier's attemptTimeoutMs: at the measured ~113 tok/s stream rate, even
+// the longest per-attempt budget (130s) cuts a runaway at ~14.7k tokens —
+// before it ever touches the 16384 ceiling.
+export const CLAUDE_MAX_TOKENS = 16384
+
+// The genuine per-size knob is the per-attempt TIMEOUT: a plan's natural
+// completion wall-time scales with its size (measured: ~46s for 5.2k tokens on
+// 3-day, ~75s for 8.5k on 5-day at ~113 tok/s). Each budget sits above its
+// natural completion so real plans always finish, while still bounding how long
+// a broken/runaway response may stream before the abort fires and Groq takes over.
 export const CLAUDE_PLAN_SIZES = [
-  // Verified against a realistic 2-day, detailed meal-plan prompt: 2048 and 2500
-  // tokens truncated mid-JSON; 3000+ completed cleanly. We keep the 1-3 day
-  // tier at 3500 for margin and to avoid edge cases from unusually detailed
-  // grocery lists or longer instructional output. The 4-5 day tier is ~30s for
-  // 3072 tokens, which scales to ~34.2s for 3500 tokens; we round up to 40s to
-  // leave headroom without breaching the shared frontend margin pattern.
-  { maxDays: 3, maxTokens: 3500, attemptTimeoutMs: 40000 },
-  { maxDays: 5, maxTokens: 3072, attemptTimeoutMs: 30000 },
-  { maxDays: 7, maxTokens: 8192, attemptTimeoutMs: 75000 },
+  // 1-3 days — natural completion up to ~46s; 70s leaves heavy headroom.
+  { maxDays: 3, attemptTimeoutMs: 70000 },
+  // 4-5 days — natural completion up to ~75s; 110s leaves heavy headroom.
+  { maxDays: 5, attemptTimeoutMs: 110000 },
+  // 6-7 days — compact prompt, historically ~36-40s on the previous model;
+  // 130s generously covers the larger haiku-4-5 outputs without a retest.
+  { maxDays: 7, attemptTimeoutMs: 130000 },
 ]
 
 // Frontend timer = backend attempt budget + margin. The backend's one retry
@@ -65,6 +84,7 @@ export const CLAUDE_FRONTEND_MARGIN_MS = 15000
 
 // Returns the generation budget for a given effectiveDays. Unknown/missing
 // days default to the largest (safest) budget. Both ends must call this.
+// maxTokens is the SAME single ceiling for every size (see CLAUDE_MAX_TOKENS).
 export function claudePlanConfig(days) {
   const effectiveDays = Number.isFinite(days) && days >= 1
     ? Math.min(7, Math.floor(days))
@@ -72,8 +92,33 @@ export function claudePlanConfig(days) {
   const size = CLAUDE_PLAN_SIZES.find(s => effectiveDays <= s.maxDays) ||
     CLAUDE_PLAN_SIZES[CLAUDE_PLAN_SIZES.length - 1]
   return {
-    maxTokens: size.maxTokens,
+    maxTokens: CLAUDE_MAX_TOKENS,
     attemptTimeoutMs: size.attemptTimeoutMs,
     frontendTimeoutMs: size.attemptTimeoutMs + CLAUDE_FRONTEND_MARGIN_MS,
   }
 }
+
+// ─── Groq output ceiling ────────────────────────────────────────────────────
+// Unlike Claude, Groq's max_tokens is NOT free headroom on the on_demand tier:
+// the 8K TPM rate limit for openai/gpt-oss-120b admits a request against
+// "Requested" tokens (input + reserved output — errors report "Limit 8000,
+// Requested N"). A Claude-style 16384 cap would therefore 413-reject EVERY
+// meal-plan call (800 input + 16384 reserve ≈ 17K ≫ 8K).
+//
+// 6144 is the largest single ceiling that stays under that 8K admission check
+// with the worst realistic meal-plan prompt (~800 input tokens):
+//   800 + 6144 ≈ 7.0K < 8K  ✔
+// while still leaving room to wait for the plan limiter / retries in the
+// same minute window. It maps directly to the old *verified-safe* Claude 3-day
+// ceiling, and the model natively supports up to 65,536 output tokens if the
+// account ever moves to a higher TPM tier. GROQ_MAX_TOKENS env override wins.
+export const GROQ_MAX_TOKENS = 6144
+
+// ─── Gemini output ceiling ────────────────────────────────────────────────────
+// Single generous cap for every plan size, same philosophy as CLAUDE_MAX_TOKENS:
+// it is a ceiling, not a target, so it costs nothing until actually reached, and
+// Gemini's free tier is INPUT-TPM based (no Groq-style input+reserve admission
+// check). Live-verified worst case: 7-day/25-item plan finished at 7,713 output
+// tokens — 20,000 leaves ~2.6× headroom. Env override wins (server reads it).
+export const GEMINI_MODEL = 'gemini-2.5-flash'
+export const GEMINI_MAX_OUTPUT_TOKENS = 20000
