@@ -22,7 +22,7 @@ const STEPS = [
   },
 ]
 
-const Loading = memo(function Loading({ step }: { step?: number }) {
+const Loading = memo(function Loading({ step, compact = false }: { step?: number; compact?: boolean }) {
   const [msgVisible, setMsgVisible] = useState(true)
   const [displayPct, setDisplayPct] = useState(STEPS[0].pct)
   const prevStepRef = useRef<number>(step ?? 0)
@@ -30,10 +30,10 @@ const Loading = memo(function Loading({ step }: { step?: number }) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (containerRef.current) {
+    if (!compact && containerRef.current) {
       containerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
-  }, [])
+  }, [compact])
 
   const activeStep = Math.min(step ?? 0, STEPS.length - 1)
   const current = STEPS[activeStep]
@@ -81,7 +81,7 @@ const Loading = memo(function Loading({ step }: { step?: number }) {
   return (
     <div
       ref={containerRef}
-      className="flex flex-col items-center justify-center min-h-[80vh] px-4"
+      className={`flex flex-col items-center justify-center ${compact ? 'h-full min-h-0 px-3' : 'min-h-[80vh] px-4'}`}
     >
       <style>{`
         @keyframes bowlFloat {
@@ -103,23 +103,23 @@ const Loading = memo(function Loading({ step }: { step?: number }) {
         .progress-fill { transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
       `}</style>
 
-      <div className="relative bg-white/70 backdrop-blur-2xl border border-white shadow-[0_32px_128px_rgba(0,0,0,0.08)] rounded-[28px] md:rounded-[52px] p-6 sm:p-10 md:p-16 flex flex-col items-center gap-8 max-w-[90vw] sm:max-w-sm w-full mx-auto">
+      <div className={`relative flex flex-col items-center w-full h-full mx-auto ${compact ? 'justify-center gap-4 p-4 bg-transparent border-0 shadow-none' : 'bg-white/70 backdrop-blur-2xl border border-white shadow-[0_32px_128px_rgba(0,0,0,0.08)] rounded-[28px] md:rounded-[52px] p-6 sm:p-10 md:p-16 gap-8 max-w-[90vw] sm:max-w-sm'}`}>
 
         {/* Animated icon — changes with step */}
-        <div className="relative flex items-center justify-center" style={{ width: 140, height: 140 }}>
+        <div className="relative flex items-center justify-center" style={{ width: compact ? 88 : 140, height: compact ? 88 : 140 }}>
           <div className="ripple-1 absolute w-32 h-32 rounded-full border-2 border-purple-200" />
           <div className="ripple-2 absolute w-32 h-32 rounded-full border-2 border-purple-100" />
           <div
             key={activeStep}
-            className="bowl-float icon-fade relative z-10 w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 shadow-2xl shadow-purple-500/30 flex items-center justify-center"
+            className={`bowl-float icon-fade relative z-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 shadow-2xl shadow-purple-500/30 flex items-center justify-center ${compact ? 'w-14 h-14' : 'w-20 h-20'}`}
           >
-            <MainIcon className="w-10 h-10 text-white" strokeWidth={1.5} />
+            <MainIcon className={`${compact ? 'w-7 h-7' : 'w-10 h-10'} text-white`} strokeWidth={1.5} />
           </div>
         </div>
 
         {/* Title + step message */}
         <div className="text-center space-y-2 w-full">
-          <h3 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight leading-tight">
+          <h3 className={`${compact ? 'text-sm' : 'text-xl md:text-2xl'} font-black text-gray-900 tracking-tight leading-tight`}>
             Generating your <br /> meal plan
           </h3>
           <p
@@ -131,7 +131,7 @@ const Loading = memo(function Loading({ step }: { step?: number }) {
           >
             {current.message}
           </p>
-          <p className="text-gray-400/70 text-xs font-medium mt-1">
+          <p className={`${compact ? 'hidden' : 'block'} text-gray-400/70 text-xs font-medium mt-1`}>
             Hang tight — this can take a minute. Your meal plan will be ready soon.
           </p>
         </div>

@@ -12,7 +12,7 @@ import Loading from './components/Loading'
 import Results from './components/Results'
 import RecipeDetail from './components/RecipeDetail'
 import ErrorBoundary from './components/ErrorBoundary'
-import HowItWorks from './components/HowItWorks'
+import HowItWorksSticky from './components/HowItWorksSticky'
 import DemoVideo from './components/DemoVideo'
 import ComparisonSection from './components/ComparisonSection'
 import Testimonials from './components/Testimonials'
@@ -272,19 +272,6 @@ function MainContent() {
 		if (canGenerate) void handleGenerate()
 	}, [canGenerate, handleGenerate])
 
-	const handleCopy = useCallback(async () => {
-		if (!result) return
-		const text = result.days.map(d =>
-			`${d.day}\n- Breakfast: ${d.Breakfast.title}\n- Lunch: ${d.Lunch.title}\n- Dinner: ${d.Dinner.title}`
-		).join('\n\n')
-		try {
-			await navigator.clipboard.writeText(text)
-			alert('Copied!')
-		} catch {
-			alert('Failed to copy.')
-		}
-	}, [result])
-
 	const handlePrint = useReactToPrint({
 		contentRef: printRef,
 		documentTitle: 'Meal Plan'
@@ -484,7 +471,7 @@ function MainContent() {
 								</div>
 								
 								<div className={`transition-all duration-700 ${isLoading ? 'opacity-20 blur-[2px] pointer-events-none' : ''}`}>
-									<HowItWorks />
+									<HowItWorksSticky />
 									<DemoVideo />
 									<ComparisonSection />
 									<Testimonials />
@@ -499,7 +486,6 @@ function MainContent() {
 							<div className="flex-1 max-w-5xl mx-auto px-4 py-8 md:py-12">
 								<Results
 									result={result}
-									onCopy={handleCopy}
 									onDownload={triggerDownload}
 									onRegenerate={handleRegenerate}
 									setAuthOpen={setAuthOpen}

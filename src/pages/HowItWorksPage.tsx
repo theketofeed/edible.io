@@ -1,26 +1,26 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
-import HowItWorks from '../components/HowItWorks'
+import HowItWorksSticky from '../components/HowItWorksSticky'
 
 export default function HowItWorksPage() {
 	useEffect(() => {
 		document.title = 'How Edible Works. Turn Groceries Into Meal Plans'
 		const meta = document.querySelector('meta[name="description"]')
-		if (meta) meta.setAttribute('content', 'Upload your grocery receipt or paste your shopping list, choose a diet, and get a personalized weekly meal plan in seconds. Three simple steps to eliminate food waste.')
+		if (meta) meta.setAttribute('content', 'Upload your grocery receipt or paste your shopping list, choose a diet, and get a personalized weekly meal plan in seconds. Four simple steps to eliminate food waste.')
 		const ogTitle = document.querySelector('meta[property="og:title"]')
 		if (ogTitle) ogTitle.setAttribute('content', 'How Edible Works. Turn Groceries Into Meal Plans')
 		const ogDesc = document.querySelector('meta[property="og:description"]')
-		if (ogDesc) ogDesc.setAttribute('content', 'Upload your grocery receipt or paste your shopping list, choose a diet, and get a personalized weekly meal plan in seconds. Three simple steps to eliminate food waste.')
+		if (ogDesc) ogDesc.setAttribute('content', 'Upload your grocery receipt or paste your shopping list, choose a diet, and get a personalized weekly meal plan in seconds. Four simple steps to eliminate food waste.')
 		const twTitle = document.querySelector('meta[name="twitter:title"]')
 		if (twTitle) twTitle.setAttribute('content', 'How Edible Works. Turn Groceries Into Meal Plans')
 		const twDesc = document.querySelector('meta[name="twitter:description"]')
-		if (twDesc) twDesc.setAttribute('content', 'Upload your grocery receipt or paste your shopping list, choose a diet, and get a personalized weekly meal plan in seconds. Three simple steps to eliminate food waste.')
+		if (twDesc) twDesc.setAttribute('content', 'Upload your grocery receipt or paste your shopping list, choose a diet, and get a personalized weekly meal plan in seconds. Four simple steps to eliminate food waste.')
 	}, [])
 
 	return (
 		<div>
-			<HowItWorks headingLevel="h1" />
+			<HowItWorksSticky headingLevel="h1" />
 			<div className="max-w-3xl mx-auto px-4 py-12">
 				<Link
 					to="/"

@@ -3,24 +3,61 @@ import http from 'node:http'
 import os from 'node:os'
 import path from 'node:path'
 import puppeteer from 'puppeteer-core'
-import chromium from '@sparticuz/chromium'
 
-async function resolveBrowserPath() {
-	if (process.platform !== 'win32') {
-		// Linux / macOS: use @sparticuz/chromium's bundled binary (works on Vercel).
-		return chromium.executablePath()
+// Environment-gated Chromium loading:
+//   dev  (NODE_ENV != production) → local system Chrome/Edge via puppeteer-core only
+//   prod (NODE_ENV == production) → @sparticuz/chromium bundled binary (Vercel serverless)
+const isProduction = process.env.NODE_ENV === 'production'
+
+let chromium = null
+if (isProduction) {
+	try {
+		const mod = await import('@sparticuz/chromium')
+		chromium = mod.default || mod
+	} catch {
+		console.warn('[prerender] @sparticuz/chromium not importable — falling back to local Chrome/Edge')
 	}
-	// Windows: find a local Chrome / Edge installation.
-	const candidates = [
-		path.join(process.env['PROGRAMFILES'] || '', 'Google', 'Chrome', 'Application', 'chrome.exe'),
-		path.join(process.env['LOCALAPPDATA'] || '', 'Google', 'Chrome', 'Application', 'chrome.exe'),
-		path.join(process.env['PROGRAMFILES(X86)'] || '', 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
-		path.join(process.env['PROGRAMFILES'] || '', 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
-	]
+}
+
+function findLocalBrowserPath() {
+	const candidates =
+		process.platform === 'win32'
+			? [
+				path.join(process.env['PROGRAMFILES'] || '', 'Google', 'Chrome', 'Application', 'chrome.exe'),
+				path.join(process.env['LOCALAPPDATA'] || '', 'Google', 'Chrome', 'Application', 'chrome.exe'),
+				path.join(process.env['PROGRAMFILES(X86)'] || '', 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+				path.join(process.env['PROGRAMFILES'] || '', 'Microsoft', 'Edge', 'Application', 'msedge.exe'),
+			]
+			: process.platform === 'darwin'
+			? [
+				'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+				'/Applications/Chromium.app/Contents/MacOS/Chromium',
+				path.join(os.homedir(), 'Applications', 'Google Chrome.app', 'Contents', 'MacOS', 'Google Chrome'),
+			]
+			: [
+				'/usr/bin/google-chrome',
+				'/usr/bin/google-chrome-stable',
+				'/usr/bin/chromium-browser',
+				'/usr/bin/chromium',
+				'/snap/bin/chromium',
+			]
 	for (const p of candidates) {
 		if (fs.existsSync(p)) return p
 	}
-	throw new Error('[prerender] No Chrome or Edge found on Windows. Install Chrome or Edge to run the prerender.')
+	return null
+}
+
+async function resolveBrowserPath() {
+	if (chromium) {
+		// Production / serverless: use @sparticuz/chromium's bundled binary.
+		return chromium.executablePath()
+	}
+	// Development: find a local Chrome / Edge / Chromium installation.
+	const local = findLocalBrowserPath()
+	if (local) return local
+	throw new Error(
+		`[prerender] No browser found. ${process.platform === 'win32' ? 'Install Chrome or Edge' : 'Install Chrome or Chromium'} to run the prerender.`
+	)
 }
 
 const ROUTES = [
@@ -33,13 +70,13 @@ const ROUTES = [
 	{ path: '/blog', contentMarker: 'Blog', h1Prefix: null },
 ]
 
-// @sparticuz/chromium's default args target memory-constrained serverless Linux.
-// On Windows, --single-process / --no-zygote / --in-process-gpu make Chrome unstable:
-// any renderer crash takes down the whole browser mid-prerender. Keep them on Linux
-// (where they're needed) and strip them for local Windows runs.
-const BROWSER_ARGS = process.platform !== 'win32'
-	? chromium.args
-	: chromium.args.filter((arg) => arg !== '--single-process' && arg !== '--no-zygote' && arg !== '--in-process-gpu')
+// When @sparticuz/chromium is loaded (production), use its serverless-tuned args
+// with Windows-incompatible flags stripped.  In dev, use sensible local defaults.
+const BROWSER_ARGS = chromium
+	? (process.platform !== 'win32'
+		? chromium.args
+		: chromium.args.filter((arg) => arg !== '--single-process' && arg !== '--no-zygote' && arg !== '--in-process-gpu'))
+	: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
 
 const MIME_TYPES = {
 	'.html': 'text/html; charset=utf-8',
@@ -141,8 +178,8 @@ async function prerenderHomepage(distDir) {
 		browser = await puppeteer.launch({
 			executablePath: execPath,
 			args: BROWSER_ARGS,
-			defaultViewport: chromium.defaultViewport,
-			headless: chromium.headless,
+			defaultViewport: chromium?.defaultViewport || { width: 1280, height: 900 },
+			headless: chromium?.headless ?? true,
 		})
 	function makeRequestHandler() {
 		return (request) => {

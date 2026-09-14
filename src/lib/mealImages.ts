@@ -4,7 +4,7 @@ import { TIMEOUTS } from '../../shared/timeouts.mjs'
 export const sessionCache = new Map<string, string>()
 
 // ─── In-flight requests (deduplication) ────────────────────────────────────────
-const inFlightRequests = new Map<string, Promise<string | null>>()
+const inFlightRequests = new Map<string, Promise<{ imageUrl: string | null; source: string | null } | null>>()
 
 export { titleToKey, buildPollinationsPrompt }
 
@@ -80,7 +80,7 @@ function getCategoryFallback(mealTitle: string): string {
 // ─── Backend Image Pipeline ─────────────────────────────────────────────────
 // Backend: DB cache → Pexels → Pixabay → Wikimedia → fallback (all server-side)
 // Returns JSON { imageUrl, source, attribution?, license? }
-async function fetchImageFromBackend(mealTitle: string): Promise<string | null> {
+async function fetchImageFromBackend(mealTitle: string): Promise<{ imageUrl: string | null; source: string | null } | null> {
   const key = titleToKey(mealTitle)
   
   // Deduplicate in-flight requests
@@ -89,7 +89,7 @@ async function fetchImageFromBackend(mealTitle: string): Promise<string | null> 
     return inFlightRequests.get(key)!
   }
   
-  const request = (async () => {
+  const request: Promise<{ imageUrl: string | null; source: string | null } | null> = (async () => {
     const backendUrl = (import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:3001'
     
     try {
@@ -104,20 +104,20 @@ async function fetchImageFromBackend(mealTitle: string): Promise<string | null> 
       if (!response.ok) {
         const error = await response.json().catch(() => ({}))
         console.warn(`[MealImages] Backend error: ${response.status} -`, error)
-        return null
+        return { imageUrl: null, source: null }
       }
 
       const data = await response.json()
       if (!data?.imageUrl) {
         console.log(`[MealImages] Backend returned no image (source: ${data?.source || 'unknown'})`)
-        return null
+        return { imageUrl: null, source: data?.source || null }
       }
 
-      console.log(`[MealImages] ✅ Got image from ${data.source} for: "${mealTitle}"`)
-      return data.imageUrl as string
+      console.log(`[MealImages] ✅ Got image from ${data.source} for: "${mealTitle}" => ${data.imageUrl}`)
+      return { imageUrl: data.imageUrl as string, source: data.source as string }
     } catch (err) {
       console.warn('[MealImages] Fetch failed:', err instanceof Error ? err.message : err)
-      return null
+      return { imageUrl: null, source: null }
     } finally {
       inFlightRequests.delete(key)
     }
@@ -150,7 +150,7 @@ export async function fetchMealImage(mealTitle: string): Promise<string | null> 
   // 1. Session cache — zero latency
   if (sessionCache.has(key)) {
     const cached = sessionCache.get(key)!
-    console.log(`[MealImages] Cache hit for: "${mealTitle}"`)
+    console.log(`[MealImages] Cache hit for: "${mealTitle}" => ${cached}`)
     return cached
   }
 
@@ -160,11 +160,14 @@ export async function fetchMealImage(mealTitle: string): Promise<string | null> 
   console.log(`[MealImages] Fetching real image for: "${mealTitle}" (SVG placeholder shown until ready)`)
 
   try {
-    const aiUrl = await fetchImageFromBackend(mealTitle)
-    if (aiUrl) {
-      sessionCache.set(key, aiUrl)
-      console.log(`[MealImages] ✅ Got real food image for: "${mealTitle}"`)
-      return aiUrl
+    const aiResult = await fetchImageFromBackend(mealTitle)
+    if (aiResult?.imageUrl) {
+      sessionCache.set(key, aiResult.imageUrl)
+      console.log(`[MealImages] ✅ Got real food image for: "${mealTitle}" from ${aiResult.source || 'unknown'} => ${aiResult.imageUrl}`)
+      return aiResult.imageUrl
+    }
+    if (aiResult?.source) {
+      console.log(`[MealImages] Image provider responded with source ${aiResult.source}, but no usable imageUrl was returned for: "${mealTitle}"`)
     }
   } catch (err) {
     console.error(`[MealImages] Unexpected error generating image for "${mealTitle}":`, err)
@@ -172,7 +175,7 @@ export async function fetchMealImage(mealTitle: string): Promise<string | null> 
 
   // Backend failed — use static category fallback so nothing is left broken
   const fallback = getCategoryFallback(mealTitle)
-  console.log(`[MealImages] Using category fallback for: "${mealTitle}"`)
+  console.log(`[MealImages] Using category fallback for: "${mealTitle}" => ${fallback}`)
   sessionCache.set(key, fallback)
   return fallback
 }

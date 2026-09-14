@@ -1,6 +1,6 @@
 import { forwardRef, memo, useMemo, useEffect, useState, useCallback } from 'react'
 import { track, Events } from '../lib/analytics'
-import { Copy, Download, RefreshCw, ChevronRight, X, Bookmark, Check, Save } from 'lucide-react'
+import { Download, RefreshCw, ChevronRight, X, Bookmark, Check, Save } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import type { MealPlanResult, DayMeals, Meal } from '../utils/types'
@@ -14,7 +14,6 @@ import MealImagePlaceholder from './MealImagePlaceholder'
 
 interface Props {
 	result: MealPlanResult
-	onCopy: () => void
 	onDownload: () => void
 	onRegenerate: () => void
 	setAuthOpen: (open: boolean) => void
@@ -162,8 +161,16 @@ useEffect(() => {
 
 	return (
 		<div
-			className="group bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] border border-gray-200 cursor-pointer flex flex-row items-center gap-4 px-3.5 py-3.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.10)] hover:border-gray-300 hover:-translate-y-0.5 transition-all duration-300"
+			className="group w-full cursor-pointer flex flex-row items-center gap-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50/60 transition-colors duration-200"
+			role="button"
+			tabIndex={0}
 			onClick={() => onNavigate(dayIndex, mealType, meal)}
+			onKeyDown={(event) => {
+				if (event.key === 'Enter' || event.key === ' ') {
+					event.preventDefault()
+					onNavigate(dayIndex, mealType, meal)
+				}
+			}}
 		>
 			{/* Image */}
 			<div className="w-14 h-14 rounded-xl flex-shrink-0 overflow-hidden relative bg-gray-50">
@@ -267,7 +274,7 @@ const DayCard = memo(function DayCard({
 	)
 })
 
-const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result, onCopy, onDownload, onRegenerate, setAuthOpen, showToast, onUpgradeRequired }, ref) {
+const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result, onDownload, onRegenerate, setAuthOpen, showToast, onUpgradeRequired }, ref) {
 	const navigate = useNavigate()
 	const { user } = useAuth()
 	const { canExportPDF } = usePlan()
@@ -394,19 +401,6 @@ const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result
 						whileHover={{ y: -2, scale: 1.02 }}
 						whileTap={{ scale: 0.98 }}
 						transition={{ duration: 0.1 }}
-						className="h-12 px-6 rounded-2xl bg-white/40 backdrop-blur-md text-gray-700 text-[14px] font-bold border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:bg-white/60 transition-all flex items-center" 
-						onClick={onCopy}
-					>
-						<div className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center mr-3 border border-gray-100/50">
-							<Copy className="w-4 h-4 text-gray-500" />
-						</div>
-						Copy Text
-					</motion.button>
-
-					<motion.button 
-						whileHover={{ y: -2, scale: 1.02 }}
-						whileTap={{ scale: 0.98 }}
-						transition={{ duration: 0.1 }}
 					className="h-12 px-6 rounded-2xl bg-white/40 backdrop-blur-md text-gray-700 text-[14px] font-bold border border-white/60 shadow-[0_8px_32px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:bg-white/60 transition-all flex items-center"
 					onClick={() => {
 						if (!canExportPDF) {
@@ -423,17 +417,6 @@ const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result
 				</motion.button>
 
 				<BulkDownloadButton result={result} showToast={showToast} onUpgradeRequired={onUpgradeRequired} />
-
-				<motion.button 
-					whileHover={{ y: -2, scale: 1.02 }}
-					whileTap={{ scale: 0.98 }}
-					transition={{ duration: 0.1 }}
-					className="h-12 px-7 rounded-2xl bg-gradient-to-br from-[#D9C4FF] to-[#C6A0F6] text-gray-900 text-[14px] font-extrabold shadow-[0_10px_25px_rgba(198,160,246,0.35)] hover:shadow-[0_15px_35px_rgba(198,160,246,0.45)] transition-all flex items-center" 
-					onClick={onRegenerate}
-				>
-					<RefreshCw className="w-4 h-4 mr-2.5 text-gray-900/70" />
-					Regenerate
-				</motion.button>
 
 				<motion.button 
 					whileHover={!saved ? { y: -2, scale: 1.02 } : undefined}
@@ -496,6 +479,19 @@ const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result
 							isLast={index === days.length - 1} 
 						/>
 					))}
+				</div>
+
+				<div className="no-print mt-10 flex justify-center">
+					<motion.button
+						whileHover={{ y: -2, scale: 1.02 }}
+						whileTap={{ scale: 0.98 }}
+						transition={{ duration: 0.1 }}
+						className="h-12 px-7 rounded-2xl bg-gradient-to-br from-[#D9C4FF] to-[#C6A0F6] text-gray-900 text-[14px] font-extrabold shadow-[0_10px_25px_rgba(198,160,246,0.35)] hover:shadow-[0_15px_35px_rgba(198,160,246,0.45)] transition-all flex items-center"
+						onClick={onRegenerate}
+					>
+						<RefreshCw className="w-4 h-4 mr-2.5 text-gray-900/70" />
+						Regenerate this plan
+					</motion.button>
 				</div>
 			</div>
 

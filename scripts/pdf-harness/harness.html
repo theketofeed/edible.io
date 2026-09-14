@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>PDF Export Harness</title>
+<style>
+  body { font-family: system-ui, -apple-system, sans-serif; background: #f3f4f6; }
+  .note { font-size: 12px; padding: 4px 16px; color: #888; }
+  .pdf-export-container { background: white !important; width: 100%; }
+  .pdf-only { position: fixed; left: -10000px; top: 0; width: var(--pdf-width, 800px) !important; z-index: -100; }
+  .pdf-export-mode.pdf-only {
+    position: relative !important; left: 0 !important; z-index: 9999 !important;
+    visibility: visible !important; display: block !important; width: var(--pdf-width, 800px) !important;
+    margin: 0 !important;
+  }
+  .pdf-only, .pdf-export-mode.pdf-only { box-sizing: border-box !important; }
+  .pdf-page-break { page-break-before: always; break-before: page; }
+  .pdf-avoid-break { page-break-inside: avoid; break-inside: avoid; }
+
+  .p-12 { padding: 3rem; } .p-8 { padding: 2rem; } .p-6 { padding: 1.5rem; } .py-2 { padding-top: .5rem; padding-bottom: .5rem; }
+  .bg-white { background: #fff; } .text-gray-900 { color: #111827; }
+  .w-\[800px\] { width: 800px; }
+  .mb-12 { margin-bottom: 3rem; } .mb-10 { margin-bottom: 2.5rem; } .mb-8 { margin-bottom: 2rem; } .mb-6 { margin-bottom: 1.5rem; }
+  .pb-6 { padding-bottom: 1.5rem; } .pb-8 { padding-bottom: 2rem; } .pt-8 { padding-top: 2rem; } .mt-16 { margin-top: 4rem; } .mt-1 { margin-top: 0.25rem; } .pt-1 { padding-top: 0.25rem; }
+  .w-full { width: 100%; } .h-full { height: 100%; } .w-1 { width: 0.25rem; } .h-6 { height: 1.5rem; } .h-\[260px\] { height: 260px; }
+  .rounded-\[2rem\] { border-radius: 2rem; } .overflow-hidden { overflow: hidden; }
+  .border { border: 1px solid #f3f4f6; } .border-b-2 { border-bottom-width: 2px; } .border-b { border-bottom: 1px solid #f3f4f6; } .border-t { border-top: 1px solid #f3f4f6; }
+  .border-purple-100 { border-color: #f3e8ff; } .border-purple-100\/50 { border-color: rgba(243,232,255,.5); } .border-gray-50 { border-color: #f9fafb; } .border-gray-100 { border-color: #f3f4f6; }
+  .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+  .text-2xl { font-size: 1.5rem; } .text-4xl { font-size: 2.25rem; } .text-xl { font-size: 1.25rem; }
+  .text-sm { font-size: .875rem; } .text-\[10px\] { font-size: 10px; } .text-\[11px\] { font-size: 11px; } .text-\[9px\] { font-size: 9px; }
+  .font-black { font-weight: 900; } .font-bold { font-weight: 700; } .font-medium { font-weight: 500; }
+  .tracking-tight { letter-spacing: -0.025em; } .tracking-wide { letter-spacing: .025em; } .tracking-widest { letter-spacing: .1em; }
+  .leading-none { line-height: 1; } .leading-tight { line-height: 1.25; } .leading-relaxed { line-height: 1.625; }
+  .uppercase { text-transform: uppercase; } .italic { font-style: italic; }
+  .text-gray-400 { color: #9ca3af; } .text-gray-500 { color: #6b7280; } .text-gray-700 { color: #374151; }
+  .text-purple-600 { color: #9333ea; }
+  .text-center { text-align: center; }
+  .flex { display: flex; } .items-center { align-items: center; } .items-end { align-items: flex-end; } .items-baseline { align-items: baseline; }
+  .justify-between { justify-content: space-between; }
+  .gap-3 { gap: .75rem; } .gap-4 { gap: 1rem; } .gap-5 { gap: 1.25rem; } .gap-8 { gap: 2rem; } .gap-12 { gap: 3rem; }
+  .space-y-3 > * + * { margin-top: .75rem; } .space-y-4 > * + * { margin-top: 1rem; } .space-y-6 > * + * { margin-top: 1.5rem; }
+  .grid { display: grid; } .grid-cols-1 { grid-template-columns: 1fr; } .grid-cols-4 { grid-template-columns: repeat(4,1fr); }
+  .bg-gray-50 { background: #f9fafb; } .bg-purple-50 { background: #faf5ff; } .bg-purple-200 { background: #e9d5ff; }
+  .bg-purple-500 { background: #a855f7; }
+  .bg-purple-50\/50 { background: rgba(250,245,255,.5); }
+  .rounded-2xl { border-radius: 1rem; } .rounded-lg { border-radius: .5rem; } .rounded-full { border-radius: 9999px; }
+  .box-border { box-sizing: border-box; } .flex-shrink-0 { flex-shrink: 0; }
+  .w-1\.5 { width: .375rem; } .h-1\.5 { height: .375rem; } .w-8 { width: 2rem; } .h-8 { height: 2rem; }
+  .w-5 { width: 1.25rem; } .h-5 { height: 1.25rem; } .whitespace-nowrap { white-space: nowrap; }
+  .object-cover { object-fit: cover; } .text-right { text-align: right; }
+</style>
+</head>
+<body>
+<div class="note">PDF Export Harness</div>
+<div id="log" style="font:12px monospace;padding:0 16px;color:#888"></div>
+<button id="run" onclick="window.__runAuto()">Run export</button>
+<div id="config" data-recipe="real" data-opts='{"dataurl":true,"waitMs":800}' data-img="1" data-imgurl="https://images.pexels.com/photos/36230654/pexels-photo-36230654.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" data-width="800"></div>
+<div id="app"></div>
+<div id="result" data-done="0" data-size data-error></div>
+
+<script src="/html2pdf.bundle.min.js"></script>
+<script>
+window.__logLines = []
+function log(s) { window.__logLines.push(s); document.getElementById('log').textContent = window.__logLines.join('\n') }
+
+const PEXELS_URL = 'https://images.pexels.com/photos/25389774/pexels-photo-25389774.jpeg?auto=compress&cs=tinysrgb&h=650&w=940'
+
+function template(recipe, imageSrc) {
+  const times = `
+    <div class="flex gap-8 mb-6 pb-6 border-b border-gray-50">
+      <div class="flex items-center gap-3">
+        <div style="background:#fdba74;" class="w-5 h-5 rounded-lg"></div>
+        <div><p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Prep</p><p class="text-sm font-bold">${recipe.prepTime} min</p></div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div style="background:#6ee7b7;" class="w-5 h-5 rounded-lg"></div>
+        <div><p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Cook</p><p class="text-sm font-bold">${recipe.cookTime} min</p></div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div style="background:#c4b5fd;" class="w-5 h-5 rounded-lg"></div>
+        <div><p class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Total</p><p class="text-sm font-bold">${recipe.totalTime} min</p></div>
+      </div>
+    </div>`
+
+  const nutrition = recipe.nutrition ? `
+    <div class="bg-gray-50 rounded-2xl p-8 border border-gray-100 mb-10 w-full box-border">
+      <p class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-6">Nutrition Guide (per serving)</p>
+      <div class="grid grid-cols-4 gap-8 w-full">
+        <div class="text-center"><p class="text-2xl font-black text-gray-900 leading-none mb-1">${recipe.nutrition.calories}</p><p class="text-[11px] text-gray-500 font-bold uppercase tracking-tight">Calories</p></div>
+        <div class="text-center"><p class="text-2xl font-black text-gray-900 leading-none mb-1">${recipe.nutrition.protein}g</p><p class="text-[11px] text-gray-500 font-bold uppercase tracking-tight">Protein</p></div>
+        <div class="text-center"><p class="text-2xl font-black text-gray-900 leading-none mb-1">${recipe.nutrition.carbs}g</p><p class="text-[11px] text-gray-500 font-bold uppercase tracking-tight">Carbs</p></div>
+        <div class="text-center"><p class="text-2xl font-black text-gray-900 leading-none mb-1">${recipe.nutrition.fat}g</p><p class="text-[11px] text-gray-500 font-bold uppercase tracking-tight">Fat</p></div>
+      </div>
+    </div>` : ''
+
+  const ingredients = recipe.ingredients.map((ing, i) => `
+    <li key="${i}" class="flex gap-4 items-center py-2 border-b border-gray-50 pdf-avoid-break">
+      <div class="w-1.5 h-1.5 rounded-full bg-purple-200"></div>
+      <span class="text-gray-700 font-medium" style="overflow-wrap:break-word;">${ing}</span>
+    </li>`).join('')
+
+  const instructions = recipe.instructions.map((step, i) => `
+    <div key="${i}" class="flex gap-5 pdf-avoid-break">
+      <div class="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600 font-black text-sm flex-shrink-0">${i + 1}</div>
+      <p class="text-gray-700 leading-relaxed font-medium pt-1" style="overflow-wrap:break-word;">${step}</p>
+    </div>`).join('')
+
+  const tips = recipe.tips.map((tip) => `
+    <div class="bg-purple-50/50 p-6 rounded-2xl border border-purple-100/50 italic text-gray-700 font-medium pdf-avoid-break" style="overflow-wrap:break-word;">"${tip}"</div>`).join('')
+
+  return `
+  <div id="pdf" class="pdf-only pdf-export-container p-12 bg-white text-gray-900 w-[800px]">
+    <div class="pdf-avoid-break mb-8">
+      <div class="flex items-end justify-between border-b-2 border-purple-100 pb-6 mb-6 w-full">
+        <div>
+          <h2 class="text-2xl font-black tracking-tight leading-none flex whitespace-nowrap items-baseline">Edible</h2>
+          <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Personalized AI Chef</p>
+        </div>
+        <div class="text-right">
+          <p class="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">${recipe.dayName || 'Day 5'}</p>
+          <p class="text-sm font-black text-purple-600 uppercase tracking-tight">${recipe.mealType || 'Lunch'}</p>
+        </div>
+      </div>
+      <h1 class="text-4xl font-black text-gray-900 mb-6 leading-tight tracking-tight" style="overflow-wrap:break-word;">${recipe.title}</h1>
+      ${imageSrc ? `<div class="mb-6 rounded-[2rem] overflow-hidden h-[260px] border border-gray-100 shadow-sm">
+        <img id="pdf-img" src="${imageSrc}" alt="${recipe.title}" class="w-full h-full object-cover" />
+      </div>` : ''}
+    </div>
+
+    <div class="mb-6">${times}</div>
+
+    <div class="mb-8">
+      <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3"><div class="w-1 h-6 bg-purple-500 rounded-full"></div>Ingredients</h2>
+      <ul class="space-y-3">${ingredients}</ul>
+    </div>
+
+    <div class="pdf-page-break pt-8">
+      <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3"><div class="w-1 h-6 bg-purple-500 rounded-full"></div>Instructions</h2>
+      <div class="space-y-6">${instructions}</div>
+    </div>
+
+    <div class="pdf-page-break pt-8">
+      <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3"><div class="w-1 h-6 bg-purple-500 rounded-full"></div>Chef Tips</h2>
+      <div class="space-y-4">${tips}</div>
+    </div>
+
+    <div class="pdf-page-break pt-8">
+      <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3"><div class="w-1 h-6 bg-purple-500 rounded-full"></div>Nutrition</h2>
+      <div class="pdf-avoid-break">${nutrition}</div>
+      <div class="mt-8 pt-8 border-t border-gray-100 text-center">
+        <p class="text-sm text-gray-400 font-medium italic">Made with love by Edible. Your Personal AI Chef</p>
+      </div>
+    </div>
+  </div>`
+}
+
+function buildOpts(o) {
+  return {
+    margin: o.margin ?? 0.5,
+    filename: o.filename || 'out.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: {
+      scale: 2, useCORS: true, logging: false, letterRendering: true,
+      windowWidth: o.windowWidth ?? 800, scrollY: 0, scrollX: 0
+    },
+    jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+    pagebreak: { mode: o.pagebreakMode ?? ['avoid-all', 'css', 'legacy'] }
+  }
+}
+
+async function runExport(recipe, imageUrl, opts) {
+  document.getElementById('app').innerHTML = template(recipe, imageUrl)
+
+  let finalSrc = imageUrl
+  if (imageUrl && opts.dataurl) {
+    try {
+      const res = await fetch(imageUrl)
+      const blob = await res.blob()
+      finalSrc = await new Promise(resolve => {
+        const r = new FileReader()
+        r.onloadend = () => resolve(r.result)
+        r.readAsDataURL(blob)
+      })
+      log('[harness] image -> dataURL (' + finalSrc.length + ' chars)')
+    } catch (e) {
+      log('[harness] image -> dataURL FAILED: ' + e.message + ' — using raw URL')
+    }
+  }
+
+  const img = document.getElementById('pdf-img')
+  if (img && finalSrc !== imageUrl) img.src = finalSrc
+
+  if (opts.decode && img) {
+    try { await img.decode(); log('[harness] image decoded OK') }
+    catch (e) { log('[harness] img.decode failed: ' + e.message) }
+  }
+
+  const el = document.getElementById('pdf')
+  el.classList.add('pdf-export-mode')
+  await new Promise(r => setTimeout(r, opts.waitMs ?? 500))
+  log('[harness] element rect w=' + el.getBoundingClientRect().width + 'css var=' + getComputedStyle(document.documentElement).getPropertyValue('--pdf-width').trim())
+
+  const opt = buildOpts(opts)
+  try {
+    const worker = html2pdf().set(opt).from(el)
+    log('[harness] worker merged: windowWidth=' + worker.opt.html2canvas.windowWidth + ' pagebreak=' + JSON.stringify(worker.opt.pagebreak.mode))
+    const blob = await worker.output('blob')
+    el.classList.remove('pdf-export-mode')
+    log('[harness] PDF blob ' + blob.size + ' bytes · windowWidth ' + (worker.opt.html2canvas.windowWidth) + ' · pagebreak ' + JSON.stringify(worker.opt.pagebreak.mode) + ' · dataurl ' + !!opts.dataurl + ' · decode ' + !!opts.decode)
+    return { ok: true, size: blob.size, blob }
+  } catch (e) {
+    log('[harness] PDF FAILED: ' + e.message)
+    el.classList.remove('pdf-export-mode')
+    return { ok: false, error: e.message }
+  }
+}
+
+window.__runAuto = async function __runAuto() {
+  const cfg = document.getElementById('config')
+  document.getElementById('result').setAttribute('data-done', '0')
+  document.documentElement.style.setProperty('--pdf-width', (cfg.getAttribute('data-width') || '800') + 'px')
+  const recipe = RECIPES[cfg.getAttribute('data-recipe')]
+  const opts = JSON.parse(cfg.getAttribute('data-opts') || '{}')
+  const useImg = cfg.getAttribute('data-img') === '1'
+  const img = useImg ? (cfg.getAttribute('data-imgurl') || PEXELS_URL) : null
+  const r = await runExport(recipe, img, opts)
+  const res = document.getElementById('result')
+  res.setAttribute('data-done', '1')
+  if (r.ok) {
+    res.setAttribute('data-size', String(r.size))
+    res.setAttribute('data-error', '')
+    const buf = new Uint8Array(await r.blob.arrayBuffer())
+    let s = ''
+    for (let i = 0; i < buf.length; i += 0x8000) s += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000))
+    res.textContent = btoa(s)
+  } else {
+    res.setAttribute('data-size', '')
+    res.setAttribute('data-error', r.error)
+    res.textContent = ''
+  }
+}
+
+const RECIPES = {
+  real: {
+    title: 'Pan-Seared Chicken with Onion and Green Bean Medley',
+    dayName: 'Day 1', mealType: 'Dinner', prepTime: 15, cookTime: 20, totalTime: 35,
+    ingredients: [
+      '2 boneless, skinless chicken breasts', '1 tbsp olive oil',
+      '1 yellow onion, thinly sliced', '2 cups fresh green beans, trimmed', '3 cloves garlic, minced',
+    ],
+    instructions: [
+      'Season the chicken breasts with salt and pepper on both sides.',
+      'Heat olive oil in a large skillet over medium-high. Sear the chicken 5-6 minutes per side until golden and cooked to 165F, then rest on a plate.',
+      'In the same pan, sauté the onion until soft, add the green beans and garlic, and cook 4-5 minutes until crisp-tender.',
+      'Return the chicken to the pan, spoon the onion and green bean medley over the top, and serve warm.',
+    ],
+    tips: ['Let the chicken rest before slicing so the juices stay in.', 'Keep the green beans crisp-tender for the best texture.'],
+    nutrition: { calories: 390, protein: 46, carbs: 18, fat: 14 },
+  },
+  short: {
+    title: 'Garlic Butter Salmon',
+    dayName: 'Day 1', mealType: 'Dinner', prepTime: 10, cookTime: 15, totalTime: 25,
+    ingredients: ['2 (6 oz) salmon fillets', '2 tbsp butter', '3 cloves garlic, minced'],
+    instructions: [
+      'Pat the salmon fillets dry and season both sides with salt and pepper.',
+      'Heat butter in a skillet over medium-high, add garlic, and cook 30 seconds until fragrant.',
+      'Sear the salmon 4 minutes per side until golden and flaky.',
+      'Spoon the garlic butter over the fillets and serve.',
+    ],
+    tips: ['Use a heavy skillet for even browning and start the fish skin-side up first.'],
+    nutrition: { calories: 480, protein: 42, carbs: 2, fat: 32 },
+  },
+  long: {
+    title: 'Mediterranean Turkey Meatball Wrap with Tzatziki',
+    dayName: 'Day 5', mealType: 'Lunch', prepTime: 25, cookTime: 30, totalTime: 55,
+    ingredients: [
+      '1 lb ground turkey', '1/2 cup breadcrumbs', '1 large egg, beaten', '3 cloves garlic, minced',
+      '1/4 cup chopped fresh parsley', '1 tsp dried oregano', '1 tsp smoked paprika', '1/2 tsp ground cumin',
+      '1/2 tsp salt', '1/4 tsp black pepper', '2 tbsp olive oil', '4 large whole wheat wraps',
+      '1 cup Greek yogurt', '1/2 cucumber, grated and drained', '1 tbsp lemon juice', '1/4 cup crumbled feta',
+    ],
+    instructions: [
+      'In a large bowl combine the ground turkey, breadcrumbs, beaten egg, half the garlic, parsley, oregano, paprika, cumin, salt and pepper. Mix gently until just combined so the meatballs stay tender.',
+      'Scoop the mixture into 1.5-inch meatballs — about 16 total — and roll each between your palms to seal any cracks so they hold their shape while cooking.',
+      'Heat the olive oil in a wide skillet over medium heat. Working in two batches so the pan is not crowded, brown the meatballs for 5-6 minutes, turning occasionally until deeply golden, then remove to a plate.',
+      'Make the tzatziki while the meatballs rest: stir the yogurt, grated cucumber (squeezed very dry), remaining garlic, and lemon juice together with a pinch of salt in a small bowl, and chill it.',
+      'Return the first batch of meatballs to the pan, add 1/4 cup water, cover, and simmer 10 minutes until cooked through to 165F, glazing the meatballs in the sauce made from their juices.',
+      'Layering step: warm the wraps in a dry pan for 30 seconds per side, then spread a generous spoonful of tzatziki across each, leaving a 1-inch border at the edges.',
+      'Arrange 4 meatballs in a row down the centre of each wrap, then crumble the feta over the top and add a handful of crisp greens or sliced tomato if you have them on hand.',
+      'Fold the two short ends of the wrap inward over the filling first so the meatballs do not spill out, then roll tightly from the long edge into a firm cylinder.',
+      'Slice each wrap in half on a sharp diagonal and serve immediately with the remaining tzatziki for dipping.',
+    ],
+    tips: [
+      'Roll the turkey mixture into balls with lightly oiled palms to stop it sticking.',
+      'Grate the cucumber on the large holes and squeeze out as much water as possible — wet tzatziki thins out and slides off the wrap.',
+      'Cook the meatballs in two batches; crowding the pan lowers the heat and steams them instead of browning them.',
+      'Warm the wraps just before filling so they bend without cracking, and fold the ends in first so the filling stays put.',
+    ],
+    nutrition: { calories: 520, protein: 34, carbs: 48, fat: 21 },
+  }
+}
+</script>
+</body>
+</html>

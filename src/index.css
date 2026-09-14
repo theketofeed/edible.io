@@ -121,6 +121,59 @@ body {
 	}
 }
 
+/* PDF page behaviour and export styling */
+.pdf-export-container {
+    min-height: 100vh;
+    width: 800px;
+    max-width: 800px;
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.pdf-export-container *,
+.pdf-export-container p,
+.pdf-export-container li,
+.pdf-export-container span,
+.pdf-export-container h1,
+.pdf-export-container h2 {
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+.pdf-export-container .pdf-section {
+    page-break-before: always;
+    break-before: page;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    -webkit-column-break-inside: avoid;
+}
+
+.pdf-export-container .pdf-section-first {
+    page-break-before: auto;
+    break-before: auto;
+}
+
+.pdf-export-container .pdf-avoid-break {
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+.pdf-export-container .pdf-page-break {
+    page-break-before: always;
+    break-before: page;
+}
+
+.pdf-export-container .pdf-word-wrap {
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+@page {
+    size: Letter;
+    margin: 0.5in;
+}
+
 @layer utilities {
 	.bg-clip-text {
 		-webkit-background-clip: text;
@@ -391,4 +444,53 @@ body {
 
 .pdf-section {
     margin-bottom: 2rem;
+}
+
+@page {
+    size: Letter;
+    margin: 0.5in;
+}
+
+.pdf-export-container {
+    box-sizing: border-box;
+    width: 800px !important;
+    max-width: 800px;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.pdf-export-container section,
+.pdf-export-container .pdf-section {
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+.pdf-export-container h1,
+.pdf-export-container h2,
+.pdf-export-container h3,
+.pdf-export-container p,
+.pdf-export-container li,
+.pdf-export-container span,
+.pdf-export-container div {
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+.pdf-export-container li,
+.pdf-export-container .pdf-avoid-break,
+.pdf-export-container .bg-purple-50\/50,
+.pdf-export-container .rounded-2xl,
+.pdf-export-container .rounded-[2rem] {
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+.pdf-export-container .pdf-page-break,
+.pdf-export-container .pdf-section {
+    page-break-before: always;
+    break-before: page;
+}
+
+.pdf-export-container .pdf-section-first {
+    page-break-before: auto;
+    break-before: auto;
 }

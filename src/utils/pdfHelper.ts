@@ -6,6 +6,10 @@ interface PDFOptions {
 }
 
 export const downloadElementAsPDF = async (element: HTMLElement, options: PDFOptions) => {
+    const windowWidth = element.offsetWidth || 800
+    if (windowWidth !== 800) {
+        console.warn(`[PDF] export element rendered ${windowWidth}px wide (expected 800px) — windowWidth follows measured width to avoid clipping`)
+    }
     const opt = {
         margin: options.margin || 0.5,
         filename: options.filename,
@@ -15,7 +19,7 @@ export const downloadElementAsPDF = async (element: HTMLElement, options: PDFOpt
             useCORS: true,
             logging: true,
             letterRendering: true,
-            windowWidth: 800,
+            windowWidth,
             scrollY: 0,
             scrollX: 0
         },
@@ -33,6 +37,10 @@ export const downloadElementAsPDF = async (element: HTMLElement, options: PDFOpt
 };
 
 export const getElementAsPDFBlob = async (element: HTMLElement, filename: string): Promise<Blob | null> => {
+    const windowWidth = element.offsetWidth || 800
+    if (windowWidth !== 800) {
+        console.warn(`[PDF] export element rendered ${windowWidth}px wide (expected 800px) — windowWidth follows measured width to avoid clipping`)
+    }
     const opt = {
         margin: 0.5,
         filename: filename,
@@ -42,9 +50,12 @@ export const getElementAsPDFBlob = async (element: HTMLElement, filename: string
             useCORS: true,
             logging: false,
             letterRendering: true,
-            windowWidth: 800
+            windowWidth,
+            scrollY: 0,
+            scrollX: 0
         },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' as const }
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' as const },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
     };
 
     try {
