@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, memo, type ElementType } from 'react'
-import { Download, FileArchive } from 'lucide-react'
+import { Camera, Download, FileArchive, FileText, FileUp, Receipt, Upload } from 'lucide-react'
 import IPhoneMockup from './IPhoneMockup'
 import Loading from './Loading'
 import DietSelector from './DietSelector'
@@ -68,17 +68,17 @@ const STATIC_PREVIEW_DAYS = [
 function DietSelectorPreview() {
 	const previewDiet: DietType = 'Balanced'
 	return (
-		<div className="h-full w-full overflow-hidden bg-white px-6 pt-14 pb-10">
-			<div className="origin-top-left" style={{ width: '114.3%', transform: 'scale(0.875)' }}>
+		<div className="h-full w-full overflow-hidden bg-white px-7 pt-14 pb-8">
+			<div className="origin-top-left" style={{ width: '128.2%', transform: 'scale(0.78)' }}>
 				<DietSelector value={previewDiet} onChange={() => undefined} disabled />
-				<div className="border-t border-gray-200 pt-5">
+				<div className="border-t border-gray-200 pt-4">
 					<h2 className="text-lg font-bold text-gray-900 mb-1.5">Select your plan duration</h2>
-					<p className="text-sm text-gray-500 font-medium mb-4">Choose how long you want your meal plan to last</p>
+					<p className="text-sm text-gray-500 font-medium mb-3">Choose how long you want your meal plan to last</p>
 					<select disabled value="3" aria-label="Plan duration" className="w-full px-3.5 py-2.5 rounded-xl border-2 border-gray-200 text-sm font-semibold text-gray-900 bg-white">
 						<option value="3">3 days</option>
 					</select>
 					<p className="text-xs text-gray-400 font-medium mt-2">Add more items to your list to unlock longer plans</p>
-					<button type="button" disabled className="mt-5 px-6 py-3 rounded-lg font-semibold bg-[#C6A0F6] text-white">Generate Plan</button>
+					<button type="button" disabled className="mt-4 px-6 py-3 rounded-lg text-base font-semibold bg-[#C6A0F6] text-white">Generate Plan</button>
 				</div>
 			</div>
 		</div>
@@ -128,6 +128,51 @@ function MealPlanPreview({ days }: { days: typeof STATIC_PREVIEW_DAYS }) {
 	)
 }
 
+function UploadPreview() {
+	return (
+		<div className="h-full w-full overflow-hidden bg-purple-50 px-3 pt-16 pb-4">
+			<div className="origin-top-left" style={{ width: '121.95%', transform: 'scale(0.82)' }}>
+				<div className="rounded-3xl bg-white p-5 shadow-[0_8px_24px_rgba(124,58,237,0.08)]">
+					<div className="flex items-center gap-2.5 mb-5">
+						<FileText className="w-5 h-5 shrink-0 text-purple-400" strokeWidth={2} />
+						<h2 className="text-base font-bold text-gray-900">Paste your grocery list:</h2>
+					</div>
+					<div className="h-28 rounded-2xl border-2 border-gray-200 bg-white px-4 py-4 text-sm leading-relaxed text-gray-400">
+						e.g., chicken breast, quinoa, spinach, eggs, yogurt, berries...
+					</div>
+					<button type="button" disabled className="mt-4 h-10 w-full rounded-full bg-purple-300 text-sm font-bold text-gray-700 shadow-[0_6px_16px_rgba(168,85,247,0.2)]">
+						Use this text
+					</button>
+
+					<div className="my-7 border-t border-gray-200" />
+
+					<div className="flex items-center gap-2.5 mb-4">
+						<Receipt className="w-5 h-5 shrink-0 text-purple-400" strokeWidth={2} />
+						<h2 className="text-base font-bold text-gray-900">Or upload a receipt photo:</h2>
+					</div>
+					<div className="rounded-2xl border-2 border-dashed border-gray-300 px-4 py-6 text-center">
+						<div className="relative mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-50">
+							<FileText className="h-7 w-7 text-purple-400" strokeWidth={1.8} />
+							<Upload className="absolute h-4 w-4 translate-x-4 translate-y-4 rounded-full bg-purple-400 p-0.5 text-white" strokeWidth={2.5} />
+						</div>
+						<h3 className="text-sm font-bold leading-tight text-gray-900">Upload your grocery receipt or shopping list</h3>
+						<p className="mt-1.5 text-[11px] font-medium leading-relaxed text-gray-500">JPG, PNG, PDF supported</p>
+						<div className="mt-4 grid gap-3">
+							<button type="button" disabled className="flex h-9 items-center justify-center gap-2 rounded-full bg-purple-300 text-xs font-bold text-gray-900">
+								<FileUp className="h-4 w-4" /> Choose File
+							</button>
+							<button type="button" disabled className="flex h-9 items-center justify-center gap-2 rounded-full border-2 border-purple-200 text-xs font-bold text-gray-900">
+								<Camera className="h-4 w-4" /> Take Photo
+							</button>
+						</div>
+						<p className="mt-4 text-[11px] font-medium text-gray-500">Tip: Upload a clear photo</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	)
+}
+
 function ScreenPlaceholder({ step, previewDays }: { step: number; previewDays: typeof STATIC_PREVIEW_DAYS }) {
 	if (step === 3) return (
 		<div className="h-full w-full flex items-center justify-center bg-purple-50 px-4 py-12">
@@ -138,9 +183,7 @@ function ScreenPlaceholder({ step, previewDays }: { step: number; previewDays: t
 	)
 	if (step === 2) return <DietSelectorPreview />
 	if (step === 4) return <MealPlanPreview days={previewDays} />
-	if (SCREEN_ASSETS[step]) {
-		return <img src={SCREEN_ASSETS[step]} alt="" className="block w-full h-full object-contain" />
-	}
+	if (step === 1) return <UploadPreview />
 
 	const slot = SCREEN_SLOTS[step - 1]
 	return (
@@ -170,7 +213,7 @@ function StepBlock({
 		<div
 			ref={stepRef}
 			data-step={index}
-			className="min-h-0 md:min-h-screen flex flex-col justify-center pt-4 pb-8 md:py-0"
+			className={`min-h-0 md:min-h-screen flex flex-col justify-center pt-4 pb-8 md:py-0 ${index === 0 ? 'mt-6 md:mt-10' : ''}`}
 		>
 			<div className="max-w-md">
 				{/* Eyebrow */}
@@ -185,9 +228,6 @@ function StepBlock({
 				<div className="flex items-baseline gap-4 mb-4">
 					<span className="text-5xl md:text-6xl font-black text-purple-200 leading-none select-none">
 						{step.number}
-					</span>
-					<span className="text-lg font-black text-gray-900 uppercase tracking-tight">
-						{step.label}
 					</span>
 				</div>
 

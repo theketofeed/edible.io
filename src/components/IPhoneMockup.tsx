@@ -12,13 +12,13 @@ interface IPhoneMockupProps {
 
 const IPhoneMockup = memo(function IPhoneMockup({ children, time = '9:41', className = '' }: IPhoneMockupProps) {
 	return (
-		<div className={`iphone-mockup ${className}`} style={{ aspectRatio: '393 / 852', width: '100%', maxWidth: 393, position: 'relative', borderRadius: 55, border: `9px solid ${FRAME_COLOR}`, background: FRAME_COLOR, boxShadow: '0 2px 0 rgba(255,255,255,0.04) inset, 0 30px 60px -20px rgba(0,0,0,0.45)', overflow: 'visible' }}>
+		<div className={`iphone-mockup ${className}`} style={{ aspectRatio: '393 / 760', width: '100%', maxWidth: 393, position: 'relative', borderRadius: 48, border: `9px solid ${FRAME_COLOR}`, background: FRAME_COLOR, boxShadow: '0 2px 0 rgba(255,255,255,0.04) inset, 0 30px 60px -20px rgba(0,0,0,0.45)', overflow: 'visible' }}>
 			<SideButton top="16%" height="7%" side="left" />
 			<SideButton top="25%" height="11%" side="left" />
 			<SideButton top="38%" height="11%" side="left" />
 			<SideButton top="22%" height="14%" side="right" />
 
-			<div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: 46, overflow: 'hidden', background: '#F5F3FF' }}>
+			<div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: 39, overflow: 'hidden', background: '#F5F3FF' }}>
 				<StatusBar time={time} />
 				<div style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>{children}</div>
 				<div style={{ position: 'absolute', bottom: '1.2%', left: '50%', transform: 'translateX(-50%)', width: '36%', height: 5, borderRadius: 3, background: 'rgba(0,0,0,0.35)' }} />
