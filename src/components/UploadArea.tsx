@@ -206,7 +206,7 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 
 	return (
 		<div className="grid gap-5 sm:gap-6">
-			{/* Manual Text Input Section — now primary, shown first */}
+			{/* Manual Text Input Section: now primary, shown first */}
 			<div className="grid gap-3">
 				<label className="text-sm font-semibold text-black/80 flex items-center gap-2">
 					<FileText className="w-4 h-4 text-lavender" strokeWidth={2} />
@@ -236,7 +236,7 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 				</div>
 			</div>
 
-			{/* Receipt Upload Section — now secondary, shown below */}
+			{/* Receipt Upload Section: now secondary, shown below */}
 			<div className="grid gap-3 pt-4 sm:pt-6 border-t border-gray-200/50">
 				<label className="text-sm font-semibold text-black/80 flex items-center gap-2">
 					<Receipt className="w-4 h-4 text-lavender" strokeWidth={2} />

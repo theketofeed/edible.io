@@ -161,7 +161,7 @@ useEffect(() => {
 
 	return (
 		<div
-			className="group w-full cursor-pointer flex flex-row items-center gap-4 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50/60 transition-colors duration-200"
+			className="group w-full cursor-pointer flex flex-row items-center gap-4 px-3.5 py-3.5 bg-white rounded-2xl border border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.10)] hover:border-gray-300 hover:-translate-y-0.5 transition-all duration-300"
 			role="button"
 			tabIndex={0}
 			onClick={() => onNavigate(dayIndex, mealType, meal)}
@@ -237,8 +237,8 @@ const DayCard = memo(function DayCard({
 					</div>
 				</div>
 
-				{/* Card Content */}
-				<div className="flex-1 flex flex-col space-y-5 w-full bg-white p-6 md:p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgba(0,0,0,0.03)] border border-gray-100/50 hover:shadow-[0_12px_45px_rgba(0,0,0,0.05)] transition-all duration-500">
+				{/* Day section: meals carry the individual card treatment. */}
+				<div className="flex-1 flex flex-col space-y-5 w-full">
 					<div className="flex items-center justify-between">
 						<h2 className="text-[20px] font-black text-gray-900 tracking-tight">
 							{day.day}

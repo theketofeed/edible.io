@@ -85,10 +85,10 @@ const PricingSection = memo(function PricingSection({ onAuthRequired, headingLev
           </div>
         </div>
 
-        {/* Plan Cards — 2 columns */}
+        {/* Plan Cards: 2 columns */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 items-stretch max-w-3xl mx-auto">
 
-          {/* Pro — highlighted */}
+          {/* Pro: highlighted */}
           <div className="rounded-3xl p-6 sm:p-7 flex flex-col relative overflow-hidden bg-gradient-to-b from-purple-600 to-purple-700 shadow-2xl shadow-purple-500/20">
             {/* Most Popular badge */}
             <div className="absolute -top-px left-0 right-0 flex justify-center">

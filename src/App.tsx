@@ -243,7 +243,7 @@ function MainContent() {
 			setResult(plan)
 
 			// PLAN_GENERATED_SUCCESS is already fired inside mealPlanGenerator.ts
-			// with { diet, duration } — no duplicate needed here.
+			// with { diet, duration }; no duplicate needed here.
 
 			// Increment generation count for free users AFTER successful generation
 			await incrementGenerationCount()

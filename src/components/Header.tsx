@@ -33,7 +33,7 @@ const Header = memo(function Header({ onAuthClick, onOpenProfile }: HeaderProps)
 			<div className="fixed inset-0 -z-10 w-full h-screen bg-purple-50"></div>
 
 			{/* Floating Pill Header */}
-			<header className="sticky top-0 z-50 mx-3 sm:mx-4 mt-3 sm:mt-4 rounded-full bg-white/70 backdrop-blur-md border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)] transition-all">
+			<header className="sticky top-0 z-[100] isolate mx-3 sm:mx-4 mt-3 sm:mt-4 rounded-full bg-white/70 backdrop-blur-md border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)] transition-all">
 				<nav className="flex items-center justify-between px-4 md:px-8 py-3 max-w-7xl mx-auto">
 
 					{/* Logo */}
@@ -44,7 +44,7 @@ const Header = memo(function Header({ onAuthClick, onOpenProfile }: HeaderProps)
 						</span>
 					</div>
 
-					{/* Desktop Nav — Centred Pill */}
+					{/* Desktop Nav: Centred Pill */}
 					<div className="hidden md:flex items-center gap-1 bg-gray-100/30 p-1 rounded-full border border-gray-200/20 absolute left-1/2 -translate-x-1/2 shadow-sm">
 						{navItems.map((item) => (
 							<a
