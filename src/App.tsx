@@ -533,16 +533,7 @@ function MainContent() {
 						onError={(error, info) => console.error('[RecipeView] Critical Error:', error, info)}
 						fallback={(error, reset) => <RecipeErrorFallback reset={reset} />}
 					>
-						<RecipeWrapper onBack={() => {
-							const fromDashboard = window.history.state?.usr?.fromDashboard
-							if (fromDashboard) {
-								navigate('/dashboard')
-							} else if (window.history.length > 2) {
-								navigate(-1)
-							} else {
-								navigate('/')
-							}
-						}} result={result} showToast={showToast} />
+						<RecipeWrapper result={result} showToast={showToast} />
 					</ErrorBoundary>
 				} />
 			<Route path="/dashboard" element={<EdibleDashboard />} />
@@ -565,8 +556,6 @@ function MainContent() {
 
 function RecipeErrorFallback({ reset }: { reset: () => void }) {
 	const navigate = useNavigate()
-	const location = useLocation()
-	const fromDashboard = location.state?.fromDashboard
 
 	return (
 		<div className="flex-1 flex flex-col items-center justify-center py-20 px-4 text-center">
@@ -581,20 +570,19 @@ function RecipeErrorFallback({ reset }: { reset: () => void }) {
 				<button
 					onClick={() => {
 						reset()
-						navigate(fromDashboard ? '/dashboard' : '/')
+						navigate('/dashboard')
 					}}
 					className="px-6 py-3 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-all flex items-center gap-2"
 				>
 					<ArrowLeft className="w-5 h-5" />
-					{fromDashboard ? 'Back to Dashboard' : 'Back to Meal Plan'}
+					Back to Dashboard
 				</button>
 			</div>
 		</div>
 	)
 }
 
-function RecipeWrapper({ onBack, result, showToast }: {
-	onBack: () => void,
+function RecipeWrapper({ result, showToast }: {
 	result: MealPlanResult | null,
 	showToast: (type: ToastKind, message: string) => void
 }) {
@@ -603,12 +591,11 @@ function RecipeWrapper({ onBack, result, showToast }: {
 	const navigate = useNavigate()
 
 	const handleBack = () => {
-		if (location.state?.fromDashboard) {
-			navigate('/dashboard')
-		} else if (window.history.length > 2) {
+		const historyIndex = window.history.state?.idx
+		if (typeof historyIndex === 'number' && historyIndex > 0) {
 			navigate(-1)
 		} else {
-			navigate('/')
+			navigate('/dashboard')
 		}
 	}
 
@@ -643,7 +630,7 @@ function RecipeWrapper({ onBack, result, showToast }: {
 					We couldn't find the recipe you're looking for. This can happen if the link is outdated or incorrect.
 				</p>
 				<button
-					onClick={onBack}
+					onClick={() => navigate('/dashboard')}
 					className="px-6 py-3 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-all"
 				>
 					Back to Home
@@ -658,7 +645,7 @@ function RecipeWrapper({ onBack, result, showToast }: {
 			mealType={(mealType as any) || 'Breakfast'}
 			dayName={`Day ${parsedDayIndex + 1}`}
 			onBack={handleBack}
-			backLabel={location.state?.fromDashboard ? "Back to Dashboard" : "Back to Meal Plan"}
+			backLabel="Back"
 			showToast={showToast}
 		/>
 	)
