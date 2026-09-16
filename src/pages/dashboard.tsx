@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 import {
   LayoutDashboard, Calendar, BookmarkCheck, Heart, Sparkles,
   User, LogOut, ChevronRight, Plus, Search, Bell, Trash2,
@@ -39,6 +39,17 @@ const C = {
 type DietKey = "All" | "Balanced" | "Keto" | "Vegan" | "High-Protein" | "Mediterranean" | "Vegetarian" | "Paleo"
 type UserData = { name: string; email: string; joined: string; avatarUrl?: string }
 const DEFAULT_USER_DATA: UserData = { name: "User", email: "user@edible.pro", joined: "2026" }
+
+// Dashboard data is fetched from Supabase on mount. Navigating /dashboard -> /recipe -> /dashboard
+// remounts this page, which re-fires every fetch and reads as a full page reload. Cache fetched data
+// per user (module-level, session lifetime) and re-render it instantly on revisit while refetching in
+// the background, so returning never flashes spinners from scratch.
+interface DashboardCacheEntry {
+  userData: UserData | null
+  plans: Plan[] | null
+  savedRecipes: SavedRecipe[] | null
+}
+const dashboardCache: Record<string, DashboardCacheEntry> = {}
 const DIET: Record<DietKey, { icon: React.ElementType; col: string; bg: string }> = {
   All: { icon: Sparkles, col: C.purple, bg: "#F5F3FF" },
   Balanced: { icon: Scale, col: "#16a34a", bg: "#F0FDF4" },
@@ -796,6 +807,7 @@ interface MealPlannerProps { plans: Plan[] }
 
 function MealPlanner({ plans, selectedPlanId }: MealPlannerProps & { selectedPlanId: string | null }) {
   const navigate = useNavigate()
+  const location = useLocation()
   const selectedPlan = plans.find(p => p.id === selectedPlanId) || plans[0] || null
   const startDate = selectedPlan?.activatedAt ? new Date(selectedPlan.activatedAt) : new Date()
   const todayIdx = getToday(startDate)
@@ -874,7 +886,7 @@ function MealPlanner({ plans, selectedPlanId }: MealPlannerProps & { selectedPla
                   position: "relative"
                 }}>
                 <div style={{ display: 'flex', gap: 12, alignItems: 'center', flex: 1, cursor: m.rawMeal ? 'pointer' : 'default', minWidth: 0 }}
-                  onClick={() => { if (m.rawMeal) navigate(`/recipe/${day}/${m.type}`, { state: { meal: m.rawMeal, fromDashboard: true } }) }}
+                  onClick={() => { if (m.rawMeal) navigate(`/recipe/${day}/${m.type}`, { state: { meal: m.rawMeal, fromDashboard: true, from: location.pathname } }) }}
                   onMouseEnter={e => { if (m.rawMeal) (e.currentTarget as HTMLElement).style.opacity = '0.85' }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}>
                   <MealImage name={m.name} type={m.type} imageUrl={(m as any).imageUrl} />
@@ -963,6 +975,7 @@ interface SavedPlansProps {
 
 function SavedPlans({ plans, activePlanId, onActivatePlan, onDeletePlan, onNav }: SavedPlansProps) {
   const navigate = useNavigate()
+  const location = useLocation()
   const [filter, setFilter] = useState<DietKey>("All")
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [expandedPlanId, setExpandedPlanId] = useState<string | null>(null)
@@ -1116,7 +1129,7 @@ function SavedPlans({ plans, activePlanId, onActivatePlan, onDeletePlan, onNav }
                             { label: "Lunch", meal: d.L },
                             { label: "Dinner", meal: d.D }
                           ].map((m, i) => (
-                            <div key={i} onClick={() => { if(m.meal.rawMeal) navigate(`/recipe/${dIdx}/${m.label}`, { state: { meal: m.meal.rawMeal, fromDashboard: true } }) }}
+                            <div key={i} onClick={() => { if(m.meal.rawMeal) navigate(`/recipe/${dIdx}/${m.label}`, { state: { meal: m.meal.rawMeal, fromDashboard: true, from: location.pathname } }) }}
                               style={{
                                 display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: C.white,
                                 borderRadius: 10, border: `1px solid ${C.cardBdr}`, cursor: m.meal.rawMeal ? "pointer" : "default", transition: "all .15s"
@@ -1243,6 +1256,7 @@ interface SavedRecipesProps { recipes: Recipe[] }
 
 function RecipeCard({ r, hidden, onHide }: { r: Recipe, hidden: boolean, onHide: (e: React.MouseEvent) => void }) {
   const navigate = useNavigate()
+  const location = useLocation()
   const [imageUrl, setImageUrl] = useState<string | null>(null)
 
   useEffect(() => {
@@ -1257,7 +1271,7 @@ function RecipeCard({ r, hidden, onHide }: { r: Recipe, hidden: boolean, onHide:
   const Icon = icons[r.type] || Sparkles
 
   return (
-    <div onClick={() => { if(r.rawMeal) navigate(`/recipe/0/${r.type}`, { state: { meal: r.rawMeal, fromDashboard: true } }) }}
+    <div onClick={() => { if(r.rawMeal) navigate(`/recipe/0/${r.type}`, { state: { meal: r.rawMeal, fromDashboard: true, from: location.pathname } }) }}
       style={{
         background: C.white, borderRadius: 20, border: "none", display: "flex", gap: 16, alignItems: "center",
         padding: "16px", cursor: r.rawMeal ? "pointer" : "default", transition: "all .25s cubic-bezier(0.2, 0.8, 0.2, 1)",
@@ -1666,33 +1680,39 @@ export default function EdibleDashboard() {
   useEffect(() => {
     const fetchUserData = async () => {
       if (!user || authLoading) return
-      try {
+      const cached = dashboardCache[user.id]
+      if (cached?.userData) {
+        setUserData(cached.userData)
+      } else {
         setIsLoadingUser(true)
+      }
+      try {
         const profile = await getProfile()
         const avatarUrl = user.user_metadata?.avatar_url as string | undefined
-        if (profile) {
-          setUserData({
-            name: user.user_metadata?.full_name || profile.name || user.email?.split('@')[0] || 'User',
-            email: profile.email || user.email || '',
-            joined: profile.joined || new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-            avatarUrl,
-          })
-        } else {
-          setUserData({
-            name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-            email: user.email || '',
-            joined: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-            avatarUrl: user.user_metadata?.avatar_url as string | undefined,
-          })
-        }
+        const nextUserData: UserData = profile
+          ? {
+              name: user.user_metadata?.full_name || profile.name || user.email?.split('@')[0] || 'User',
+              email: profile.email || user.email || '',
+              joined: profile.joined || new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+              avatarUrl,
+            }
+          : {
+              name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+              email: user.email || '',
+              joined: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+              avatarUrl: user.user_metadata?.avatar_url as string | undefined,
+            }
+        dashboardCache[user.id] = { ...dashboardCache[user.id], userData: nextUserData }
+        setUserData(nextUserData)
       } catch (error) {
         console.error('Failed to load user profile:', error)
-        setUserData({
+        const fallbackUserData: UserData = {
           name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
           email: user.email || '',
           joined: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
           avatarUrl: user.user_metadata?.avatar_url as string | undefined,
-        })
+        }
+        setUserData(fallbackUserData)
       } finally {
         setIsLoadingUser(false)
       }
@@ -1705,8 +1725,19 @@ export default function EdibleDashboard() {
   useEffect(() => {
     const fetchPlans = async () => {
       if (!user || authLoading) return
-      try {
+      const cached = dashboardCache[user.id]
+      if (cached?.plans) {
+        setPlans(cached.plans)
+        if (cached.plans.length > 0 && !selectedPlanId) {
+          const mostRecentlyActivated = [...cached.plans].sort((a, b) =>
+            new Date(b.activatedAt).getTime() - new Date(a.activatedAt).getTime()
+          )[0]
+          setSelectedPlanId(mostRecentlyActivated.id)
+        }
+      } else {
         setIsLoadingPlans(true)
+      }
+      try {
         const mealPlans = await getUserMealPlans()
 
         // Transform Supabase meal plans to dashboard format
@@ -1730,6 +1761,7 @@ export default function EdibleDashboard() {
           }
         })
 
+        dashboardCache[user.id] = { ...dashboardCache[user.id], plans: transformedPlans }
         setPlans(transformedPlans)
         if (transformedPlans.length > 0 && !selectedPlanId) {
           const mostRecentlyActivated = [...transformedPlans].sort((a, b) =>
@@ -1774,9 +1806,15 @@ export default function EdibleDashboard() {
   useEffect(() => {
     const fetchSaved = async () => {
       if (!user || authLoading) return
-      try {
+      const cached = dashboardCache[user.id]
+      if (cached?.savedRecipes) {
+        setSavedRecipes(cached.savedRecipes)
+      } else {
         setIsLoadingSaved(true)
+      }
+      try {
         const recipes = await getUserSavedRecipes()
+        dashboardCache[user.id] = { ...dashboardCache[user.id], savedRecipes: recipes }
         setSavedRecipes(recipes)
       } catch (error) {
         console.error('Failed to load saved recipes:', error)

@@ -2,7 +2,7 @@ import { forwardRef, memo, useMemo, useEffect, useState, useCallback } from 'rea
 import { track, Events } from '../lib/analytics'
 import { Download, RefreshCw, ChevronRight, X, Bookmark, Check, Save } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import type { MealPlanResult, DayMeals, Meal } from '../utils/types'
 import { fetchMealImage, fetchMealImages, sessionCache, titleToKey } from '../lib/mealImages'
 import { useAuth } from '../context/AuthContext'
@@ -276,6 +276,7 @@ const DayCard = memo(function DayCard({
 
 const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result, onDownload, onRegenerate, setAuthOpen, showToast, onUpgradeRequired }, ref) {
 	const navigate = useNavigate()
+	const location = useLocation()
 	const { user } = useAuth()
 	const { canExportPDF } = usePlan()
 	const [showSaveModal, setShowSaveModal] = useState(false)
@@ -287,7 +288,7 @@ const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result
 	const days = useMemo(() => result.days, [result.days])
 
 	const handleNavigate = (dayIndex: number, mealType: string, meal: Meal) => {
-		navigate(`/recipe/${dayIndex}/${mealType}`, { state: { meal } })
+		navigate(`/recipe/${dayIndex}/${mealType}`, { state: { meal, from: location.pathname } })
 	}
 
 	const handleSavePlanClick = useCallback(() => {

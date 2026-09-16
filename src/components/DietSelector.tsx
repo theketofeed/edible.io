@@ -31,6 +31,7 @@ interface Props {
 	value: DietType
 	onChange: (diet: DietType) => void
 	disabled?: boolean
+	compact?: boolean
 }
 
 // Memoized diet button with enhanced styling
@@ -39,13 +40,15 @@ const DietButton = memo(function DietButton({
 	isActive, 
 	onClick, 
 	disabled,
-	isPopular
+	isPopular,
+	compact
 }: { 
 	diet: DietType
 	isActive: boolean
 	onClick: (diet: DietType) => void
 	disabled?: boolean
 	isPopular?: boolean
+	compact?: boolean
 }) {
 	const handleClick = useCallback(() => onClick(diet), [diet, onClick])
 	const info = DIET_INFO[diet]
@@ -59,7 +62,7 @@ const DietButton = memo(function DietButton({
 			disabled={disabled}
 			className={`
 				flex flex-row items-center gap-2.5
-				px-4 py-2.5 md:px-5 md:py-3
+				px-4 py-2.5 ${compact ? '' : 'md:px-5 md:py-3'}
 				rounded-full border transition-all duration-300
 				${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:-translate-y-0.5'}
 			`}
@@ -83,23 +86,23 @@ const DietButton = memo(function DietButton({
 			>
 				<Icon size={14} style={{ color: isActive ? '#FFFFFF' : info.col }} />
 			</div>
-			<div className="text-[13px] md:text-sm font-bold tracking-wide" style={{ color: isActive ? '#FFFFFF' : '#111827' }}>
+			<div className={`text-[13px] ${compact ? '' : 'md:text-sm'} font-bold tracking-wide`} style={{ color: isActive ? '#FFFFFF' : '#111827' }}>
                 {diet}
             </div>
 		</button>
 	)
 })
 
-const DietSelector = memo(function DietSelector({ value, onChange, disabled }: Props) {
+const DietSelector = memo(function DietSelector({ value, onChange, disabled, compact = false }: Props) {
 	const handleChange = useCallback((diet: DietType) => {
 		onChange(diet)
 	}, [onChange])
 	
 	return (
-		<div className="py-6 md:py-8">
+		<div className={`py-6 ${compact ? '' : 'md:py-8'}`}>
 			{/* Section Header */}
-			<div className="mb-5 md:mb-6">
-				<h2 className="text-lg md:text-2xl font-bold text-gray-900 mb-1.5 md:mb-2">
+			<div className={`mb-5 ${compact ? '' : 'md:mb-6'}`}>
+				<h2 className={`text-lg ${compact ? '' : 'md:text-2xl'} font-bold text-gray-900 mb-1.5 ${compact ? '' : 'md:mb-2'}`}>
 					Select your preferred diet
 				</h2>
 				<p className="text-sm text-gray-500 font-medium">
@@ -110,11 +113,11 @@ const DietSelector = memo(function DietSelector({ value, onChange, disabled }: P
 			{/* Popular Diets Row */}
 			<div className="mb-5">
 				<div className="mb-3 flex items-center gap-2">
-					<span className="inline-block px-2.5 py-1 bg-purple-50 text-purple-600 rounded-full text-[10px] md:text-xs font-bold tracking-widest uppercase border border-purple-100/50">
+					<span className={`inline-block px-2.5 py-1 bg-purple-50 text-purple-600 rounded-full text-[10px] ${compact ? '' : 'md:text-xs'} font-bold tracking-widest uppercase border border-purple-100/50`}>
 						Most Popular
 					</span>
 				</div>
-				<div className="flex flex-wrap gap-2.5 md:gap-3">
+				<div className={`flex flex-wrap gap-2.5 ${compact ? '' : 'md:gap-3'}`}>
 					{POPULAR_DIETS.map((d) => (
 						<DietButton
 							key={d}
@@ -123,6 +126,7 @@ const DietSelector = memo(function DietSelector({ value, onChange, disabled }: P
 							onClick={handleChange}
 							disabled={disabled}
 							isPopular={true}
+							compact={compact}
 						/>
 					))}
 				</div>
@@ -130,7 +134,7 @@ const DietSelector = memo(function DietSelector({ value, onChange, disabled }: P
 
 			{/* Other Diets Row */}
 			<div>
-				<div className="flex flex-wrap gap-2.5 md:gap-3">
+				<div className={`flex flex-wrap gap-2.5 ${compact ? '' : 'md:gap-3'}`}>
 					{OTHER_DIETS.map((d) => (
 						<DietButton
 							key={d}
@@ -138,6 +142,7 @@ const DietSelector = memo(function DietSelector({ value, onChange, disabled }: P
 							isActive={d === value}
 							onClick={handleChange}
 							disabled={disabled}
+							compact={compact}
 						/>
 					))}
 				</div>

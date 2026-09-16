@@ -591,9 +591,9 @@ function RecipeWrapper({ result, showToast }: {
 	const navigate = useNavigate()
 
 	const handleBack = () => {
-		const historyIndex = window.history.state?.idx
-		if (typeof historyIndex === 'number' && historyIndex > 0) {
-			navigate(-1)
+		const from = (location.state as { from?: string } | null)?.from
+		if (typeof from === 'string' && from.length > 0) {
+			navigate(from)
 		} else {
 			navigate('/dashboard')
 		}

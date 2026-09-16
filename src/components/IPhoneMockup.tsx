@@ -12,7 +12,7 @@ interface IPhoneMockupProps {
 
 const IPhoneMockup = memo(function IPhoneMockup({ children, time = '9:41', className = '' }: IPhoneMockupProps) {
 	return (
-		<div className={`iphone-mockup ${className}`} style={{ aspectRatio: '393 / 760', width: '100%', maxWidth: 393, position: 'relative', borderRadius: 48, border: `9px solid ${FRAME_COLOR}`, background: FRAME_COLOR, boxShadow: '0 2px 0 rgba(255,255,255,0.04) inset, 0 30px 60px -20px rgba(0,0,0,0.45)', overflow: 'visible' }}>
+		<div className={`iphone-mockup ${className}`} style={{ aspectRatio: '393 / 760', width: '100%', maxWidth: 320, position: 'relative', borderRadius: 48, border: `9px solid ${FRAME_COLOR}`, background: FRAME_COLOR, boxShadow: '0 2px 0 rgba(255,255,255,0.04) inset, 0 30px 60px -20px rgba(0,0,0,0.45)', overflow: 'visible' }}>
 			<SideButton top="16%" height="7%" side="left" />
 			<SideButton top="25%" height="11%" side="left" />
 			<SideButton top="38%" height="11%" side="left" />

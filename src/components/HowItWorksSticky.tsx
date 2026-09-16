@@ -68,9 +68,9 @@ const STATIC_PREVIEW_DAYS = [
 function DietSelectorPreview() {
 	const previewDiet: DietType = 'Balanced'
 	return (
-		<div className="h-full w-full overflow-hidden bg-white px-7 pt-14 pb-8">
-			<div className="origin-top-left" style={{ width: '128.2%', transform: 'scale(0.78)' }}>
-				<DietSelector value={previewDiet} onChange={() => undefined} disabled />
+		<div className="h-full w-full overflow-hidden bg-white px-7 pt-10 pb-6">
+			<div className="origin-top-left" style={{ width: '133.33%', transform: 'scale(0.75)' }}>
+				<DietSelector value={previewDiet} onChange={() => undefined} disabled compact />
 				<div className="border-t border-gray-200 pt-4">
 					<h2 className="text-lg font-bold text-gray-900 mb-1.5">Select your plan duration</h2>
 					<p className="text-sm text-gray-500 font-medium mb-3">Choose how long you want your meal plan to last</p>
@@ -88,31 +88,31 @@ function DietSelectorPreview() {
 function MealPlanPreview({ days }: { days: typeof STATIC_PREVIEW_DAYS }) {
 	const previewDays = days.slice(0, 3)
 	return (
-		<div className="h-full w-full overflow-hidden bg-white px-7 pt-20 pb-16">
-			<div className="origin-top-left" style={{ width: '121.95%', transform: 'scale(0.82)' }}>
-				<div className="mb-5 text-center">
-					<p className="text-lg font-black uppercase tracking-[0.12em] text-purple-500">3-day plan</p>
+		<div className="h-full w-full overflow-hidden bg-white px-7 pt-14 pb-10">
+			<div className="origin-top-left" style={{ width: '128.2%', transform: 'scale(0.78)' }}>
+				<div className="mb-4 text-center">
+					<p className="text-xl font-black uppercase tracking-[0.12em] text-purple-500">3-day plan</p>
 					<h2 className="text-base font-black text-gray-900 mt-1">Your meal plan</h2>
 				</div>
-				<div className="flex gap-2 mb-6">
-					<button type="button" disabled className="h-9 flex-1 rounded-xl bg-white/70 border border-gray-200 text-[11px] font-bold text-gray-700 flex items-center justify-center gap-1.5 shadow-sm">
+				<div className="flex gap-2 mb-5">
+					<button type="button" disabled className="h-8 flex-1 rounded-xl bg-white/70 border border-gray-200 text-[11px] font-bold text-gray-700 flex items-center justify-center gap-1.5 shadow-sm">
 						<Download className="w-3.5 h-3.5 text-purple-500" />
 						Download Plan
 					</button>
-					<button type="button" disabled className="h-9 flex-1 rounded-xl bg-white/70 border border-gray-200 text-[11px] font-bold text-gray-700 flex items-center justify-center gap-1.5 shadow-sm">
+					<button type="button" disabled className="h-8 flex-1 rounded-xl bg-white/70 border border-gray-200 text-[11px] font-bold text-gray-700 flex items-center justify-center gap-1.5 shadow-sm">
 						<FileArchive className="w-3.5 h-3.5 text-amber-500" />
 						Download All Recipes PDF
 					</button>
 				</div>
-				<div className="space-y-5">
+				<div className="space-y-4">
 					{previewDays.map((day, dayIndex) => (
 						<div key={day.day}>
-							<p className="mb-2 text-xs font-black uppercase tracking-wider text-gray-900">{day.day}</p>
+							<p className="mb-1.5 text-xs font-black uppercase tracking-wider text-gray-900">{day.day}</p>
 							<div className="space-y-2">
 								{(['Breakfast', 'Lunch', 'Dinner'] as const).filter((type) => dayIndex < 2 || type === 'Breakfast').map((type) => {
 									const meal = day[type]
-									return <div key={type} className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-2.5 shadow-[0_1px_5px_rgba(0,0,0,0.05)]">
-										<img src={meal.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" />
+									return <div key={type} className="flex items-center gap-2.5 rounded-xl border border-gray-200 bg-white p-2 shadow-[0_1px_5px_rgba(0,0,0,0.05)]">
+										<img src={meal.imageUrl} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" />
 										<div className="min-w-0">
 											<p className="text-[9px] font-bold uppercase tracking-wider text-purple-500">{type}</p>
 											<p className="line-clamp-1 text-xs font-bold leading-tight text-gray-900">{meal.title}</p>
@@ -130,8 +130,8 @@ function MealPlanPreview({ days }: { days: typeof STATIC_PREVIEW_DAYS }) {
 
 function UploadPreview() {
 	return (
-		<div className="h-full w-full overflow-hidden bg-purple-50 px-3 pt-16 pb-4">
-			<div className="origin-top-left" style={{ width: '121.95%', transform: 'scale(0.82)' }}>
+		<div className="h-full w-full overflow-hidden bg-purple-50 px-3 pt-12 pb-6">
+			<div className="origin-top-left" style={{ width: '128.2%', transform: 'scale(0.78)' }}>
 				<div className="rounded-3xl bg-white p-5 shadow-[0_8px_24px_rgba(124,58,237,0.08)]">
 					<div className="flex items-center gap-2.5 mb-5">
 						<FileText className="w-5 h-5 shrink-0 text-purple-400" strokeWidth={2} />
