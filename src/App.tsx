@@ -591,17 +591,13 @@ function RecipeWrapper({ result, showToast }: {
 	const navigate = useNavigate()
 
 	const handleBack = () => {
-		console.log('[Back] clicked. pathname:', location.pathname, '| history.state:', window.history.state, '| history.length:', window.history.length)
 		const idx = (window.history.state as { idx?: number } | null)?.idx
 		const canGoBack = typeof idx === 'number' ? idx > 0 : window.history.length > 1
-		console.log('[Back] idx:', idx, '| canGoBack:', canGoBack)
 		try {
 			if (canGoBack) {
 				navigate(-1)
-				console.log('[Back] called navigate(-1)')
 			} else {
 				navigate('/dashboard', { replace: true })
-				console.log('[Back] called navigate("/dashboard", replace)')
 			}
 		} catch (e) {
 			console.error('[Back] ERROR in navigate:', e)
@@ -619,11 +615,6 @@ function RecipeWrapper({ result, showToast }: {
 		if (parsedDayIndex < 0 || parsedDayIndex >= result.days.length) return null
 		return result.days[parsedDayIndex][mealType as 'Breakfast' | 'Lunch' | 'Dinner']
 	}, [location.state?.meal, result, parsedDayIndex, mealType, isValidMealType])
-
-	useEffect(() => {
-		console.log('[RecipeWrapper] mounted. pathname:', location.pathname, '| history.state:', window.history.state, '| history.length:', window.history.length, '| location.state:', location.state)
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [])
 
 	useEffect(() => {
 		if (meal) track(Events.RECIPE_VIEWED, { title: meal.title, meal_type: mealType })

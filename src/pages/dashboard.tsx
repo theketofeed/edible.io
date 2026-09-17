@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react"
-import { useNavigate, useLocation } from "react-router-dom"
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom"
 import {
   LayoutDashboard, Calendar, BookmarkCheck, Heart, Sparkles,
   User, LogOut, ChevronRight, Plus, Search, Bell, Trash2,
@@ -1638,14 +1638,19 @@ function Profile({ user, plans }: ProfileProps) {
 export default function EdibleDashboard() {
   const navigate = useNavigate()
   const { user, isLoading: authLoading, isInitialized, isLoading, signOut } = useAuth()
-  const [view, setView] = useState<NavId>("overview")
+  const [searchParams, setSearchParams] = useSearchParams()
+  const VALID_VIEWS: NavId[] = ["overview", "planner", "plans", "recipes", "generate", "profile"]
+  const [view, setView] = useState<NavId>(() => {
+    const v = searchParams.get("view") as NavId | null
+    return v && VALID_VIEWS.includes(v) ? v : "overview"
+  })
   const [search, setSearch] = useState("")
   const [showDrop, setShowDrop] = useState(false)
   const [plans, setPlans] = useState<Plan[]>([])
   const [isLoadingPlans, setIsLoadingPlans] = useState(true)
   const [userData, setUserData] = useState<UserData>(DEFAULT_USER_DATA)
   const [isLoadingUser, setIsLoadingUser] = useState(true)
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(() => searchParams.get("plan"))
   const [savedRecipes, setSavedRecipes] = useState<SavedRecipe[]>([])
   const [isLoadingSaved, setIsLoadingSaved] = useState(true)
   const [pricingOpen, setPricingOpen] = useState(false)
@@ -1856,6 +1861,18 @@ export default function EdibleDashboard() {
     if (id === "logout") { signOut(); return }
     setView(id); setSearch(""); setShowDrop(false)
   }
+
+  // Persist the active dashboard view + selected plan in the URL. Navigating
+  // /dashboard -> /recipe -> /dashboard remounts this page, so without this the
+  // back button would always reset to the Overview tab. With the param in the
+  // URL, the remount restores the exact screen the user left from.
+  useEffect(() => {
+    const params = new URLSearchParams()
+    params.set("view", view)
+    if (selectedPlanId) params.set("plan", selectedPlanId)
+    setSearchParams(params, { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, selectedPlanId])
 
   return (
     <>
