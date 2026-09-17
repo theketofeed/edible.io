@@ -591,11 +591,12 @@ function RecipeWrapper({ result, showToast }: {
 	const navigate = useNavigate()
 
 	const handleBack = () => {
-		const from = (location.state as { from?: string } | null)?.from
-		if (typeof from === 'string' && from.length > 0) {
-			navigate(from)
+		const idx = (window.history.state as { idx?: number } | null)?.idx
+		const canGoBack = typeof idx === 'number' ? idx > 0 : window.history.length > 1
+		if (canGoBack) {
+			navigate(-1)
 		} else {
-			navigate('/dashboard')
+			navigate('/dashboard', { replace: true })
 		}
 	}
 
