@@ -416,16 +416,19 @@ body {
     z-index: -100;
 }
 
-/* Ensure it is visible during capture */
+/* Ensure it is visible during capture.
+   Width must match html2pdf's capture container (letter 8.5in at margin 0 = 816px).
+   The element then maps 1:1 onto the full page with the jsPDF margin removed, so its
+   own p-12 padding (48px) becomes the page's ~0.5in breathing room and the element
+   neither overflows (right-edge clipping) nor renders at a reduced scale. */
 .pdf-export-mode.pdf-only {
     position: relative !important;
     left: 0 !important;
     z-index: 9999 !important;
     visibility: visible !important;
     display: block !important;
-    width: 800px !important;
+    width: 816px !important;
     margin: 0 !important;
-    padding: 0 !important;
 }
 
 .pdf-export-mode .no-pdf {
