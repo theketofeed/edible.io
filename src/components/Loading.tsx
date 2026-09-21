@@ -103,7 +103,7 @@ const Loading = memo(function Loading({ step, compact = false }: { step?: number
         .progress-fill { transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
       `}</style>
 
-      <div className={`relative flex flex-col items-center w-full h-full mx-auto ${compact ? 'justify-center gap-2 px-2 py-0 bg-transparent border-0 shadow-none' : 'bg-white/70 backdrop-blur-2xl border border-white shadow-[0_32px_128px_rgba(0,0,0,0.08)] rounded-[28px] md:rounded-[52px] p-6 sm:p-10 md:p-16 gap-8 max-w-[90vw] sm:max-w-sm'}`}>
+      <div className={`relative flex flex-col items-center w-full h-full mx-auto ${compact ? 'justify-center gap-4 px-4 py-4 bg-transparent border-0 shadow-none' : 'bg-white/70 backdrop-blur-2xl border border-white shadow-[0_32px_128px_rgba(0,0,0,0.08)] rounded-[28px] md:rounded-[52px] p-6 sm:p-10 md:p-16 gap-8 max-w-[90vw] sm:max-w-sm'}`}>
 
         {/* Animated icon: changes with step */}
         <div className="relative flex items-center justify-center" style={{ width: compact ? 88 : 140, height: compact ? 88 : 140 }}>
@@ -118,7 +118,7 @@ const Loading = memo(function Loading({ step, compact = false }: { step?: number
         </div>
 
         {/* Title + step message */}
-        <div className="text-center space-y-2 w-full">
+        <div className="text-center space-y-2.5 w-full">
           <h3 className={`${compact ? 'text-base' : 'text-xl md:text-2xl'} font-black text-gray-900 tracking-tight leading-tight`}>
             Generating your <br /> meal plan
           </h3>
@@ -129,11 +129,11 @@ const Loading = memo(function Loading({ step, compact = false }: { step?: number
               transform: msgVisible ? 'translateY(0)' : 'translateY(4px)',
             }}
           >
-            {current.message}
-          </p>
-          <p className={`${compact ? 'hidden' : 'block'} text-gray-400/70 text-xs font-medium mt-1`}>
-            Hang tight. This can take a minute. Your meal plan will be ready soon.
-          </p>
+{current.message}
+			</p>
+			<p className={`${compact ? 'hidden' : 'block'} text-gray-400/70 text-xs font-medium mt-1`}>
+				Hang tight. This can take a minute. Your meal plan will be ready soon.
+			</p>
         </div>
 
         {/* Progress bar: creeps forward in real time */}

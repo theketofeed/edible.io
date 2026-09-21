@@ -32,6 +32,8 @@ interface Props {
 	onChange: (diet: DietType) => void
 	disabled?: boolean
 	compact?: boolean
+	/** When false, disabled buttons keep full opacity (marketing previews). Defaults to true. */
+	dimDisabled?: boolean
 }
 
 // Memoized diet button with enhanced styling
@@ -41,7 +43,8 @@ const DietButton = memo(function DietButton({
 	onClick, 
 	disabled,
 	isPopular,
-	compact
+	compact,
+	dimDisabled = true,
 }: { 
 	diet: DietType
 	isActive: boolean
@@ -49,6 +52,7 @@ const DietButton = memo(function DietButton({
 	disabled?: boolean
 	isPopular?: boolean
 	compact?: boolean
+	dimDisabled?: boolean
 }) {
 	const handleClick = useCallback(() => onClick(diet), [diet, onClick])
 	const info = DIET_INFO[diet]
@@ -64,7 +68,7 @@ const DietButton = memo(function DietButton({
 				flex flex-row items-center gap-2.5
 				px-4 py-2.5 ${compact ? '' : 'md:px-5 md:py-3'}
 				rounded-full border transition-all duration-300
-				${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:-translate-y-0.5'}
+				${disabled ? (dimDisabled ? 'opacity-60 cursor-not-allowed' : 'cursor-not-allowed') : 'cursor-pointer hover:-translate-y-0.5'}
 			`}
 			style={{
 				background: isActive ? info.col : '#FFFFFF',
@@ -93,7 +97,7 @@ const DietButton = memo(function DietButton({
 	)
 })
 
-const DietSelector = memo(function DietSelector({ value, onChange, disabled, compact = false }: Props) {
+const DietSelector = memo(function DietSelector({ value, onChange, disabled, compact = false, dimDisabled = true }: Props) {
 	const handleChange = useCallback((diet: DietType) => {
 		onChange(diet)
 	}, [onChange])
@@ -127,6 +131,7 @@ const DietSelector = memo(function DietSelector({ value, onChange, disabled, com
 							disabled={disabled}
 							isPopular={true}
 							compact={compact}
+							dimDisabled={dimDisabled}
 						/>
 					))}
 				</div>
@@ -143,6 +148,7 @@ const DietSelector = memo(function DietSelector({ value, onChange, disabled, com
 							onClick={handleChange}
 							disabled={disabled}
 							compact={compact}
+							dimDisabled={dimDisabled}
 						/>
 					))}
 				</div>
