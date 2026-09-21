@@ -220,7 +220,7 @@ const GalleryExport = memo(function GalleryExport() {
 				{STEPS.map((step, index) => (
 					<Slide
 						key={step.number}
-						eyebrow={step.eyebrow}
+						eyebrow={`Step ${step.number}`}
 						kicker={<NumberKicker number={step.number} />}
 						title={step.title}
 						description={step.description}
