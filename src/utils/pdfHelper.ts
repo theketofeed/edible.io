@@ -11,7 +11,7 @@ const PAGE_INNER_HEIGHT_PX = 1056
 // p-12 padding on .pdf-export-container (48px top + 48px bottom).
 const PDF_CONTAINER_PAD = 48
 // The recipe hero image keeps rounded corners via its wrapper (.pdf-hero, overflow-hidden).
-const HERO_MIN = 260
+const HERO_MIN = 320
 const HERO_MAX = 520
 
 // html2canvas has no flexbox support, so "image fills leftover page space" must be

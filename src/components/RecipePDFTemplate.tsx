@@ -42,7 +42,7 @@ const RecipePDFTemplate = forwardRef<HTMLDivElement, RecipePDFTemplateProps>(
 					</h1>
 
 					{imageSrc && (
-						<div className="pdf-hero mb-8 rounded-[2rem] overflow-hidden h-[260px] border border-gray-100 shadow-sm pdf-avoid-break">
+						<div className="pdf-hero mb-8 rounded-[2rem] overflow-hidden h-[320px] border border-gray-100 shadow-sm pdf-avoid-break">
 							<img src={imageSrc} alt={safeMeal.title} className="w-full h-full object-cover" />
 						</div>
 					)}
