@@ -1,27 +1,17 @@
-import { useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import PricingSection from '../components/PricingSection'
+import Seo from '../components/Seo'
+
+const TITLE = 'Edible Pricing. Plans Starting at $3.99/mo'
+const DESCRIPTION = 'Choose between Edible Pro ($3.99/mo or $2.50/mo annual) and the Founding Member plan ($19 one-time). Unlimited meal plans, saved recipes, PDF export, and more.'
 
 export default function PricingPage() {
 	const navigate = useNavigate()
 
-	useEffect(() => {
-		document.title = 'Edible Pricing. Plans Starting at $3.99/mo'
-		const meta = document.querySelector('meta[name="description"]')
-		if (meta) meta.setAttribute('content', 'Choose between Edible Pro ($3.99/mo or $2.50/mo annual) and the Founding Member plan ($19 one-time). Unlimited meal plans, saved recipes, PDF export, and more.')
-		const ogTitle = document.querySelector('meta[property="og:title"]')
-		if (ogTitle) ogTitle.setAttribute('content', 'Edible Pricing. Plans Starting at $3.99/mo')
-		const ogDesc = document.querySelector('meta[property="og:description"]')
-		if (ogDesc) ogDesc.setAttribute('content', 'Choose between Edible Pro ($3.99/mo or $2.50/mo annual) and the Founding Member plan ($19 one-time). Unlimited meal plans, saved recipes, PDF export, and more.')
-		const twTitle = document.querySelector('meta[name="twitter:title"]')
-		if (twTitle) twTitle.setAttribute('content', 'Edible Pricing. Plans Starting at $3.99/mo')
-		const twDesc = document.querySelector('meta[name="twitter:description"]')
-		if (twDesc) twDesc.setAttribute('content', 'Choose between Edible Pro ($3.99/mo or $2.50/mo annual) and the Founding Member plan ($19 one-time). Unlimited meal plans, saved recipes, PDF export, and more.')
-	}, [])
-
 	return (
 		<div>
+			<Seo title={TITLE} description={DESCRIPTION} path="/pricing" />
 			<PricingSection headingLevel="h1" onAuthRequired={() => navigate('/')} />
 			<div className="max-w-3xl mx-auto px-4 py-12">
 				<Link

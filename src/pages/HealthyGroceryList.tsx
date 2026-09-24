@@ -1,8 +1,9 @@
-import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import BlogBreadcrumb from '../components/BlogBreadcrumb'
 import ShareButtons from '../components/ShareButtons'
 import JsonLd from '../components/JsonLd'
+import Seo from '../components/Seo'
+import { SITE_URL } from '../lib/seo'
 
 const TITLE = 'The Healthy Grocery List: What to Buy & Build Your Own'
 const DESCRIPTION = 'A complete healthy grocery list organized by food category, with a free printable checklist, budget tips, and keto and low-carb swaps.'
@@ -27,15 +28,15 @@ const STRUCTURED_DATA = [
 		'@context': 'https://schema.org',
 		'@type': 'Article',
 		headline: ARTICLE_TITLE,
-		image: 'https://www.tryediblee.com/blog/healthy-grocery-list-hero.png',
+		image: `${SITE_URL}/blog/healthy-grocery-list-hero.png`,
 		author: { '@type': 'Person', name: 'Praise' },
 		publisher: {
 			'@type': 'Organization',
 			name: 'Edible',
-			logo: { '@type': 'ImageObject', url: 'https://www.tryediblee.com/logo.png' },
+			logo: { '@type': 'ImageObject', url: `${SITE_URL}/logo.png` },
 		},
 		datePublished: '2026-08-23T09:00:00-05:00',
-		mainEntityOfPage: 'https://www.tryediblee.com/blog/healthy-grocery-list',
+		mainEntityOfPage: `${SITE_URL}/blog/healthy-grocery-list`,
 	},
 	{
 		'@context': 'https://schema.org',
@@ -49,26 +50,14 @@ const STRUCTURED_DATA = [
 ]
 
 export default function HealthyGroceryList() {
-	useEffect(() => {
-		document.title = TITLE
-		const meta = document.querySelector('meta[name="description"]')
-		if (meta) meta.setAttribute('content', DESCRIPTION)
-		const ogTitle = document.querySelector('meta[property="og:title"]')
-		if (ogTitle) ogTitle.setAttribute('content', TITLE)
-		const ogDesc = document.querySelector('meta[property="og:description"]')
-		if (ogDesc) ogDesc.setAttribute('content', DESCRIPTION)
-		const twTitle = document.querySelector('meta[name="twitter:title"]')
-		if (twTitle) twTitle.setAttribute('content', TITLE)
-		const twDesc = document.querySelector('meta[name="twitter:description"]')
-		if (twDesc) twDesc.setAttribute('content', DESCRIPTION)
-		const ogImg = document.querySelector('meta[property="og:image"]')
-		if (ogImg) ogImg.setAttribute('content', 'https://tryediblee.com/blog/healthy-grocery-list-hero.png')
-		const twImg = document.querySelector('meta[name="twitter:image"]')
-		if (twImg) twImg.setAttribute('content', 'https://tryediblee.com/blog/healthy-grocery-list-hero.png')
-	}, [])
-
 	return (
 		<article className="w-full max-w-[760px] mx-auto px-5 sm:px-6 py-10 md:py-16">
+			<Seo
+				title={TITLE}
+				description={DESCRIPTION}
+				path="/blog/healthy-grocery-list"
+				image={`${SITE_URL}/blog/healthy-grocery-list-hero.png`}
+			/>
 			<JsonLd data={STRUCTURED_DATA} />
 			<BlogBreadcrumb title="The Healthy Grocery List" />
 

@@ -46,13 +46,15 @@ import BestMealPlanningApps from './pages/BestMealPlanningApps'
 import HealthyGroceryList from './pages/HealthyGroceryList'
 import Blog from './pages/Blog'
 import JsonLd from './components/JsonLd'
+import Seo from './components/Seo'
+import { SITE_URL } from './lib/seo'
 
 const ORGANIZATION_SCHEMA = {
 	'@context': 'https://schema.org',
 	'@type': 'Organization',
 	name: 'Edible',
-	url: 'https://www.tryediblee.com',
-	logo: 'https://www.tryediblee.com/logo.png',
+	url: SITE_URL,
+	logo: `${SITE_URL}/logo.png`,
 	description: 'Edible is an AI-powered meal planning app that turns your grocery list, receipt, or a photo of your kitchen into a complete, personalized weekly meal plan with recipes, instantly.',
 }
 
@@ -344,6 +346,11 @@ function MainContent() {
 			<Routes>
 				<Route path="/" element={
 					<>
+						<Seo
+							title="Edible. Turn Groceries Into Meal Plans Instantly"
+							description="Stop guessing what to cook. Edible turns whatever's in your kitchen into a complete weekly meal plan, instantly."
+							path="/"
+						/>
 						<JsonLd data={ORGANIZATION_SCHEMA} />
 						{(!result || isLoading) && (
 							<div className="flex-1">

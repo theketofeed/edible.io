@@ -1,8 +1,9 @@
-import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import BlogBreadcrumb from '../components/BlogBreadcrumb'
 import ShareButtons from '../components/ShareButtons'
 import JsonLd from '../components/JsonLd'
+import Seo from '../components/Seo'
+import { SITE_URL } from '../lib/seo'
 
 const TITLE = '5 Best Meal Planning Apps in 2026 | Edible'
 const DESCRIPTION = 'Comparing five popular meal planning apps, including Mealime, AnyList, Edible, Paprika, and Samsung Food, to help you pick the one that fits your household.'
@@ -23,15 +24,15 @@ const STRUCTURED_DATA = [
 		'@context': 'https://schema.org',
 		'@type': 'Article',
 		headline: ARTICLE_TITLE,
-		image: 'https://www.tryediblee.com/blog/best-meal-planning-apps-hero.png',
+		image: `${SITE_URL}/blog/best-meal-planning-apps-hero.png`,
 		author: { '@type': 'Person', name: 'Praise' },
 		publisher: {
 			'@type': 'Organization',
 			name: 'Edible',
-			logo: { '@type': 'ImageObject', url: 'https://www.tryediblee.com/logo.png' },
+			logo: { '@type': 'ImageObject', url: `${SITE_URL}/logo.png` },
 		},
 		datePublished: '2026-08-19T09:00:00-05:00',
-		mainEntityOfPage: 'https://www.tryediblee.com/blog/best-meal-planning-apps',
+		mainEntityOfPage: `${SITE_URL}/blog/best-meal-planning-apps`,
 	},
 	{
 		'@context': 'https://schema.org',
@@ -45,26 +46,14 @@ const STRUCTURED_DATA = [
 ]
 
 export default function BestMealPlanningApps() {
-	useEffect(() => {
-		document.title = TITLE
-		const meta = document.querySelector('meta[name="description"]')
-		if (meta) meta.setAttribute('content', DESCRIPTION)
-		const ogTitle = document.querySelector('meta[property="og:title"]')
-		if (ogTitle) ogTitle.setAttribute('content', TITLE)
-		const ogDesc = document.querySelector('meta[property="og:description"]')
-		if (ogDesc) ogDesc.setAttribute('content', DESCRIPTION)
-		const twTitle = document.querySelector('meta[name="twitter:title"]')
-		if (twTitle) twTitle.setAttribute('content', TITLE)
-		const twDesc = document.querySelector('meta[name="twitter:description"]')
-		if (twDesc) twDesc.setAttribute('content', DESCRIPTION)
-		const ogImg = document.querySelector('meta[property="og:image"]')
-		if (ogImg) ogImg.setAttribute('content', 'https://tryediblee.com/blog/best-meal-planning-apps-hero.png')
-		const twImg = document.querySelector('meta[name="twitter:image"]')
-		if (twImg) twImg.setAttribute('content', 'https://tryediblee.com/blog/best-meal-planning-apps-hero.png')
-	}, [])
-
 	return (
 		<article className="w-full max-w-[760px] mx-auto px-5 sm:px-6 py-10 md:py-16">
+			<Seo
+				title={TITLE}
+				description={DESCRIPTION}
+				path="/blog/best-meal-planning-apps"
+				image={`${SITE_URL}/blog/best-meal-planning-apps-hero.png`}
+			/>
 			<JsonLd data={STRUCTURED_DATA} />
 			<BlogBreadcrumb title="5 Best Meal Planning Apps in 2026" />
 

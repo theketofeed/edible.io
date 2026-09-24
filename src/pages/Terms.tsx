@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
+import Seo from '../components/Seo'
 
 export default function Terms() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-16">
+      <Seo title="Terms of Service | Edible" description="Edible's terms of use: eligibility, accounts, subscriptions, and how the meal planning service works." path="/terms" />
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Terms of Service</h1>
       <p className="text-sm text-gray-500 mb-8">Last updated: May 7, 2026</p>
       

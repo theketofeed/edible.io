@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import Seo from '../components/Seo'
 
 const TITLE = 'Blog | Edible'
 const DESCRIPTION = 'Meal planning tips, app comparisons, and guides to help you spend less time deciding what to cook.'
@@ -53,18 +53,9 @@ const posts: Post[] = [
 ]
 
 export default function Blog() {
-	useEffect(() => {
-		document.title = TITLE
-		const meta = document.querySelector('meta[name="description"]')
-		if (meta) meta.setAttribute('content', DESCRIPTION)
-		const ogTitle = document.querySelector('meta[property="og:title"]')
-		if (ogTitle) ogTitle.setAttribute('content', TITLE)
-		const ogDesc = document.querySelector('meta[property="og:description"]')
-		if (ogDesc) ogDesc.setAttribute('content', DESCRIPTION)
-	}, [])
-
 	return (
 		<article className="max-w-[760px] mx-auto px-5 sm:px-6 py-10 md:py-16">
+			<Seo title={TITLE} description={DESCRIPTION} path="/blog" />
 			<h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-gray-900 leading-tight mb-3" style={{ fontFamily: "'Montserrat', sans-serif", fontWeight: 900 }}>
 				Blog
 			</h1>

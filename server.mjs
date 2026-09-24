@@ -646,7 +646,7 @@ app.post('/api/webhooks/dodo', async (req, res) => {
   <!-- Header -->
   <div style="background: linear-gradient(135deg, #7c3aed, #a855f7); padding: 40px 32px; text-align: center; border-radius: 12px 12px 0 0;">
     <div style="display: inline-flex; align-items: center; gap: 12px; justify-content: center;">
-      <img src="https://www.tryediblee.com/logo.png" alt="Edible logo" width="48" height="48" style="border-radius: 10px; display: block;" />
+      <img src="https://tryediblee.com/logo.png" alt="Edible logo" width="48" height="48" style="border-radius: 10px; display: block;" />
       <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; line-height: 1;">Edible</h1>
     </div>
     <p style="color: #e9d5ff; margin: 10px 0 0; font-size: 15px;">AI-powered meal planning</p>
@@ -821,7 +821,7 @@ app.post('/api/send-welcome', async (req, res) => {
               No more wasted groceries. No more "what should we eat" panic.
             </p>
 
-            <a href="https://www.tryediblee.com" style="background: #C6A0F6; color: #1a1a1a; text-decoration: none; padding: 13px 26px; border-radius: 10px; font-size: 14.5px; font-weight: 700; display: inline-block;">
+            <a href="https://tryediblee.com" style="background: #C6A0F6; color: #1a1a1a; text-decoration: none; padding: 13px 26px; border-radius: 10px; font-size: 14.5px; font-weight: 700; display: inline-block;">
               Generate your first meal plan →
             </a>
             <p style="color: #999; font-size: 13px; margin: 12px 0 0;">Takes less than a minute. Try it with whatever's in your fridge right now.</p>
@@ -870,7 +870,7 @@ app.post('/api/check-plan-expiry', async (req, res) => {
           <div style="background: #ffffff; border-radius: 0 0 20px 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.04); padding: 36px 32px 40px;">
             <h2 style="color: #1a1a1a; font-size: 20px; font-weight: 800; margin: 0 0 12px; line-height: 1.3;">${title}</h2>
             <p style="color: #555; font-size: 15.5px; line-height: 1.65; margin: 0 0 28px;">${body}</p>
-            <a href="https://www.tryediblee.com/dashboard" style="background: #C6A0F6; color: #1a1a1a; text-decoration: none; padding: 13px 26px; border-radius: 10px; font-size: 14.5px; font-weight: 700; display: inline-block;">${ctaText} →</a>
+            <a href="https://tryediblee.com/dashboard" style="background: #C6A0F6; color: #1a1a1a; text-decoration: none; padding: 13px 26px; border-radius: 10px; font-size: 14.5px; font-weight: 700; display: inline-block;">${ctaText} →</a>
           </div>
           <p style="text-align: center; color: #A8A29A; font-size: 12px; margin: 20px 0 0;">Edible — Turn groceries into meal plans, instantly.</p>
         </div>
@@ -969,7 +969,7 @@ app.post('/api/first-plan-check', async (req, res) => {
           <div style="background: #ffffff; border-radius: 0 0 20px 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.04); padding: 36px 32px 40px;">
             <h2 style="color: #1a1a1a; font-size: 20px; font-weight: 800; margin: 0 0 12px; line-height: 1.3;">Your first plan is saved</h2>
             <p style="color: #555; font-size: 15.5px; line-height: 1.65; margin: 0 0 28px;">It's ready and waiting for you. Come back anytime to check today's meals, swap a recipe, or start your next week.</p>
-            <a href="https://www.tryediblee.com/dashboard" style="background: #C6A0F6; color: #1a1a1a; text-decoration: none; padding: 13px 26px; border-radius: 10px; font-size: 14.5px; font-weight: 700; display: inline-block;">View your plan →</a>
+            <a href="https://tryediblee.com/dashboard" style="background: #C6A0F6; color: #1a1a1a; text-decoration: none; padding: 13px 26px; border-radius: 10px; font-size: 14.5px; font-weight: 700; display: inline-block;">View your plan →</a>
           </div>
           <p style="text-align: center; color: #A8A29A; font-size: 12px; margin: 20px 0 0;">Edible — Turn groceries into meal plans, instantly.</p>
         </div>

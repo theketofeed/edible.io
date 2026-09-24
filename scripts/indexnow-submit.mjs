@@ -1,6 +1,6 @@
 // Usage: node scripts/indexnow-submit.mjs <url> [...<url>]
 
-const host = 'www.tryediblee.com';
+const host = 'tryediblee.com';
 const key = '45999bc295c74d589e44c0950222e642';
 const keyLocation = `https://${host}/${key}.txt`;
 const defaultUrls = [

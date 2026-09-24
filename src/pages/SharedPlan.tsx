@@ -4,6 +4,7 @@ import { getPublicMealPlan } from '../lib/db'
 import { fetchMealImage } from '../lib/mealImages'
 import { ChevronRight, ArrowLeft } from 'lucide-react'
 import logo from '../assets/favicon.png'
+import Seo from '../components/Seo'
 
 type MealSlot = { name: string; cal: number; imageUrl?: string }
 type PlanDay = { day: string; B: MealSlot; L: MealSlot; D: MealSlot }
@@ -163,6 +164,7 @@ export default function SharedPlan() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f3ef', fontFamily: "'Open Sans', ui-sans-serif, system-ui, sans-serif" }}>
+      <Seo title={`${plan.title || 'Shared Meal Plan'} | Edible`} description="A shared weekly meal plan built with Edible." path={`/plan/${id || ''}`} />
       {/* Minimal sticky bar */}
       <div style={{ background: 'rgba(245,243,239,0.92)', backdropFilter: 'blur(10px)', borderBottom: '1px solid #ede9e2', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>

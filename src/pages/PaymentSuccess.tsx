@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CheckCircle } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import Seo from '../components/Seo'
 
 export default function PaymentSuccess() {
   const navigate = useNavigate()
@@ -17,6 +18,7 @@ export default function PaymentSuccess() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-purple-50">
+      <Seo title="Payment Successful | Edible" description="Your Edible upgrade was successful." path="/payment-success" />
       <div className="text-center p-8 bg-white rounded-3xl shadow-xl max-w-md">
         <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
         <h1 className="text-2xl font-bold text-gray-900 mb-2">You're all set! 🎉</h1>

@@ -10,4 +10,4 @@ Disallow: /auth
 # Disallow API endpoints
 Disallow: /api/
 
-Sitemap: https://www.tryediblee.com/sitemap.xml
+Sitemap: https://tryediblee.com/sitemap.xml

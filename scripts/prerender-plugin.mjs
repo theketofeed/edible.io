@@ -68,6 +68,8 @@ const ROUTES = [
 	{ path: '/blog/best-meal-planning-apps', contentMarker: '5 Best Meal Planning Apps in 2026', h1Prefix: null },
 	{ path: '/blog/healthy-grocery-list', contentMarker: 'The Healthy Grocery List: What to Buy and How to Build Your Own', h1Prefix: null },
 	{ path: '/blog', contentMarker: 'Blog', h1Prefix: null },
+	{ path: '/privacy', contentMarker: 'Privacy Policy', h1Prefix: null },
+	{ path: '/terms', contentMarker: 'Terms of Service', h1Prefix: null },
 ]
 
 // When @sparticuz/chromium is loaded (production), use its serverless-tuned args

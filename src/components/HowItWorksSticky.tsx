@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, memo, type ElementType } from 'react'
+import { Link } from 'react-router-dom'
 import IPhoneMockup from './IPhoneMockup'
 import { STORY_STEPS as STEPS, STATIC_PREVIEW_DAYS, StepScreen } from './howItWorksScreens'
 
@@ -7,10 +8,12 @@ function StepBlock({
 	step,
 	index,
 	stepRef,
+	showGuideLink,
 }: {
 	step: (typeof STEPS)[number]
 	index: number
 	stepRef: (el: HTMLDivElement | null) => void
+	showGuideLink?: boolean
 }) {
 	return (
 		<div
@@ -43,6 +46,20 @@ function StepBlock({
 				<p className="text-base md:text-lg text-gray-500 leading-relaxed font-medium">
 					{step.description}
 				</p>
+
+				{/* Grocery list guide aside (standalone How It Works page only) */}
+				{showGuideLink && (
+					<p className="mt-4 text-sm text-purple-600 font-medium leading-relaxed">
+						Not sure what to buy? Check our{' '}
+						<Link
+							to="/blog/healthy-grocery-list"
+							className="underline decoration-purple-300 underline-offset-2 hover:text-purple-800"
+						>
+							healthy grocery list guide
+						</Link>
+						.
+					</p>
+				)}
 			</div>
 		</div>
 	)
@@ -136,6 +153,7 @@ const HowItWorksSticky = memo(function HowItWorksSticky({
 								<StepBlock
 									step={step}
 									index={index}
+									showGuideLink={headingLevel === 'h1' && index === 0}
 									stepRef={(el) => { stepRefs.current[index] = el }}
 								/>
 												<MobileMockup index={index} previewDays={previewDays} />

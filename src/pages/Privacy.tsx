@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
+import Seo from '../components/Seo'
 
 export default function Privacy() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-16">
+      <Seo title="Privacy Policy | Edible" description="How Edible handles your data: what we collect, how we use it, third parties involved, and your data rights." path="/privacy" />
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Privacy Policy</h1>
       <p className="text-sm text-gray-500 mb-8">Last updated: May 7, 2026</p>
       

@@ -53,7 +53,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         track(Events.SIGNUP_COMPLETED, { method: 'google' })
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
-            options: { redirectTo: 'https://www.tryediblee.com' },
+            options: { redirectTo: 'https://tryediblee.com' },
         })
         if (error) {
             setStatus('error')

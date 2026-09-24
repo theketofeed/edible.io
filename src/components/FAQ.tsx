@@ -1,9 +1,10 @@
 import { memo, useState, useCallback, type ElementType } from 'react'
+import { Link } from 'react-router-dom'
 import { Store, PencilLine, Salad, Banknote, RefreshCw, Sparkles } from 'lucide-react'
 
 interface FAQItem {
 	question: string
-	answer: string
+	answer: React.ReactNode
 	icon: React.ReactNode
 }
 
@@ -35,7 +36,15 @@ const FAQ_ITEMS: FAQItem[] = [
   },
   {
     question: "What makes Edible different?",
-    answer: 'Every other meal planner gives you recipes and tells you to go shopping. Edible works the other way. You start with what you already bought, and it builds your week around that. No food waste, no extra trips, meals you can actually make tonight.',
+    answer: (
+      <>
+        Every other meal planner gives you recipes and tells you to go shopping. Edible works the other way. You start with what you already bought, and it builds your week around that. No food waste, no extra trips, meals you can actually make tonight. If you want to see how we compare feature-by-feature, check out our breakdown of the{' '}
+        <Link to="/blog/best-meal-planning-apps" className="text-purple-600 hover:underline">
+          best meal planning apps
+        </Link>
+        .
+      </>
+    ),
     icon: <Sparkles className="w-5 h-5 text-purple-500" />
   }
 ]
@@ -48,7 +57,7 @@ const FAQRow = memo(function FAQRow({
 	onToggle
 }: {
 	question: string
-	answer: string
+	answer: React.ReactNode
 	icon: React.ReactNode
 	isOpen: boolean
 	onToggle: () => void
