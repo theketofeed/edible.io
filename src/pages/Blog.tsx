@@ -23,6 +23,20 @@ interface Post {
 
 const posts: Post[] = [
 	{
+		title: 'AnyList Alternative: What To Know Before You Switch',
+		excerpt: 'What AnyList does well, where it falls short, and when an app built from what you already bought fits your kitchen better.',
+		readingTime: '7 min read',
+		date: 'October 1, 2026',
+		href: '/blog/anylist-alternative',
+		thumbnail: {
+			webp: '/blog/anylist-alternative-hero.webp',
+			png: '/blog/anylist-alternative-hero.png',
+			alt: 'Side-by-side comparison of the AnyList app and Edible, showing a shared grocery list next to a meal plan built from that list',
+			width: 1600,
+			height: 900,
+		},
+	},
+	{
 		title: 'The Healthy Grocery List: What to Buy and How to Build Your Own',
 		excerpt: 'A categorized healthy grocery list with a free printable checklist, plus budget tips and keto/low-carb swaps.',
 		readingTime: '5 min read',

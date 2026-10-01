@@ -184,8 +184,16 @@ export default function BestMealPlanningApps() {
 				AnyList's core strength is real-time, shared grocery lists. Multiple people can check off the same list, import recipes from any website via browser extension, and stay synced across devices.
 			</p>
 
-			<p className="text-gray-700 leading-relaxed mb-6">
+			<p className="text-gray-700 leading-relaxed mb-4">
 				Meal planning exists, but it's a paywalled add-on layer, not the main event. If shared lists are your actual priority and meal planning is a nice-to-have, this is a strong fit. If you want AI personalization, it's not really built for that.
+			</p>
+
+			<p className="text-gray-700 leading-relaxed mb-6">
+				Want the full breakdown? See our{' '}
+				<Link to="/blog/anylist-alternative" className="text-purple-600 hover:underline">
+					AnyList alternative guide
+				</Link>
+				.
 			</p>
 
 			<a

@@ -44,6 +44,7 @@ import HowItWorksPage from './pages/HowItWorksPage'
 import FAQPage from './pages/FAQPage'
 import BestMealPlanningApps from './pages/BestMealPlanningApps'
 import HealthyGroceryList from './pages/HealthyGroceryList'
+import AnyListAlternative from './pages/AnyListAlternative'
 import Blog from './pages/Blog'
 import JsonLd from './components/JsonLd'
 import Seo from './components/Seo'
@@ -552,6 +553,7 @@ function MainContent() {
 			<Route path="/faq" element={<FAQPage />} />
 			<Route path="/blog/best-meal-planning-apps" element={<BestMealPlanningApps />} />
 			<Route path="/blog/healthy-grocery-list" element={<HealthyGroceryList />} />
+			<Route path="/blog/anylist-alternative" element={<AnyListAlternative />} />
 			<Route path="/blog" element={<Blog />} />
 			<Route path="/plan/:id" element={<SharedPlan />} />
 			</Routes>
