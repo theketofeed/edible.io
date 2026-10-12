@@ -73,6 +73,7 @@ DECLARE
 BEGIN
   provider := COALESCE(
     new.raw_app_meta_data ->> 'provider',   -- e.g. 'email' | 'google'
+    new.app_metadata ->> 'provider',
     'email'
   );
 
