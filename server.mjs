@@ -1021,6 +1021,14 @@ app.post('/api/notify-signup', requireWebhookSecret, async (req, res) => {
     if (!email) return res.status(400).json({ error: 'Missing email in payload' })
 
     const authMethod = provider === 'google' ? 'Google OAuth' : 'Email/password'
+    const escapeHtml = (value) =>
+      String(value).replace(/[&<>"']/g, (character) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+      })[character])
 
     // Resend v6 resolves { data, error } instead of throwing on API errors
     // (unverified domain, test-mode recipient restriction, bad key). Check it,
@@ -1038,19 +1046,35 @@ app.post('/api/notify-signup', requireWebhookSecret, async (req, res) => {
         `Method:     ${authMethod}`,
         `User ID:    ${userId}`,
       ].join('\n'),
-      html: `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
-  <div style="background: linear-gradient(135deg, #7c3aed, #a855f7); padding: 40px 32px; text-align: center; border-radius: 12px 12px 0 0;">
-    <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.5px;">Someone just signed up for Edible</h1>
-    <p style="color: #e9d5ff; margin: 10px 0 0; font-size: 15px;">Introducing a new user to the family</p>
-  </div>
-  <div style="padding: 40px 32px; background: #fafafa;">
-    <h2 style="color: #1a1a1a; font-size: 22px; margin: 0 0 16px;">New signup</h2>
-    <table style="width: 100%; font-size: 15px; color: #333; border-collapse: collapse;">
-      <tr><td style="padding: 8px 0; color: #888; width: 110px;">Email</td><td style="padding: 8px 0; font-weight: 600;">${email}</td></tr>
-      <tr><td style="padding: 8px 0; color: #888;">Signed up</td><td style="padding: 8px 0; font-weight: 600;">${createdAt}</td></tr>
-      <tr><td style="padding: 8px 0; color: #888;">Method</td><td style="padding: 8px 0; font-weight: 600;">${authMethod}</td></tr>
-      <tr><td style="padding: 8px 0; color: #888;">User ID</td><td style="padding: 8px 0; font-weight: 600;">${userId}</td></tr>
-    </table>
+      html: `<div style="margin: 0; padding: 32px 16px; background-color: #f5f2fa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; color: #292238;">
+  <div style="max-width: 560px; margin: 0 auto; overflow: hidden; background-color: #ffffff; border: 1px solid #e9e3f2; border-radius: 18px;">
+    <div style="padding: 34px 28px 30px; text-align: center; background-color: #ddd6fe; background-image: linear-gradient(135deg, #e9e3ff 0%, #c4b5fd 100%);">
+      <div style="margin-bottom: 16px; color: #5b4b78; font-size: 12px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase;">Edible · New member</div>
+      <h1 style="margin: 0; color: #302343; font-size: 27px; line-height: 1.25; font-weight: 700; letter-spacing: -0.6px;">Someone just signed up</h1>
+      <p style="margin: 10px 0 0; color: #514365; font-size: 15px; line-height: 1.5;">A new member just joined your community.</p>
+    </div>
+    <div style="padding: 30px 28px 26px;">
+      <p style="margin: 0 0 18px; color: #625b6d; font-size: 14px; line-height: 1.6;">Here are the signup details:</p>
+      <table role="presentation" style="width: 100%; border: 1px solid #eeeaf3; border-radius: 12px; border-collapse: separate; border-spacing: 0; background-color: #fcfbfe; font-size: 14px; line-height: 1.5;">
+        <tr>
+          <td style="width: 112px; padding: 13px 14px; border-bottom: 1px solid #eeeaf3; color: #746c80; vertical-align: top;">Email</td>
+          <td style="padding: 13px 14px; border-bottom: 1px solid #eeeaf3; color: #302a39; font-weight: 600; word-break: break-word;">${escapeHtml(email)}</td>
+        </tr>
+        <tr>
+          <td style="padding: 13px 14px; border-bottom: 1px solid #eeeaf3; color: #746c80; vertical-align: top;">Signed up</td>
+          <td style="padding: 13px 14px; border-bottom: 1px solid #eeeaf3; color: #302a39; font-weight: 600;">${escapeHtml(createdAt)}</td>
+        </tr>
+        <tr>
+          <td style="padding: 13px 14px; border-bottom: 1px solid #eeeaf3; color: #746c80; vertical-align: top;">Method</td>
+          <td style="padding: 13px 14px; border-bottom: 1px solid #eeeaf3; color: #302a39; font-weight: 600;">${escapeHtml(authMethod)}</td>
+        </tr>
+        <tr>
+          <td style="padding: 13px 14px; color: #746c80; vertical-align: top;">User ID</td>
+          <td style="padding: 13px 14px; color: #302a39; font-weight: 600; word-break: break-word;">${escapeHtml(userId)}</td>
+        </tr>
+      </table>
+      <p style="margin: 22px 0 0; color: #8a8294; font-size: 12px; line-height: 1.5; text-align: center;">This is an automatic notification from Edible.</p>
+    </div>
   </div>
 </div>`,
     })
