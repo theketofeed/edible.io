@@ -118,6 +118,25 @@ app.use('/api/webhooks', rawBodyParser)
 app.use(express.json({ limit: '25mb' }))
 app.use(express.urlencoded({ limit: '25mb', extended: true }))
 
+// ─── Shared-secret guard for server-to-server webhook routes ────────────────
+// Senders (Supabase Database Webhooks / cron) must include the header
+// `x-webhook-secret: <WEBHOOK_SECRET>`. Fails closed if the env var is unset.
+function requireWebhookSecret(req, res, next) {
+  const expected = process.env.WEBHOOK_SECRET
+  if (!expected) {
+    console.error('[Webhook Auth] WEBHOOK_SECRET not set — rejecting request')
+    return res.status(500).json({ error: 'Webhook secret not configured' })
+  }
+  const provided = req.get('x-webhook-secret') || ''
+  const a = Buffer.from(provided)
+  const b = Buffer.from(expected)
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    console.warn('[Webhook Auth] ❌ Invalid or missing webhook secret')
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+  next()
+}
+
 // ─── Claude API proxy ──────────────────────────────────────────────────────
 app.post('/api/claude', async (req, res) => {
 	try {
@@ -846,7 +865,7 @@ app.post('/api/send-welcome', async (req, res) => {
 })
 
 // ─── Plan Expiry Check (called daily by Supabase cron) ─────────────────────
-app.post('/api/check-plan-expiry', async (req, res) => {
+app.post('/api/check-plan-expiry', requireWebhookSecret, async (req, res) => {
   try {
     const now = new Date()
     const todayStart = new Date(now); todayStart.setHours(0,0,0,0)
@@ -939,7 +958,7 @@ app.post('/api/check-plan-expiry', async (req, res) => {
 })
 
 // ─── First Plan Milestone Email (called by Supabase webhook) ───────────────
-app.post('/api/first-plan-check', async (req, res) => {
+app.post('/api/first-plan-check', requireWebhookSecret, async (req, res) => {
   try {
     const record = req.body?.record
     if (!record?.user_id) return res.status(400).json({ error: 'Missing record.user_id' })
@@ -980,6 +999,71 @@ app.post('/api/first-plan-check', async (req, res) => {
     res.json({ success: true })
   } catch (err) {
     console.error('[FirstPlan] Error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ─── New Signup Notification (called by Supabase trigger on auth.users) ────
+app.post('/api/notify-signup', requireWebhookSecret, async (req, res) => {
+  try {
+    // Accept either a raw payload or a Supabase Database Webhook { record } envelope
+    const record = req.body?.record ?? req.body ?? {}
+    const email = record.email
+    const createdAt = record.created_at || new Date().toISOString()
+    const provider =
+      record.provider ||
+      record.raw_app_meta_data?.provider ||
+      (Array.isArray(record.raw_app_meta_data?.providers) ? record.raw_app_meta_data.providers[0] : null) ||
+      record.app_metadata?.provider ||
+      'email'
+    const userId = record.id || record.user_id || 'unknown'
+
+    if (!email) return res.status(400).json({ error: 'Missing email in payload' })
+
+    const authMethod = provider === 'google' ? 'Google OAuth' : 'Email/password'
+
+    // Resend v6 resolves { data, error } instead of throwing on API errors
+    // (unverified domain, test-mode recipient restriction, bad key). Check it,
+    // otherwise a rejected send is silently reported as success.
+    const { data, error } = await resend.emails.send({
+      from: 'Edible <hello@tryediblee.com>',
+      to: 'theketofeed.ceo@gmail.com',
+      reply_to: email,
+      subject: `Someone just signed up for Edible: ${email}`,
+      text: [
+        'Someone just signed up for Edible',
+        '',
+        `Email:      ${email}`,
+        `Signed up:  ${createdAt}`,
+        `Method:     ${authMethod}`,
+        `User ID:    ${userId}`,
+      ].join('\n'),
+      html: `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+  <div style="background: linear-gradient(135deg, #7c3aed, #a855f7); padding: 40px 32px; text-align: center; border-radius: 12px 12px 0 0;">
+    <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.5px;">Someone just signed up for Edible</h1>
+    <p style="color: #e9d5ff; margin: 10px 0 0; font-size: 15px;">Introducing a new user to the family</p>
+  </div>
+  <div style="padding: 40px 32px; background: #fafafa;">
+    <h2 style="color: #1a1a1a; font-size: 22px; margin: 0 0 16px;">New signup</h2>
+    <table style="width: 100%; font-size: 15px; color: #333; border-collapse: collapse;">
+      <tr><td style="padding: 8px 0; color: #888; width: 110px;">Email</td><td style="padding: 8px 0; font-weight: 600;">${email}</td></tr>
+      <tr><td style="padding: 8px 0; color: #888;">Signed up</td><td style="padding: 8px 0; font-weight: 600;">${createdAt}</td></tr>
+      <tr><td style="padding: 8px 0; color: #888;">Method</td><td style="padding: 8px 0; font-weight: 600;">${authMethod}</td></tr>
+      <tr><td style="padding: 8px 0; color: #888;">User ID</td><td style="padding: 8px 0; font-weight: 600;">${userId}</td></tr>
+    </table>
+  </div>
+</div>`,
+    })
+
+    if (error) {
+      console.error('[Signup Notify] ❌ Resend rejected the send:', JSON.stringify(error))
+      return res.status(502).json({ error: error.message || 'Resend send failed', resend: error })
+    }
+
+    console.log(`[Signup Notify] 📧 Notified owner about ${email} (${authMethod}) id=${data?.id}`)
+    res.json({ success: true, id: data?.id })
+  } catch (err) {
+    console.error('[Signup Notify] ❌ Failed:', err.message)
     res.status(500).json({ error: err.message })
   }
 })
