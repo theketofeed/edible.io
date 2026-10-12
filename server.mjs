@@ -118,6 +118,25 @@ app.use('/api/webhooks', rawBodyParser)
 app.use(express.json({ limit: '25mb' }))
 app.use(express.urlencoded({ limit: '25mb', extended: true }))
 
+// ─── Shared-secret guard for server-to-server webhook routes ────────────────
+// Senders (Supabase Database Webhooks / cron) must include the header
+// `x-webhook-secret: <WEBHOOK_SECRET>`. Fails closed if the env var is unset.
+function requireWebhookSecret(req, res, next) {
+  const expected = process.env.WEBHOOK_SECRET
+  if (!expected) {
+    console.error('[Webhook Auth] WEBHOOK_SECRET not set — rejecting request')
+    return res.status(500).json({ error: 'Webhook secret not configured' })
+  }
+  const provided = req.get('x-webhook-secret') || ''
+  const a = Buffer.from(provided)
+  const b = Buffer.from(expected)
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    console.warn('[Webhook Auth] ❌ Invalid or missing webhook secret')
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+  next()
+}
+
 // ─── Claude API proxy ──────────────────────────────────────────────────────
 app.post('/api/claude', async (req, res) => {
 	try {
@@ -846,7 +865,7 @@ app.post('/api/send-welcome', async (req, res) => {
 })
 
 // ─── Plan Expiry Check (called daily by Supabase cron) ─────────────────────
-app.post('/api/check-plan-expiry', async (req, res) => {
+app.post('/api/check-plan-expiry', requireWebhookSecret, async (req, res) => {
   try {
     const now = new Date()
     const todayStart = new Date(now); todayStart.setHours(0,0,0,0)
@@ -939,7 +958,7 @@ app.post('/api/check-plan-expiry', async (req, res) => {
 })
 
 // ─── First Plan Milestone Email (called by Supabase webhook) ───────────────
-app.post('/api/first-plan-check', async (req, res) => {
+app.post('/api/first-plan-check', requireWebhookSecret, async (req, res) => {
   try {
     const record = req.body?.record
     if (!record?.user_id) return res.status(400).json({ error: 'Missing record.user_id' })
@@ -980,6 +999,48 @@ app.post('/api/first-plan-check', async (req, res) => {
     res.json({ success: true })
   } catch (err) {
     console.error('[FirstPlan] Error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ─── New Signup Notification (called by Supabase trigger on auth.users) ────
+app.post('/api/notify-signup', requireWebhookSecret, async (req, res) => {
+  try {
+    // Accept either a raw payload or a Supabase Database Webhook { record } envelope
+    const record = req.body?.record ?? req.body ?? {}
+    const email = record.email
+    const createdAt = record.created_at || new Date().toISOString()
+    const provider =
+      record.provider ||
+      record.raw_app_meta_data?.provider ||
+      (Array.isArray(record.raw_app_meta_data?.providers) ? record.raw_app_meta_data.providers[0] : null) ||
+      record.app_metadata?.provider ||
+      'email'
+    const userId = record.id || record.user_id || 'unknown'
+
+    if (!email) return res.status(400).json({ error: 'Missing email in payload' })
+
+    const authMethod = provider === 'google' ? 'Google OAuth' : 'Email/password'
+
+    await resend.emails.send({
+      from: 'Edible <hello@tryediblee.com>',
+      to: 'theketofeed.ceo@gmail.com',
+      reply_to: email,
+      subject: `New Edible signup: ${email}`,
+      text: [
+        'New signup on Edible',
+        '',
+        `Email:      ${email}`,
+        `Signed up:  ${createdAt}`,
+        `Method:     ${authMethod}`,
+        `User ID:    ${userId}`,
+      ].join('\n'),
+    })
+
+    console.log(`[Signup Notify] 📧 Notified owner about ${email} (${authMethod})`)
+    res.json({ success: true })
+  } catch (err) {
+    console.error('[Signup Notify] ❌ Failed:', err.message)
     res.status(500).json({ error: err.message })
   }
 })
