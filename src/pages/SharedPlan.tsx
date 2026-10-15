@@ -9,6 +9,8 @@ import Seo from '../components/Seo'
 type MealSlot = { name: string; cal: number; imageUrl?: string }
 type PlanDay = { day: string; B: MealSlot; L: MealSlot; D: MealSlot }
 
+const DESCRIPTION = 'A shared weekly meal plan built with Edible: browse the full week of meals, see calories for each dish, and generate your own personalized plan in seconds.'
+
 function getMealEmoji(title: string): string {
   const t = title.toLowerCase()
   if (t.includes('salad')) return '🥗'
@@ -70,6 +72,7 @@ export default function SharedPlan() {
 
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f5f3ef', fontFamily: "'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif" }}>
+      <Seo title="Shared Meal Plan | Edible" description={DESCRIPTION} path={`/plan/${id || ''}`} noindex />
       <style>{`
         .rec-body {
           width: 96px;
@@ -141,6 +144,7 @@ export default function SharedPlan() {
 
   if (notFound) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f3ef', fontFamily: "'Open Sans', ui-sans-serif, system-ui, sans-serif", padding: 24 }}>
+      <Seo title="Plan not found | Edible" description={DESCRIPTION} path={`/plan/${id || ''}`} noindex />
       <div style={{ textAlign: 'center', maxWidth: 360 }}>
         <p style={{ fontSize: 40, marginBottom: 12 }}>🍽️</p>
         <h2 style={{ fontSize: 22, fontWeight: 800, color: '#111827', marginBottom: 8 }}>Plan not found</h2>
@@ -164,7 +168,7 @@ export default function SharedPlan() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f3ef', fontFamily: "'Open Sans', ui-sans-serif, system-ui, sans-serif" }}>
-      <Seo title={`${plan.title || 'Shared Meal Plan'} | Edible`} description="A shared weekly meal plan built with Edible." path={`/plan/${id || ''}`} />
+      <Seo title={`${plan.title || 'Shared Meal Plan'} | Edible`} description={DESCRIPTION} path={`/plan/${id || ''}`} noindex />
       {/* Minimal sticky bar */}
       <div style={{ background: 'rgba(245,243,239,0.92)', backdropFilter: 'blur(10px)', borderBottom: '1px solid #ede9e2', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>

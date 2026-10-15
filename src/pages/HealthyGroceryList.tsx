@@ -5,7 +5,7 @@ import JsonLd from '../components/JsonLd'
 import Seo from '../components/Seo'
 import { SITE_URL } from '../lib/seo'
 
-const TITLE = 'The Healthy Grocery List: What to Buy & Build Your Own'
+const TITLE = 'Healthy Grocery List: What to Buy, Build Your Own | Edible'
 const DESCRIPTION = 'A complete healthy grocery list organized by food category, with a free printable checklist, budget tips, and keto and low-carb swaps.'
 const ARTICLE_TITLE = 'The Healthy Grocery List: What to Buy and How to Build Your Own'
 const FAQ_ITEMS = [

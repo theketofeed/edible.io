@@ -63,7 +63,7 @@ async function resolveBrowserPath() {
 const ROUTES = [
 	{ path: '/', contentMarker: 'Turn your groceries into meal plans instantly', h1Prefix: 'Turn your groceries' },
 	{ path: '/pricing', contentMarker: 'Simple Pricing', h1Prefix: null },
-	{ path: '/how-it-works', contentMarker: 'From groceries to meal plans', h1Prefix: null },
+	{ path: '/how-it-works', contentMarker: 'From groceries to meal plans', h1Prefix: 'From groceries to meal plans' },
 	{ path: '/faq', contentMarker: 'Frequently Asked Questions', h1Prefix: null },
 	{ path: '/blog/best-meal-planning-apps', contentMarker: '5 Best Meal Planning Apps in 2026', h1Prefix: null },
 	{ path: '/blog/healthy-grocery-list', contentMarker: 'The Healthy Grocery List: What to Buy and How to Build Your Own', h1Prefix: null },

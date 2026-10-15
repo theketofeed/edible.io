@@ -6,7 +6,7 @@ import Seo from '../components/Seo'
 import { SITE_URL } from '../lib/seo'
 
 const TITLE = '5 Best Meal Planning Apps in 2026 | Edible'
-const DESCRIPTION = 'Comparing five popular meal planning apps, including Mealime, AnyList, Edible, Paprika, and Samsung Food, to help you pick the one that fits your household.'
+const DESCRIPTION = 'Comparing five popular meal planning apps, including Mealime, AnyList, Edible, Paprika and Samsung Food, to help you pick the one that fits your household.'
 const ARTICLE_TITLE = '5 Best Meal Planning Apps in 2026 (and Who Each One Is Actually For)'
 const FAQ_ITEMS = [
 	{

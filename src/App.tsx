@@ -349,7 +349,7 @@ function MainContent() {
 					<>
 						<Seo
 							title="Edible. Turn Groceries Into Meal Plans Instantly"
-							description="Stop guessing what to cook. Edible turns whatever's in your kitchen into a complete weekly meal plan, instantly."
+							description="Stop guessing what to cook. Edible turns whatever's in your kitchen into a complete weekly meal plan instantly, so dinner never stumps you again."
 							path="/"
 						/>
 						<JsonLd data={ORGANIZATION_SCHEMA} />

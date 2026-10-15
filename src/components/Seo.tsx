@@ -8,16 +8,35 @@ type SeoProps = {
 	path: string
 	/** Absolute image URL for social cards. Defaults to the site's og-image. */
 	image?: string
+	/** Marks non-content pages as noindex. Defaults to false, which removes any robots tag. */
+	noindex?: boolean
 }
 
 const CANONICAL_SELECTOR = 'link[rel="canonical"]'
+const ROBOTS_SELECTOR = 'meta[name="robots"]'
+
+function setRobotsMeta(noindex?: boolean) {
+	const el = document.querySelector(ROBOTS_SELECTOR)
+	if (noindex) {
+		if (el) {
+			el.setAttribute('content', 'noindex, follow')
+		} else {
+			const meta = document.createElement('meta')
+			meta.setAttribute('name', 'robots')
+			meta.setAttribute('content', 'noindex, follow')
+			document.head.appendChild(meta)
+		}
+	} else if (el) {
+		el.remove()
+	}
+}
 
 function setMeta(selector: string, content: string) {
 	const el = document.querySelector(selector)
 	if (el) el.setAttribute('content', content)
 }
 
-export default function Seo({ title, description, path, image }: SeoProps) {
+export default function Seo({ title, description, path, image, noindex }: SeoProps) {
 	useEffect(() => {
 		const url = `${SITE_URL}${path}`
 		const img = image || DEFAULT_OG_IMAGE
@@ -31,6 +50,7 @@ export default function Seo({ title, description, path, image }: SeoProps) {
 		setMeta('meta[name="twitter:title"]', title)
 		setMeta('meta[name="twitter:description"]', description)
 		setMeta('meta[name="twitter:image"]', img)
+		setRobotsMeta(noindex)
 
 		let canonical = document.querySelector<HTMLLinkElement>(CANONICAL_SELECTOR)
 		if (!canonical) {
@@ -39,7 +59,11 @@ export default function Seo({ title, description, path, image }: SeoProps) {
 			document.head.appendChild(canonical)
 		}
 		canonical.href = url
-	}, [title, description, path, image])
+
+		// Clear the robots tag when this route unmounts so a noindex never
+		// sticks to the next route (routes that render no Seo at all included).
+		return () => setRobotsMeta(false)
+	}, [title, description, path, image, noindex])
 
 	return null
 }

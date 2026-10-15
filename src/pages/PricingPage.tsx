@@ -4,7 +4,7 @@ import PricingSection from '../components/PricingSection'
 import Seo from '../components/Seo'
 
 const TITLE = 'Edible Pricing. Plans Starting at $3.99/mo'
-const DESCRIPTION = 'Choose between Edible Pro ($3.99/mo or $2.50/mo annual) and the Founding Member plan ($19 one-time). Unlimited meal plans, saved recipes, PDF export, and more.'
+const DESCRIPTION = 'Choose between Edible Pro ($3.99/mo or $2.50/mo annual) and the Founding Member plan ($19 one-time). Unlimited meal plans, saved recipes, and PDF export.'
 
 export default function PricingPage() {
 	const navigate = useNavigate()

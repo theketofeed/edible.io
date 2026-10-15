@@ -4,7 +4,7 @@ import HowItWorksSticky from '../components/HowItWorksSticky'
 import Seo from '../components/Seo'
 
 const TITLE = 'How Edible Works. Turn Groceries Into Meal Plans'
-const DESCRIPTION = 'Upload your grocery receipt or paste your shopping list, choose a diet, and get a personalized weekly meal plan in seconds. Four simple steps to eliminate food waste.'
+const DESCRIPTION = 'Upload your grocery receipt or paste your shopping list, choose a diet, and get a personalized weekly meal plan in seconds. Four steps to stop food waste.'
 
 export default function HowItWorksPage() {
 	return (

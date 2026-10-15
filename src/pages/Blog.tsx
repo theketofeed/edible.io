@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import Seo from '../components/Seo'
 
 const TITLE = 'Blog | Edible'
-const DESCRIPTION = 'Meal planning tips, app comparisons, and guides to help you spend less time deciding what to cook.'
+const DESCRIPTION = 'Meal planning tips, app comparisons, and practical guides that help you spend less time deciding what to cook for breakfast, lunch, and dinner.'
 
 interface PostThumbnail {
 	webp?: string

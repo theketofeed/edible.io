@@ -4,7 +4,7 @@ import FAQ from '../components/FAQ'
 import Seo from '../components/Seo'
 
 const TITLE = 'Edible FAQ. Common Questions Answered'
-const DESCRIPTION = 'Answers to common questions about Edible: pricing, supported stores, diet options, meal plan editing, and what makes Edible different from other meal planners.'
+const DESCRIPTION = 'Answers to common questions about Edible: pricing, supported stores, diet options, meal plan editing, and what makes Edible different from meal planners.'
 
 export default function FAQPage() {
 	return (
