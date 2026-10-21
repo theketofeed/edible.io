@@ -93,24 +93,76 @@ const imageLimiter = rateLimit({
   message: { error: 'Image rate limit reached. Please wait a moment.' }
 })
 
-const allowedOrigins = [
+// ─── CORS allow-list ───────────────────────────────────────────────────────
+// Every browser origin allowed to call this API. The preflight (OPTIONS)
+// carries the frontend's `Origin` header, and the browser compares it against
+// `Access-Control-Allow-Origin` — so the list must contain the EXACT origin
+// the site is served from. `www.` and the apex domain are DIFFERENT origins
+// to a browser, so both have to be listed explicitly.
+const PRODUCTION_ORIGINS = [
+  'https://tryediblee.com',
+  'https://www.tryediblee.com',
+  'https://edible-io.vercel.app',
+]
+
+const LOCAL_ORIGINS = [
   'http://localhost:5173',
   'http://localhost:5174',
   'http://localhost:4173',
-  process.env.FRONTEND_URL,
-  'https://youractualdomain.com', // replace with your real domain
-].filter(Boolean)
+]
 
+// FRONTEND_URL is optional and may hold one or several comma/space separated
+// origins. Normalised (trailing slash stripped, lower-cased) so that
+// "https://tryediblee.com/" still matches "https://tryediblee.com".
+const envOrigins = String(process.env.FRONTEND_URL || '')
+  .split(/[\s,]+/)
+  .map((o) => o.trim().replace(/\/+$/, '').toLowerCase())
+  .filter(Boolean)
+
+const allowedOrigins = [
+  ...new Set([
+    ...PRODUCTION_ORIGINS,
+    ...LOCAL_ORIGINS,
+    ...envOrigins,
+  ].map((o) => o.replace(/\/+$/, '').toLowerCase())),
+]
+
+console.log(`[CORS] Allowed origins (${allowedOrigins.length}): ${allowedOrigins.join(', ')}`)
+if (!process.env.FRONTEND_URL) {
+  console.warn('[CORS] ⚠️  FRONTEND_URL is not set — production + localhost origins are still allowed')
+}
+
+// Tracks how many requests each blocked origin has made, so a real user
+// hammering the API is distinguishable from one-off scanner noise.
+const blockedOriginCounts = new Map()
+
+// ⚠️ ORDERING: this `app.use(cors(...))` MUST remain the FIRST middleware
+// registered on the app — above every route and above the per-route
+// `requireWebhookSecret` guard defined below. The cors middleware answers and
+// terminates preflight OPTIONS requests itself, so a preflight never reaches
+// a route handler and can never trip the webhook-secret check. Keep it here.
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (mobile apps, curl, etc.)
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true)
-    } else {
-      callback(new Error('Not allowed by CORS'))
+    // Allow requests with no origin (mobile apps, curl, server-to-server).
+    if (!origin) {
+      return callback(null, true)
     }
+    // Compare case-insensitively / trailing-slash-insensitively, but echo the
+    // request's ORIGINAL origin string back in the header.
+    const normalized = origin.trim().replace(/\/+$/, '').toLowerCase()
+    if (allowedOrigins.includes(normalized)) {
+      return callback(null, true)
+    }
+    const seen = (blockedOriginCounts.get(origin) || 0) + 1
+    blockedOriginCounts.set(origin, seen)
+    console.warn(`[CORS] ❌ Blocked origin: ${origin} (request #${seen} from this origin)`)
+    console.warn(`[CORS] Allowed origins: ${allowedOrigins.join(', ')}`)
+    callback(new Error(`Not allowed by CORS: ${origin}`))
   },
-  credentials: true
+  credentials: true,
+  // Cache preflights for 10 minutes so Render doesn't serve a preflight on
+  // every single API call.
+  maxAge: 600,
 }))
 
 const rawBodyParser = express.raw({ type: 'application/json' })
@@ -582,10 +634,18 @@ app.post('/api/checkout', async (req, res) => {
 			return res.status(400).json({ error: 'Invalid product type' })
 		}
 
+		const returnUrl = new URL(process.env.FRONTEND_URL || 'https://tryediblee.com')
+		if (returnUrl.hostname === 'www.tryediblee.com') {
+			returnUrl.hostname = 'tryediblee.com'
+		}
+		returnUrl.pathname = `${returnUrl.pathname.replace(/\/+$/, '')}/payment-success`
+		returnUrl.search = ''
+		returnUrl.hash = ''
+
 		const session = await dodo.checkoutSessions.create({
 			customer: { email: userEmail, name: userEmail.split('@')[0] },
 			product_cart: [{ product_id: productId, quantity: 1 }],
-			return_url: `${process.env.FRONTEND_URL}/payment-success`,
+			return_url: returnUrl.toString(),
 			metadata: { user_id: userId, product_type: productType }
 		})
 

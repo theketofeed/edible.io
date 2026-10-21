@@ -10,20 +10,23 @@ type SeoProps = {
 	image?: string
 	/** Marks non-content pages as noindex. Defaults to false, which removes any robots tag. */
 	noindex?: boolean
+	/** Prevents crawlers from following links on noindex pages. */
+	nofollow?: boolean
 }
 
 const CANONICAL_SELECTOR = 'link[rel="canonical"]'
 const ROBOTS_SELECTOR = 'meta[name="robots"]'
 
-function setRobotsMeta(noindex?: boolean) {
+function setRobotsMeta(noindex?: boolean, nofollow?: boolean) {
 	const el = document.querySelector(ROBOTS_SELECTOR)
 	if (noindex) {
+		const content = `noindex, ${nofollow ? 'nofollow' : 'follow'}`
 		if (el) {
-			el.setAttribute('content', 'noindex, follow')
+			el.setAttribute('content', content)
 		} else {
 			const meta = document.createElement('meta')
 			meta.setAttribute('name', 'robots')
-			meta.setAttribute('content', 'noindex, follow')
+			meta.setAttribute('content', content)
 			document.head.appendChild(meta)
 		}
 	} else if (el) {
@@ -36,7 +39,7 @@ function setMeta(selector: string, content: string) {
 	if (el) el.setAttribute('content', content)
 }
 
-export default function Seo({ title, description, path, image, noindex }: SeoProps) {
+export default function Seo({ title, description, path, image, noindex, nofollow }: SeoProps) {
 	useEffect(() => {
 		const url = `${SITE_URL}${path}`
 		const img = image || DEFAULT_OG_IMAGE
@@ -50,7 +53,7 @@ export default function Seo({ title, description, path, image, noindex }: SeoPro
 		setMeta('meta[name="twitter:title"]', title)
 		setMeta('meta[name="twitter:description"]', description)
 		setMeta('meta[name="twitter:image"]', img)
-		setRobotsMeta(noindex)
+		setRobotsMeta(noindex, nofollow)
 
 		let canonical = document.querySelector<HTMLLinkElement>(CANONICAL_SELECTOR)
 		if (!canonical) {
@@ -63,7 +66,7 @@ export default function Seo({ title, description, path, image, noindex }: SeoPro
 		// Clear the robots tag when this route unmounts so a noindex never
 		// sticks to the next route (routes that render no Seo at all included).
 		return () => setRobotsMeta(false)
-	}, [title, description, path, image, noindex])
+	}, [title, description, path, image, noindex, nofollow])
 
 	return null
 }
