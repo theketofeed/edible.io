@@ -1,5 +1,5 @@
-import { memo, useCallback, useState } from 'react'
-import { House, Sparkles, CreditCard, MessageCircleQuestion, Menu, X } from 'lucide-react'
+import { memo, useState } from 'react'
+import { House, Sparkles, CreditCard, MessageCircleQuestion, BookOpen, Menu, X } from 'lucide-react'
 import logo from '../assets/favicon.png'
 import { useAuth } from '../context/AuthContext'
 import UserMenu from './Usermenu'
@@ -13,18 +13,12 @@ const Header = memo(function Header({ onAuthClick, onOpenProfile }: HeaderProps)
 	const { user } = useAuth()
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-	const scrollToUpload = useCallback(() => {
-		const el = document.getElementById('upload-section')
-		if (el) {
-			el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-		}
-	}, [])
-
 	const navItems = [
-		{ name: 'Home', href: '#home', icon: House },
-		{ name: 'How it Works', href: '#how-it-works', icon: Sparkles },
-		{ name: 'Pricing', href: '#pricing', icon: CreditCard },
-		{ name: 'FAQ', href: '#faq', icon: MessageCircleQuestion },
+		{ name: 'Home', href: '/', icon: House },
+		{ name: 'How it Works', href: '/how-it-works', icon: Sparkles },
+		{ name: 'Pricing', href: '/pricing', icon: CreditCard },
+		{ name: 'FAQ', href: '/faq', icon: MessageCircleQuestion },
+		{ name: 'Blog', href: '/blog', icon: BookOpen },
 	]
 
 	return (
@@ -37,12 +31,12 @@ const Header = memo(function Header({ onAuthClick, onOpenProfile }: HeaderProps)
 				<nav className="flex items-center justify-between px-4 md:px-8 py-3 max-w-7xl mx-auto">
 
 					{/* Logo */}
-					<div className="flex items-center gap-2 cursor-pointer flex-shrink-0" onClick={() => window.scrollTo(0, 0)}>
+					<a href="/" aria-label="Edible home" className="flex items-center gap-2 cursor-pointer flex-shrink-0">
 						<img src={logo} alt="Edible" className="w-7 h-7 sm:w-8 sm:h-8 object-contain" />
 						<span className="text-[17px] sm:text-xl font-bold text-gray-900 tracking-tight">
 							Edible
 						</span>
-					</div>
+					</a>
 
 					{/* Desktop Nav: Centred Pill */}
 					<div className="hidden md:flex items-center gap-1 bg-gray-100/30 p-1 rounded-full border border-gray-200/20 absolute left-1/2 -translate-x-1/2 shadow-sm">

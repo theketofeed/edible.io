@@ -63,8 +63,8 @@ const Footer = memo(function Footer() {
 						<div>
 							<h4 className="text-white font-semibold text-sm mb-4">Product</h4>
 							<ul className="space-y-2">
-								<li><a href="#how-it-works" className="text-gray-400 hover:text-purple-400 text-sm transition-colors">How It Works</a></li>
-								<li><a href="#pricing" className="text-gray-400 hover:text-purple-400 text-sm transition-colors">Pricing</a></li>
+								<li><a href="/how-it-works" className="text-gray-400 hover:text-purple-400 text-sm transition-colors">How It Works</a></li>
+								<li><a href="/pricing" className="text-gray-400 hover:text-purple-400 text-sm transition-colors">Pricing</a></li>
 							</ul>
 						</div>
 
@@ -73,7 +73,8 @@ const Footer = memo(function Footer() {
 							<h4 className="text-white font-semibold text-sm mb-4">Company</h4>
 							<ul className="space-y-2">
 								<li><a href="/blog" className="text-gray-400 hover:text-purple-400 text-sm transition-colors">Blog</a></li>
-								<li><a href="#contact" className="text-gray-400 hover:text-purple-400 text-sm transition-colors">Contact Us</a></li>
+								<li><a href="/faq" className="text-gray-400 hover:text-purple-400 text-sm transition-colors">FAQ</a></li>
+								<li><a href="mailto:hello@tryediblee.com" className="text-gray-400 hover:text-purple-400 text-sm transition-colors">Contact Us</a></li>
 							</ul>
 						</div>
 
