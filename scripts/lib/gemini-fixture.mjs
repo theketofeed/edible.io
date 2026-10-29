@@ -52,18 +52,22 @@ ${itemsList}
 CRITICAL CULINARY RULES:
 1. Create COHESIVE, REALISTIC meals. Do NOT just throw random ingredients together (e.g., no "Apple and Egg Breakfast" or "Banana Chicken"). If the ingredients don't naturally go together, rely heavily on the pantry staples to bridge them or separate them (e.g., eat the apple as a side).
 2. Only use ingredients from the list above + pantry staples. Do NOT add salmon, chickpeas, feta, mushrooms, or any ingredient not listed.
-3. Give each recipe an appetizing, standard culinary name. Instead of "Roasted Chicken with Green Bean and Onion", use "Herb-Roasted Chicken with Garlic Green Beans". Instead of "Oatmeal with Peanut Butter", use "Creamy Peanut Butter Oat Porridge". Make it sound delicious without using absurd 5-star restaurant flowery words.
+3. Use the shortest conventional title that identifies the main ingredients and dish form. Use a cooking method (roasted, pan-seared, baked, steamed, stir-fried, slow-cooked) only when that is how the dish is actually cooked. Use an ingredient or sauce descriptor (garlic, lemon, tomato, cream sauce) only when that ingredient or sauce is in the recipe. Use "Creamy" only when the dish truly has a cream, yogurt, cheese, or nut-butter sauce element. Never use mood, taste, temperature, texture, or quality words such as warm, savory, hearty, delicious, comforting, golden, zesty, juicy, tender, crispy, fluffy, flavorful, spiced, or cheesy. Never use words about when or how a meal was made or reused, such as leftover, leftovers, next-day, reheated, or meal-prep. If a meal reuses an earlier meal, name it as a normal dish. Do not repeat a descriptor word across titles in one plan.
+   Bad: "Warm Lentil and Spinach Soup". Good: "Lentil and Spinach Soup".
+   Bad: "Hearty Beef and Barley Stew". Good: "Beef and Barley Stew".
+   Bad: "Savory Mushroom Pasta". Good: "Mushroom Pasta".
+   Bad: "Leftover Roasted Pork and Apple Salad". Good: "Roasted Pork and Apple Salad".
 4. Meals must make sense for their time of day (Breakfast, Lunch, Dinner).
 
 Return ONLY valid JSON (no markdown, no commentary):
-If ingredients are insufficient to create a meaningful meal for a slot, use null for that slot instead of a placeholder name. Never output a meal named literally 'Lunch', 'Dinner', or 'Breakfast' — these are placeholders and are not acceptable meal names.
+If ingredients are insufficient to create a meaningful meal for a slot, use null for that slot instead of a placeholder name. Never output a meal named literally 'Lunch', 'Dinner', or 'Breakfast'; these are placeholders and are not acceptable meal names.
 {
   "totalDays": ${days},
   "days": [
     {
       "day": "Day 1",
       "Breakfast": {
-        "title": "Enticing Recipe Name",
+        "title": "Plain Recipe Title",
         "instructions": ["Step 1", "Step 2", "ENJOY!❤️"],
         "ingredients": ["ingredient 1", "ingredient 2"],
         "tips": ["Chef tip specific to this recipe"],

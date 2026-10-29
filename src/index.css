@@ -124,8 +124,8 @@ body {
 /* PDF page behaviour and export styling */
 .pdf-export-container {
     min-height: 100vh;
-    width: 800px;
-    max-width: 800px;
+    width: 816px;
+    max-width: 816px;
     box-sizing: border-box;
     overflow-wrap: anywhere;
     word-break: break-word;
@@ -412,16 +412,16 @@ body {
     position: fixed;
     left: -10000px;
     top: 0;
-    width: 800px !important;
+    width: 816px !important;
     z-index: -100;
 }
 
-/* Ensure it is visible during capture.
+/* Ensure only the html2pdf clone is visible during capture.
    Width must match html2pdf's capture container (letter 8.5in at margin 0 = 816px).
-   The element then maps 1:1 onto the full page with the jsPDF margin removed, so its
+   The clone then maps 1:1 onto the full page with the jsPDF margin removed, so its
    own p-12 padding (48px) becomes the page's ~0.5in breathing room and the element
    neither overflows (right-edge clipping) nor renders at a reduced scale. */
-.pdf-export-mode.pdf-only {
+.html2pdf__container > .pdf-export-mode.pdf-only {
     position: relative !important;
     left: 0 !important;
     z-index: 9999 !important;
@@ -456,8 +456,8 @@ body {
 
 .pdf-export-container {
     box-sizing: border-box;
-    width: 800px !important;
-    max-width: 800px;
+    width: 816px !important;
+    max-width: 816px;
     font-family: Arial, Helvetica, sans-serif;
 }
 
