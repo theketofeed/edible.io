@@ -50,6 +50,7 @@ export default function Seo({ title, description, path, image, noindex, nofollow
 		setMeta('meta[property="og:description"]', description)
 		setMeta('meta[property="og:url"]', url)
 		setMeta('meta[property="og:image"]', img)
+		setMeta('meta[property="og:image:secure_url"]', img)
 		setMeta('meta[name="twitter:title"]', title)
 		setMeta('meta[name="twitter:description"]', description)
 		setMeta('meta[name="twitter:image"]', img)

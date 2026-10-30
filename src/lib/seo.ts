@@ -1,2 +1,2 @@
 export const SITE_URL = 'https://tryediblee.com'
-export const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.jpg`
+export const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.jpg?v=2`
