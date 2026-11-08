@@ -119,16 +119,6 @@ export default function SavedPlanPage({
 
 	return (
 		<div style={{ maxWidth: 860, margin: '0 auto' }}>
-			<style>{`
-				.saved-plan-print { width: 100%; max-width: 100%; margin: 0; padding: 0; background: transparent; }
-				.saved-plan-print.pdf-export-mode { width: 816px !important; max-width: 816px !important; margin: 0 auto; padding: 32px !important; box-sizing: border-box; background: #fff !important; }
-				.saved-plan-pdf-header { display: none; }
-				.saved-plan-print.pdf-export-mode .saved-plan-pdf-header { display: block; }
-				.saved-plan-print .grid-layout-vertical { width: 100%; max-width: 100%; }
-				.saved-plan-print .grid-layout-vertical > div { width: 100%; max-width: 100%; }
-				.saved-plan-print.pdf-export-mode .grid-layout-vertical { display: flex; flex-direction: column; gap: 3rem; }
-				.saved-plan-print.pdf-export-mode .grid-layout-vertical > div { width: 100%; max-width: 100%; }
-			`}</style>
 			<header style={{ marginBottom: 22 }}>
 				<button onClick={onBack} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, border: '1px solid #EDE9E2', borderRadius: 10, padding: '8px 12px', background: '#FFFFFF', color: '#6B7280', fontWeight: 700, cursor: 'pointer', marginBottom: 18 }}>
 					<ArrowLeft size={16} />
@@ -172,9 +162,9 @@ export default function SavedPlanPage({
 
 			<div ref={printableRef} className="saved-plan-print meal-plan-pdf">
 				<div className="saved-plan-pdf-header text-center mb-10">
-					<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16 }}>
-						<span style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-							<img src={logo} alt="" aria-hidden="true" style={{ display: 'block', width: 32, height: 32, objectFit: 'contain', transform: 'translateY(2px)' }} />
+					<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, marginBottom: 16 }}>
+						<span style={{ position: 'relative', width: 32, height: 32, overflow: 'hidden', flexShrink: 0 }}>
+							<img src={logo} alt="" aria-hidden="true" style={{ position: 'absolute', top: '50%', left: '50%', display: 'block', width: 42, height: 42, objectFit: 'contain', transform: 'translate(-50%, calc(-50% + 2px))' }} />
 						</span>
 						<span style={{ color: '#111827', fontSize: 32, fontWeight: 900, lineHeight: 1 }}>Edible</span>
 					</div>

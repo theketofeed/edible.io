@@ -19,6 +19,7 @@ import PricingModal from '../components/PricingModal'
 import { usePlan } from '../hooks/usePlan'
 import { track, Events } from '../lib/analytics'
 import { countMeals, pickPlanPhotos, resizeForCard } from "../lib/planCover"
+import { isSavedPlanCurrent } from "../lib/savedPlan"
 import SavedPlanPage from "./SavedPlanPage"
 
 const C = {
@@ -1113,7 +1114,7 @@ function SavedPlans({ plans, activePlanId, onActivatePlan, onDeletePlan, onNav, 
         {visible.map(plan => {
           const dm = DIET[plan.diet] || DIET.Balanced
           const photos = pickPlanPhotos(plan.planData)
-          const isActive = plan.id === activePlanId
+          const isActive = plan.id === activePlanId && isSavedPlanCurrent(plan.activatedAt, plan.days.length)
           return (
             <div key={plan.id} role="link" aria-label={`Open plan: ${plan.title}`} tabIndex={0}
               onClick={e => {
@@ -1930,6 +1931,7 @@ export default function EdibleDashboard() {
 
   const query = search.trim().toLowerCase()
   const showSearch = query.length > 1
+  const openedPlan = plans.find(plan => plan.id === searchParams.get("open"))
 
   const matchedPlans = showSearch
     ? plans.filter(p => p.title.toLowerCase().includes(query) || p.diet.toLowerCase().includes(query))
@@ -2279,9 +2281,9 @@ export default function EdibleDashboard() {
             <div style={{ maxWidth: 860, margin: "0 auto" }}>
               {view === "plans" && searchParams.get("open") ? (
                 <SavedPlanPage
-                  plan={plans.find(plan => plan.id === searchParams.get("open"))}
+                  plan={openedPlan}
                   isLoading={isLoadingPlans}
-                  isActive={plans.find(plan => plan.id === searchParams.get("open"))?.id === selectedPlanId}
+                  isActive={Boolean(openedPlan && openedPlan.id === selectedPlanId && isSavedPlanCurrent(openedPlan.activatedAt, openedPlan.days.length))}
                   onBack={returnToSavedPlans}
                   onActivate={handleActivatePlan}
                   onViewPlanner={() => go("planner")}

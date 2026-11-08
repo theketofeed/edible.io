@@ -260,9 +260,9 @@ const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result
 
 			<div ref={ref} className="w-full print-content meal-plan-pdf">
 				<div className="print-only text-center mb-12">
-					<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16 }}>
-						<span style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-							<img src={logo} alt="" aria-hidden="true" style={{ display: 'block', width: 32, height: 32, objectFit: 'contain', transform: 'translateY(2px)' }} />
+					<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, marginBottom: 16 }}>
+						<span style={{ position: 'relative', width: 32, height: 32, overflow: 'hidden', flexShrink: 0 }}>
+							<img src={logo} alt="" aria-hidden="true" style={{ position: 'absolute', top: '50%', left: '50%', display: 'block', width: 42, height: 42, objectFit: 'contain', transform: 'translate(-50%, calc(-50% + 2px))' }} />
 						</span>
 						<h1 style={{ color: '#111827', fontSize: 36, fontWeight: 900, lineHeight: 1, margin: 0 }}>
 							Edible

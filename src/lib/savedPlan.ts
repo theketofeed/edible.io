@@ -81,3 +81,13 @@ export function normalizeSavedPlan(record: SavedPlanRecord): { title: string; re
 		}
 	}
 }
+
+export function isSavedPlanCurrent(activatedAt: string, dayCount: number, now = new Date()): boolean {
+	const start = new Date(activatedAt)
+	if (!Number.isFinite(start.getTime()) || dayCount <= 0) return false
+	start.setHours(0, 0, 0, 0)
+	const today = new Date(now)
+	today.setHours(0, 0, 0, 0)
+	const dayIndex = Math.floor((today.getTime() - start.getTime()) / 86400000)
+	return dayIndex >= 0 && dayIndex < dayCount
+}

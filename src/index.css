@@ -431,6 +431,15 @@ body {
     margin: 0 !important;
 }
 
+.html2pdf__container > .meal-plan-pdf-export {
+    position: relative !important;
+    left: 0 !important;
+    z-index: 9999 !important;
+    visibility: visible !important;
+    display: block !important;
+    margin: 0 !important;
+}
+
 .meal-plan-pdf.pdf-export-mode .line-clamp-2 {
     display: block !important;
     overflow: visible !important;
@@ -442,6 +451,43 @@ body {
 .meal-plan-pdf.pdf-export-mode .group {
     page-break-inside: avoid;
     break-inside: avoid;
+}
+
+.meal-plan-pdf.pdf-export-mode .grid-layout-vertical > div,
+.meal-plan-pdf.pdf-export-mode .grid-layout-vertical > div > .flex-1 {
+    min-width: 0 !important;
+}
+
+.saved-plan-print {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+}
+
+.saved-plan-pdf-header {
+    display: none;
+}
+
+.saved-plan-print.pdf-export-mode .saved-plan-pdf-header {
+    display: block;
+}
+
+.saved-plan-print .grid-layout-vertical,
+.saved-plan-print .grid-layout-vertical > div {
+    width: 100%;
+    max-width: 100%;
+}
+
+.saved-plan-print.pdf-export-mode .grid-layout-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+}
+
+.saved-plan-print.pdf-export-mode .grid-layout-vertical > div {
+    min-width: 0;
 }
 
 .pdf-export-mode .no-pdf {

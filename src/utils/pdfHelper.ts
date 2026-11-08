@@ -105,13 +105,24 @@ export const getElementAsPDFBlob = async (element: HTMLElement, filename: string
 
 export const downloadPlanAsPDF = async (element: HTMLElement, options: PDFOptions) => {
     const exportElement = element.cloneNode(true) as HTMLElement
-    exportElement.classList.add('pdf-export-mode', 'pdf-only')
+    const margin = Math.max(0, options.margin ?? 0)
+    const exportWidth = Math.max(1, 816 - margin * 192)
+    exportElement.classList.add('pdf-export-mode', 'meal-plan-pdf-export')
+    exportElement.style.setProperty('position', 'fixed')
+    exportElement.style.setProperty('left', '-10000px')
+    exportElement.style.setProperty('top', '0')
+    exportElement.style.setProperty('width', `${exportWidth}px`, 'important')
+    exportElement.style.setProperty('max-width', `${exportWidth}px`, 'important')
+    exportElement.style.setProperty('margin', '0', 'important')
+    exportElement.style.setProperty('padding', '32px', 'important')
+    exportElement.style.setProperty('box-sizing', 'border-box', 'important')
+    exportElement.style.setProperty('background', '#fff', 'important')
     document.body.appendChild(exportElement)
 
     try {
-        const windowWidth = exportElement.offsetWidth || 816
+        const windowWidth = exportWidth
         const opt = {
-            margin: options.margin ?? 0,
+            margin,
             filename: options.filename,
             image: { type: 'jpeg' as const, quality: 0.98 },
             html2canvas: {
