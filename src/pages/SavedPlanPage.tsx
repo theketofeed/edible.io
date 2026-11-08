@@ -8,7 +8,6 @@ import { downloadPlanAsPDF } from '../utils/pdfHelper'
 import { usePlan } from '../hooks/usePlan'
 import BulkDownloadButton from '../components/BulkDownloadButton'
 import { DayCard } from '../components/PlanDays'
-import logo from '../assets/favicon.png'
 
 type SavedPlan = { id: string; title: string; planData: unknown }
 type ToastKind = 'success' | 'error' | 'info'
@@ -162,12 +161,7 @@ export default function SavedPlanPage({
 
 			<div ref={printableRef} className="saved-plan-print meal-plan-pdf">
 				<div className="saved-plan-pdf-header text-center mb-10">
-					<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, marginBottom: 16 }}>
-						<span style={{ position: 'relative', width: 32, height: 32, overflow: 'hidden', flexShrink: 0 }}>
-							<img src={logo} alt="" aria-hidden="true" style={{ position: 'absolute', top: '50%', left: '50%', display: 'block', width: 42, height: 42, objectFit: 'contain', transform: 'translate(-50%, calc(-50% + 2px))' }} />
-						</span>
-						<span style={{ color: '#111827', fontSize: 32, fontWeight: 900, lineHeight: 1 }}>Edible</span>
-					</div>
+					<p style={{ color: '#111827', fontSize: 32, fontWeight: 900, lineHeight: 1, margin: '0 0 16px' }}>Edible</p>
 					<h2 style={{ color: '#1F2937', fontSize: 24, fontWeight: 700, margin: '0 0 8px' }}>{title}</h2>
 					{result.sourceItems.length > 0 && (
 						<p style={{ color: '#6B7280', fontSize: 14, fontWeight: 500, margin: 0 }}>
