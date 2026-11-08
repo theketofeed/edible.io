@@ -1618,8 +1618,8 @@ function Generate({
           />
         </div>
       ) : isLoading ? (
-        <div role="status" aria-live="polite" style={{
-          background: C.white, borderRadius: 20, border: `1px solid ${C.cardBdr}`, height: 390, overflow: "hidden"
+        <div className="dashboard-generate-loading-panel" role="status" aria-live="polite" style={{
+          background: C.white, borderRadius: 20, border: `1px solid ${C.cardBdr}`, overflow: "hidden"
         }}>
           <Loading step={loadingStep} compact />
         </div>
@@ -2201,6 +2201,7 @@ export default function EdibleDashboard(generateProps: GenerateProps) {
         .dash-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .dash-planner-grid { display: grid; grid-template-columns: 1fr 250px; gap: 14px; }
         .dash-generate-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .dashboard-generate-loading-panel { height: 390px; }
         @media (max-width: 768px) {
           .desktop-sidebar { display: none !important; }
           .mobile-bottom-nav { 
@@ -2227,6 +2228,13 @@ export default function EdibleDashboard(generateProps: GenerateProps) {
           .dash-two-col { grid-template-columns: 1fr !important; }
           .dash-planner-grid { grid-template-columns: 1fr !important; }
           .dash-generate-grid { grid-template-columns: 1fr !important; }
+          .dashboard-generate-loading-panel {
+            height: auto !important;
+            min-height: calc(100dvh - 170px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
           .dash-header { padding: 0 12px !important; gap: 8px !important; }
           .dash-overview-card { padding: 18px 16px 24px !important; }
           .dash-stat-card { padding: 12px 14px !important; }

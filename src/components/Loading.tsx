@@ -131,7 +131,7 @@ const Loading = memo(function Loading({ step, compact = false }: { step?: number
           >
 {current.message}
 			</p>
-			<p className={`${compact ? 'hidden' : 'block'} text-gray-400/70 text-xs font-medium mt-1`}>
+			<p className={`${compact ? 'block text-[11px] leading-relaxed' : 'block text-xs'} text-gray-400/70 font-medium mt-1`}>
 				Hang tight. This can take a minute. Your meal plan will be ready soon.
 			</p>
         </div>
