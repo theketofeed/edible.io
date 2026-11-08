@@ -171,17 +171,27 @@ const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result
 				}
 				
 				/* Force 1-column layout for PDF export specifically */
-				.pdf-export-mode .grid-layout-vertical {
+				.meal-plan-pdf.pdf-export-mode .grid-layout-vertical {
 					display: flex !important;
 					flex-direction: column !important;
 					gap: 3rem !important;
 				}
-				.pdf-export-mode .grid-layout-vertical > div {
+				.meal-plan-pdf.pdf-export-mode .grid-layout-vertical > div {
 					width: 100% !important;
 					max-width: 100% !important;
 				}
 
 				.print-only { display: none; }
+				.meal-plan-pdf.pdf-export-mode {
+					width: 816px !important;
+					max-width: 816px !important;
+					margin: 0 auto !important;
+					padding: 32px !important;
+					box-sizing: border-box !important;
+					background: white !important;
+				}
+				.meal-plan-pdf.pdf-export-mode .print-only { display: block !important; }
+				.meal-plan-pdf.pdf-export-mode .no-print { display: none !important; }
 			`}</style>
 			<div className="screen-only mb-10">
 				<h1 className="text-3xl md:text-4xl font-bold mb-3 text-center text-gray-900 tracking-tight">
@@ -248,11 +258,13 @@ const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result
 				</div>
 			</div>
 
-			<div ref={ref} className="w-full print-content">
+			<div ref={ref} className="w-full print-content meal-plan-pdf">
 				<div className="print-only text-center mb-12">
-					<div className="inline-flex items-center gap-2 mb-4">
-						<img src={logo} alt="Edible" className="w-10 h-10 object-contain" />
-						<h1 className="text-4xl font-black text-gray-900 tracking-tight">
+					<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16 }}>
+						<span style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+							<img src={logo} alt="" aria-hidden="true" style={{ display: 'block', width: 32, height: 32, objectFit: 'contain', transform: 'translateY(2px)' }} />
+						</span>
+						<h1 style={{ color: '#111827', fontSize: 36, fontWeight: 900, lineHeight: 1, margin: 0 }}>
 							Edible
 						</h1>
 					</div>

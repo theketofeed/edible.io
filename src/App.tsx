@@ -30,7 +30,7 @@ import { createCheckout } from './lib/checkout'
 import type { DietType, MealPlanResult } from './utils/types'
 import type { ProductType } from './lib/checkout'
 import { useReactToPrint } from 'react-to-print'
-import html2pdf from 'html2pdf.js'
+import { downloadPlanAsPDF } from './utils/pdfHelper'
 import ToastContainer, { ToastKind, ToastMessage } from './components/Toast'
 import ReceiptConfirmation from './components/ReceiptConfirmation'
 import { parseReceiptWithGemini, ParsedItem } from './services/receiptParser'
@@ -282,35 +282,12 @@ function MainContent() {
 
 	const triggerDownload = useCallback(async () => {
 		if (!printRef.current) return
-		
-		// Add helper class to force 1-column layout for the PDF capture
-		const el = printRef.current
-		el.classList.add('pdf-export-mode')
-		
-		const opt = {
-			margin: 0.5,
-			filename: 'meal-plan.pdf',
-			image: { type: 'jpeg' as const, quality: 0.98 },
-			html2canvas: { 
-				scale: 2,
-				useCORS: true,
-				logging: false,
-				letterRendering: true
-			},
-			jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' as const }
-		}
-
 		try {
-			// Give a tiny moment for the layout to re-flow
-			await new Promise(resolve => setTimeout(resolve, 100))
-			await html2pdf().set(opt).from(el).save()
-			showToast('success', 'Downloaded PDF')
+			const downloaded = await downloadPlanAsPDF(printRef.current, { filename: 'meal-plan.pdf', margin: 0.5 })
+			showToast(downloaded ? 'success' : 'error', downloaded ? 'Downloaded PDF' : 'Failed to generate PDF')
 		} catch (err) {
 			console.error('PDF Generation Error:', err)
 			showToast('error', 'Failed to generate PDF')
-		} finally {
-			// Remove the helper class
-			el.classList.remove('pdf-export-mode')
 		}
 	}, [showToast])
 

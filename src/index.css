@@ -431,6 +431,19 @@ body {
     margin: 0 !important;
 }
 
+.meal-plan-pdf.pdf-export-mode .line-clamp-2 {
+    display: block !important;
+    overflow: visible !important;
+    -webkit-box-orient: initial !important;
+    -webkit-line-clamp: unset !important;
+    line-height: 1.4 !important;
+}
+
+.meal-plan-pdf.pdf-export-mode .group {
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
 .pdf-export-mode .no-pdf {
     display: none !important;
 }

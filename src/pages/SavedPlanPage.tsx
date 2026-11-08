@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import type { Meal } from '../utils/types'
 import { countMeals } from '../lib/planCover'
 import { normalizeSavedPlan } from '../lib/savedPlan'
-import { downloadElementAsPDF } from '../utils/pdfHelper'
+import { downloadPlanAsPDF } from '../utils/pdfHelper'
 import { usePlan } from '../hooks/usePlan'
 import BulkDownloadButton from '../components/BulkDownloadButton'
 import { DayCard } from '../components/PlanDays'
@@ -100,7 +100,7 @@ export default function SavedPlanPage({
 		setDownloadingPDF(true)
 		const filename = `${title.trim().replace(/[<>:"/\\|?*\x00-\x1F]/g, '-').replace(/\s+/g, '-') || 'meal-plan'}.pdf`
 		try {
-			const downloaded = await downloadElementAsPDF(printableRef.current, { filename, margin: 0.5 })
+			const downloaded = await downloadPlanAsPDF(printableRef.current, { filename, margin: 0.5 })
 			showToast(downloaded ? 'success' : 'error', downloaded ? 'Downloaded PDF' : 'Failed to generate PDF')
 		} finally {
 			setDownloadingPDF(false)
@@ -120,9 +120,14 @@ export default function SavedPlanPage({
 	return (
 		<div style={{ maxWidth: 860, margin: '0 auto' }}>
 			<style>{`
-				.saved-plan-print { width: 816px; max-width: 100%; margin: 0 auto; padding: 32px; background: #fff; }
+				.saved-plan-print { width: 100%; max-width: 100%; margin: 0; padding: 0; background: transparent; }
+				.saved-plan-print.pdf-export-mode { width: 816px !important; max-width: 816px !important; margin: 0 auto; padding: 32px !important; box-sizing: border-box; background: #fff !important; }
+				.saved-plan-pdf-header { display: none; }
+				.saved-plan-print.pdf-export-mode .saved-plan-pdf-header { display: block; }
 				.saved-plan-print .grid-layout-vertical { width: 100%; max-width: 100%; }
 				.saved-plan-print .grid-layout-vertical > div { width: 100%; max-width: 100%; }
+				.saved-plan-print.pdf-export-mode .grid-layout-vertical { display: flex; flex-direction: column; gap: 3rem; }
+				.saved-plan-print.pdf-export-mode .grid-layout-vertical > div { width: 100%; max-width: 100%; }
 			`}</style>
 			<header style={{ marginBottom: 22 }}>
 				<button onClick={onBack} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, border: '1px solid #EDE9E2', borderRadius: 10, padding: '8px 12px', background: '#FFFFFF', color: '#6B7280', fontWeight: 700, cursor: 'pointer', marginBottom: 18 }}>
@@ -165,15 +170,17 @@ export default function SavedPlanPage({
 				</button>
 			</div>
 
-			<div ref={printableRef} className="saved-plan-print">
-				<div className="text-center mb-10">
-					<div className="inline-flex items-center gap-2 mb-4">
-						<img src={logo} alt="Edible" className="w-10 h-10 object-contain" />
-						<span className="text-3xl font-black text-gray-900">Edible</span>
+			<div ref={printableRef} className="saved-plan-print meal-plan-pdf">
+				<div className="saved-plan-pdf-header text-center mb-10">
+					<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16 }}>
+						<span style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+							<img src={logo} alt="" aria-hidden="true" style={{ display: 'block', width: 32, height: 32, objectFit: 'contain', transform: 'translateY(2px)' }} />
+						</span>
+						<span style={{ color: '#111827', fontSize: 32, fontWeight: 900, lineHeight: 1 }}>Edible</span>
 					</div>
-					<h2 className="text-2xl font-bold text-gray-800 mb-2">{title}</h2>
+					<h2 style={{ color: '#1F2937', fontSize: 24, fontWeight: 700, margin: '0 0 8px' }}>{title}</h2>
 					{result.sourceItems.length > 0 && (
-						<p className="text-sm text-gray-500 font-medium">
+						<p style={{ color: '#6B7280', fontSize: 14, fontWeight: 500, margin: 0 }}>
 							Personalized Meal Plan · Grounded in {result.sourceItems.length} grocery items
 						</p>
 					)}

@@ -53,7 +53,6 @@ export const downloadElementAsPDF = async (element: HTMLElement, options: PDFOpt
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' as const },
         pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
     };
-
     try {
         const restoreHero = fitHeroToPage(element)
         try {
@@ -75,7 +74,7 @@ export const getElementAsPDFBlob = async (element: HTMLElement, filename: string
     }
     const opt = {
         margin: 0,
-        filename: filename,
+        filename,
         image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: {
             scale: 2,
@@ -89,7 +88,6 @@ export const getElementAsPDFBlob = async (element: HTMLElement, filename: string
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' as const },
         pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
     };
-
     try {
         const restoreHero = fitHeroToPage(element)
         try {
@@ -104,3 +102,36 @@ export const getElementAsPDFBlob = async (element: HTMLElement, filename: string
         return null;
     }
 };
+
+export const downloadPlanAsPDF = async (element: HTMLElement, options: PDFOptions) => {
+    const exportElement = element.cloneNode(true) as HTMLElement
+    exportElement.classList.add('pdf-export-mode', 'pdf-only')
+    document.body.appendChild(exportElement)
+
+    try {
+        const windowWidth = exportElement.offsetWidth || 816
+        const opt = {
+            margin: options.margin ?? 0,
+            filename: options.filename,
+            image: { type: 'jpeg' as const, quality: 0.98 },
+            html2canvas: {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                letterRendering: true,
+                windowWidth,
+                scrollY: 0,
+                scrollX: 0
+            },
+            jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' as const },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        }
+        await html2pdf().set(opt).from(exportElement).save()
+        return true
+    } catch (err) {
+        console.error('PDF Generation Error:', err)
+        return false
+    } finally {
+        exportElement.remove()
+    }
+}
