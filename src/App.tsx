@@ -324,6 +324,8 @@ function MainContent() {
 		window.scrollTo({ top: 0, behavior: 'smooth' })
 	}
 
+	const showFooter = location.pathname === '/' || /^\/(?:blog|privacy|terms)(?:\/|$)/.test(location.pathname)
+
 	return (
 		<div className="min-h-full flex flex-col">
 			<ToastContainer toasts={toasts} onDismiss={dismissToast} />
@@ -558,7 +560,7 @@ function MainContent() {
 			<Route path="/plan/:id" element={<SharedPlan />} />
 			</Routes>
 
-			<Footer />
+			{showFooter && <Footer />}
 		</div>
 	)
 }
@@ -606,7 +608,8 @@ function RecipeWrapper({ result, showToast }: {
 			if (canGoBack) {
 				navigate(-1)
 			} else {
-				navigate('/dashboard', { replace: true })
+				const returnTo = location.state?.returnTo
+				navigate(typeof returnTo === 'string' && returnTo.startsWith('/dashboard') ? returnTo : '/dashboard', { replace: true })
 			}
 		} catch (e) {
 			console.error('[Back] ERROR in navigate:', e)

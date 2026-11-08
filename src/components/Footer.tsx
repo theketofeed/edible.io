@@ -1,5 +1,4 @@
 import { memo } from 'react'
-import { Twitter, Instagram, Facebook } from 'lucide-react'
 import logo from '../assets/favicon.png'
 
 const Footer = memo(function Footer() {
@@ -25,36 +24,6 @@ const Footer = memo(function Footer() {
 							Turn your groceries into delicious, personalized meal plans, powered by Edible.
 						</p>
 
-						{/* Social Icons */}
-						<div className="flex gap-3 mt-6">
-							<a
-								href="https://twitter.com"
-								target="_blank"
-								rel="noopener noreferrer"
-								title="Twitter / X"
-								className="w-9 h-9 rounded-full bg-gray-800 hover:bg-purple-600 transition-colors flex items-center justify-center"
-							>
-								<Twitter className="w-4 h-4" />
-							</a>
-							<a
-								href="https://instagram.com"
-								target="_blank"
-								rel="noopener noreferrer"
-								title="Instagram"
-								className="w-9 h-9 rounded-full bg-gray-800 hover:bg-purple-600 transition-colors flex items-center justify-center"
-							>
-								<Instagram className="w-4 h-4" />
-							</a>
-							<a
-								href="https://facebook.com"
-								target="_blank"
-								rel="noopener noreferrer"
-								title="Facebook"
-								className="w-9 h-9 rounded-full bg-gray-800 hover:bg-purple-600 transition-colors flex items-center justify-center"
-							>
-								<Facebook className="w-4 h-4" />
-							</a>
-						</div>
 					</div>
 
 					{/* Link Columns - stacked on mobile */}

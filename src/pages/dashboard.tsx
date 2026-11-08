@@ -7,7 +7,7 @@ import {
   ClipboardList, CalendarDays, Utensils,
   Sunrise, Sun, Moon,
   Scale, Leaf, Dumbbell, Wheat, Sprout,
-  Camera, PencilLine, Share2
+  Camera, PencilLine, Share2, MoreHorizontal
 } from "lucide-react"
 import logo from "../assets/favicon.png"
 import { useAuth } from "../context/AuthContext"
@@ -18,6 +18,8 @@ import PlanBadge from "../components/PlanBadge"
 import PricingModal from '../components/PricingModal'
 import { usePlan } from '../hooks/usePlan'
 import { track, Events } from '../lib/analytics'
+import { countMeals, pickPlanPhotos, resizeForCard } from "../lib/planCover"
+import SavedPlanPage from "./SavedPlanPage"
 
 const C = {
   white: "#FFFFFF",
@@ -63,7 +65,7 @@ const DIET: Record<DietKey, { icon: React.ElementType; col: string; bg: string }
 
 type MealSlot = { name: string; cal: number; imageUrl?: string; rawMeal?: Meal }
 type PlanDay = { day: string; B: MealSlot; L: MealSlot; D: MealSlot }
-type Plan = { id: string; title: string; diet: DietKey; date: string; activatedAt: string; days: PlanDay[] }
+type Plan = { id: string; title: string; diet: DietKey; date: string; createdAt?: string; activatedAt: string; days: PlanDay[]; planData: unknown }
 
 type Recipe = { id: string; title: string; type: string; time: number; cal: number; rawMeal?: Meal }
 type CustomMeal = { id: string; name: string; type: string; cal: number; time: number; rawMeal?: Meal }
@@ -597,9 +599,16 @@ function Sidebar({ active, onNav, userData }: SidebarProps) {
 }
 
 // ─── Overview ─────────────────────────────────────────────────────────────────
-interface OverviewProps { plans: Plan[]; onNav: (id: NavId) => void; userData: UserData }
+interface OverviewProps {
+  plans: Plan[]
+  savedPlans: Plan[]
+  isLoadingPlans: boolean
+  onNav: (id: NavId) => void
+  onOpenPlan: (id: string) => void
+  userData: UserData
+}
 
-function Overview({ plans, onNav, userData, onSelectPlan, selectedPlanId }: OverviewProps & { onSelectPlan: (id: string) => void; selectedPlanId: string | null }) {
+function Overview({ plans, savedPlans, isLoadingPlans, onNav, onOpenPlan, userData, selectedPlanId }: OverviewProps & { selectedPlanId: string | null }) {
   const totalDays = plans.reduce((a, p) => a + p.days.length, 0)
   const totalMeals = totalDays * 3
   const selectedPlan = plans.find(p => p.id === selectedPlanId) || plans[0] || null
@@ -616,6 +625,16 @@ function Overview({ plans, onNav, userData, onSelectPlan, selectedPlanId }: Over
   const weekday = now.toLocaleDateString("en-US", { weekday: "long" })
   const monthDay = now.toLocaleDateString("en-US", { month: "long", day: "numeric" })
   const activePlan = plans.find(p => p.id === selectedPlanId)
+  const recentSavedPlans = [...savedPlans].sort((a, b) => {
+    const aCreatedAt = a.createdAt ? Date.parse(a.createdAt) : Number.NaN
+    const bCreatedAt = b.createdAt ? Date.parse(b.createdAt) : Number.NaN
+    const aMissingDate = !Number.isFinite(aCreatedAt)
+    const bMissingDate = !Number.isFinite(bCreatedAt)
+    if (aMissingDate || bMissingDate) {
+      return aMissingDate === bMissingDate ? 0 : aMissingDate ? 1 : -1
+    }
+    return bCreatedAt - aCreatedAt
+  }).slice(0, 2)
   return (
     <div>
       <div className="dash-overview-card" style={{
@@ -749,54 +768,100 @@ function Overview({ plans, onNav, userData, onSelectPlan, selectedPlanId }: Over
             View all →
           </button>
         </div>
-        {plans.slice(0, 2).map(p => {
-          const dm = DIET[p.diet] || DIET.Balanced
-          return (
-            <div key={p.id} style={{
-              background: C.white, borderRadius: 14, padding: "12px 16px",
-              border: p.id === selectedPlanId ? `2px solid ${C.accent}` : `1px solid ${C.cardBdr}`, 
-              display: "flex", alignItems: "center", gap: 12,
-              marginBottom: 8, cursor: "pointer", transition: "all .15s",
-              position: "relative"
-            }}
-              onClick={() => { onSelectPlan(p.id); onNav("plans") }}
-              onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = C.accent}
-              onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = C.cardBdr}>
-              <div style={{
-                width: 38, height: 38, borderRadius: 10, background: dm.bg,
-                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
-              }}>
-                <dm.icon size={18} style={{ color: "white" }} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
-                  <p style={{ fontWeight: 700, color: C.txt, fontSize: 13 }}>{p.title}</p>
-                  {p.id === selectedPlanId && (
-                    <span style={{ fontSize: 9, fontWeight: 800, color: C.accent, border: `1px solid ${C.accent}`, padding: "0px 4px", borderRadius: 3, textTransform: "uppercase" }}>Active</span>
-                  )}
+        {recentSavedPlans.length > 0 && (
+          <div className="dash-two-col">
+            {recentSavedPlans.map(plan => {
+              const dm = DIET[plan.diet] || DIET.Balanced
+              const photos = pickPlanPhotos(plan.planData)
+              const isActive = plan.id === selectedPlanId
+              const savedDate = new Date(plan.createdAt || plan.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+              return (
+                <div key={plan.id} role="link" aria-label={`Open plan: ${plan.title}`} tabIndex={0}
+                  onClick={() => onOpenPlan(plan.id)}
+                  onKeyDown={e => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault()
+                      onOpenPlan(plan.id)
+                    }
+                  }}
+                  style={{
+                    background: C.white, borderRadius: 18, padding: 10, border: `1px solid ${C.cardBdr}`,
+                    boxShadow: isActive ? `0 0 0 2px ${C.accent}` : undefined,
+                    display: "flex", alignItems: "center", gap: 12, cursor: "pointer", transition: "all .18s",
+                    position: "relative", minWidth: 0
+                  }}
+                  onMouseEnter={e => {
+                    const card = e.currentTarget as HTMLElement
+                    card.style.transform = "translateY(-2px)"
+                    card.style.boxShadow = `${isActive ? `0 0 0 2px ${C.accent}, ` : ""}0 8px 24px rgba(0,0,0,0.07)`
+                  }}
+                  onMouseLeave={e => {
+                    const card = e.currentTarget as HTMLElement
+                    card.style.transform = ""
+                    card.style.boxShadow = isActive ? `0 0 0 2px ${C.accent}` : ""
+                  }}>
+                  <div style={{ width: 104, height: 104, borderRadius: 16, overflow: "hidden", flexShrink: 0, background: "linear-gradient(135deg, #F5EDFF, #FDF7F0)" }}>
+                    {photos.length === 4 ? (
+                      <div style={{ width: "100%", height: "100%", display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gridTemplateRows: "repeat(2, 1fr)", gap: 2 }}>
+                        {photos.map((photo, index) => (
+                          <div key={`${photo}-${index}`} style={{ minWidth: 0, minHeight: 0, overflow: "hidden", background: "linear-gradient(135deg, #F5EDFF, #FDF7F0)" }}>
+                            <img src={resizeForCard(photo)} alt="" aria-hidden="true" loading="lazy" decoding="async"
+                              onError={e => { e.currentTarget.style.display = "none" }}
+                              style={{ width: "100%", height: "100%", display: "block", objectFit: "cover", objectPosition: "center 40%" }} />
+                          </div>
+                        ))}
+                      </div>
+                    ) : photos.length > 0 ? (
+                      <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #F5EDFF, #FDF7F0)" }}>
+                        <img src={resizeForCard(photos[0])} alt="" aria-hidden="true" loading="lazy" decoding="async"
+                          onError={e => { e.currentTarget.style.display = "none" }}
+                          style={{ width: "100%", height: "100%", display: "block", objectFit: "cover", objectPosition: "center 40%" }} />
+                      </div>
+                    ) : (
+                      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, #F5EDFF, #FDF7F0)" }}>
+                        <UtensilsCrossed size={38} aria-hidden="true" style={{ color: C.accent, opacity: 0.7 }} />
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0, marginBottom: 7 }}>
+                      <p style={{ minWidth: 0, margin: 0, fontSize: 13, fontWeight: 700, color: C.txt, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{plan.title}</p>
+                      {isActive && (
+                        <span style={{ flexShrink: 0, background: C.accent, color: "white", fontSize: 10, fontWeight: 700, padding: "3px 7px", borderRadius: 999 }}>ACTIVE</span>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0, marginBottom: 5 }}>
+                      <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 600, color: dm.col, background: dm.bg, padding: "3px 8px", borderRadius: 999 }}>{plan.diet}</span>
+                      <p style={{ minWidth: 0, margin: 0, fontSize: 11, color: C.muted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {plan.days.length} days · {countMeals(plan.planData)} meals
+                      </p>
+                    </div>
+                    <p style={{ margin: 0, fontSize: 11, color: C.faint }}>Saved {savedDate}</p>
+                  </div>
+                  <ChevronRight size={16} aria-hidden="true" style={{ color: C.faint, flexShrink: 0 }} />
                 </div>
-                <p style={{ fontSize: 11, color: C.faint }}>{p.diet} · {p.days.length} days</p>
-              </div>
-              <ChevronRight size={14} style={{ color: C.faint }} />
+              )
+            })}
+          </div>
+        )}
+        {!isLoadingPlans && savedPlans.length === 0 && (
+          <div onClick={() => onNav("generate")} style={{
+            background: "linear-gradient(135deg,#1a0533,#2d0a5e)", borderRadius: 16,
+            padding: "18px 22px", display: "flex", alignItems: "center", gap: 16, cursor: "pointer", marginTop: 8
+          }}>
+            <div style={{
+              width: 42, height: 42, borderRadius: 12, background: "rgba(198,160,246,0.2)",
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
+            }}>
+              <Sparkles size={20} style={{ color: C.accent }} />
             </div>
-          )
-        })}
-      </div>
-      <div onClick={() => onNav("generate")} style={{
-        background: "linear-gradient(135deg,#1a0533,#2d0a5e)", borderRadius: 16,
-        padding: "18px 22px", display: "flex", alignItems: "center", gap: 16, cursor: "pointer", marginTop: 8
-      }}>
-        <div style={{
-          width: 42, height: 42, borderRadius: 12, background: "rgba(198,160,246,0.2)",
-          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
-        }}>
-          <Sparkles size={20} style={{ color: C.accent }} />
-        </div>
-        <div style={{ flex: 1 }}>
-          <p style={{ color: "white", fontSize: 14, fontWeight: 700, marginBottom: 2 }}>Plan your next week</p>
-          <p style={{ color: "rgba(198,160,246,0.6)", fontSize: 12 }}>Upload a receipt → get a full meal plan in seconds</p>
-        </div>
-        <ArrowUpRight size={16} style={{ color: C.accent, flexShrink: 0 }} />
+            <div style={{ flex: 1 }}>
+              <p style={{ color: "white", fontSize: 14, fontWeight: 700, marginBottom: 2 }}>Plan your first week</p>
+              <p style={{ color: "rgba(198,160,246,0.6)", fontSize: 12 }}>Upload a receipt, get a full meal plan in seconds</p>
+            </div>
+            <ArrowUpRight size={16} style={{ color: C.accent, flexShrink: 0 }} />
+          </div>
+        )}
       </div>
     </div>
   )
@@ -971,18 +1036,50 @@ interface SavedPlansProps {
   onActivatePlan: (id: string) => Promise<void>;
   onDeletePlan: (id: string) => void;
   onNav: (id: NavId) => void;
+  onOpenPlan: (id: string) => void;
 }
 
-function SavedPlans({ plans, activePlanId, onActivatePlan, onDeletePlan, onNav }: SavedPlansProps) {
-  const navigate = useNavigate()
-  const location = useLocation()
+function SavedPlans({ plans, activePlanId, onActivatePlan, onDeletePlan, onNav, onOpenPlan }: SavedPlansProps) {
   const [filter, setFilter] = useState<DietKey>("All")
   const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [expandedPlanId, setExpandedPlanId] = useState<string | null>(null)
   const [activatingId, setActivatingId] = useState<string | null>(null)
   const [sharingId, setSharingId] = useState<string | null>(null)
   const [activatingLoading, setActivatingLoading] = useState(false)
-  const [justActivatedId, setJustActivatedId] = useState<string | null>(null)
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (!openMenuId) return
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) setOpenMenuId(null)
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpenMenuId(null)
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown)
+    document.addEventListener("keydown", handleKeyDown)
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown)
+      document.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [openMenuId])
+
+  useEffect(() => () => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+  }, [])
+
+  const showShareToast = () => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    setToastMessage("Link copied")
+    toastTimerRef.current = setTimeout(() => {
+      setToastMessage(null)
+      toastTimerRef.current = null
+    }, 2500)
+  }
 
   const diets = ["All" as DietKey, ...Array.from(new Set(plans.map(p => p.diet)))]
   const visible = plans.filter(p => filter === "All" || p.diet === filter)
@@ -1012,146 +1109,131 @@ function SavedPlans({ plans, activePlanId, onActivatePlan, onDeletePlan, onNav }
           )
         })}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(270px,1fr))", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(270px,1fr))", gap: 14, alignItems: "stretch" }}>
         {visible.map(plan => {
           const dm = DIET[plan.diet] || DIET.Balanced
+          const photos = pickPlanPhotos(plan.planData)
+          const isActive = plan.id === activePlanId
           return (
-            <div key={plan.id} style={{
-              background: C.white, borderRadius: 16, overflow: "hidden",
-              border: plan.id === expandedPlanId ? `2px solid ${C.accent}` : `1px solid ${C.cardBdr}`, 
-              cursor: "pointer", transition: "all .18s",
-              position: "relative"
-            }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)"; (e.currentTarget as HTMLElement).style.boxShadow = "0 8px 24px rgba(0,0,0,0.07)" }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ""; (e.currentTarget as HTMLElement).style.boxShadow = "" }}>
-              <div style={{ height: 4, background: `linear-gradient(90deg,${dm.col},${C.accent})` }} />
-              <div style={{ padding: 18 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-                  <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                    <dm.icon size={22} style={{ color: "white", flexShrink: 0 }} />
-                    <div>
-                      <p style={{ fontWeight: 700, color: C.txt, fontSize: 14, marginBottom: 6 }}>{plan.title}</p>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <span style={{
-                          fontSize: 11, fontWeight: 600, color: dm.col, background: dm.bg,
-                          padding: "2px 8px", borderRadius: 999
-                        }}>{plan.diet}</span>
-                        {plan.id === activePlanId && (
-                          <span style={{ fontSize: 9, fontWeight: 800, color: "white", background: C.accent, padding: "2px 7px", borderRadius: 999, textTransform: "uppercase" }}>Active</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button onClick={async e => {
-                      e.stopPropagation()
-                      setSharingId(plan.id)
-                      try {
-                        await setMealPlanPublic(plan.id, true)
-                        const url = `${window.location.origin}/plan/${plan.id}`
-                        await navigator.clipboard.writeText(url)
-                        setSharingId(null)
-                        alert('Link copied! Share it anywhere.')
-                      } catch {
-                        setSharingId(null)
-                        alert('Failed to generate link. Please try again.')
-                      }
-                    }}
-                      style={{
-                        width: 26, height: 26, borderRadius: 7, background: 'rgba(198,160,246,0.12)', border: 'none',
-                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
-                      }}>
-                      {sharingId === plan.id
-                        ? <div style={{ width: 10, height: 10, borderRadius: '50%', border: `2px solid ${C.accent}`, borderTopColor: 'transparent', animation: 'spin 0.7s linear infinite' }} />
-                        : <Share2 size={11} style={{ color: C.accentDark }} />
-                      }
-                    </button>
-                    <button onClick={e => { e.stopPropagation(); setDeletingId(plan.id) }}
-                      style={{
-                        width: 26, height: 26, borderRadius: 7, background: '#FEF2F2', border: 'none',
-                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
-                      }}>
-                      <Trash2 size={11} style={{ color: C.red }} />
-                    </button>
-                  </div>
-                </div>
-                <div style={{ background: "#F9F8F6", borderRadius: 10, padding: "10px 12px", marginBottom: 12 }}>
-                  {plan.days.slice(0, 2).map((dayItem, i) => (
-                    <div key={i} style={{ display: "flex", gap: 8, marginBottom: i < 1 ? 6 : 0 }}>
-                      <span style={{ fontSize: 10, fontWeight: 700, color: C.purple, width: 24, flexShrink: 0 }}>{dayItem.day}</span>
-                      <span style={{ fontSize: 11, color: C.muted, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
-                        {dayItem.B.name} · {dayItem.L.name}
-                      </span>
-                    </div>
-                  ))}
-                  {plan.days.length > 2 && <p style={{ fontSize: 11, color: C.faint, marginTop: 4 }}>+{plan.days.length - 2} more days</p>}
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                  <p style={{ fontSize: 11.5, color: C.faint }}>{plan.days.length} days · {plan.days.length * 3} meals · {new Date(plan.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</p>
-                  <button onClick={e => { e.stopPropagation(); setExpandedPlanId(expandedPlanId === plan.id ? null : plan.id) }}
-                    style={{ background: "transparent", border: "none", color: C.accent, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", flexShrink: 0 }}>
-                    {expandedPlanId === plan.id ? "Close" : "View Plan"} <ChevronRight size={14} style={{ transform: expandedPlanId === plan.id ? "rotate(90deg)" : "none", transition: "transform .15s" }} />
-                  </button>
-                </div>
-                {plan.id === activePlanId ? (
-                  <button
-                    onClick={e => { e.stopPropagation(); onNav('planner') }}
-                    style={{ width: "100%", textAlign: "center", padding: "9px 0", borderRadius: 10, border: `1px solid ${C.accent}`, background: "rgba(198,160,246,0.08)", color: C.accentDark, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
-                    View in Meal Planner →
-                  </button>
-                ) : justActivatedId === plan.id ? (
-                  <button
-                    onClick={e => { e.stopPropagation(); onNav('planner') }}
-                    style={{ width: "100%", textAlign: "center", padding: "9px 0", borderRadius: 10, border: "none", background: C.accent, color: "white", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
-                    View in Meal Planner →
-                  </button>
-                ) : (
-                  <button onClick={e => { e.stopPropagation(); setActivatingId(plan.id) }}
-                    style={{ width: "100%", padding: "9px 0", borderRadius: 10, border: "none", background: C.accent, color: "white", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
-                    Use this plan
-                  </button>
-                )}
-              </div>
-
-              {/* Inline Expanded View */}
-              {expandedPlanId === plan.id && (
-                <div style={{ borderTop: `1px solid ${C.cardBdr}`, background: "#FBF9FE", padding: "16px 18px", cursor: "default" }} onClick={e => e.stopPropagation()}>
-                  <h4 style={{ fontSize: 13, fontWeight: 800, color: C.txt, marginBottom: 12 }}>Full Plan Breakdown</h4>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                    {plan.days.map((d, dIdx) => (
-                      <div key={dIdx}>
-                        <p style={{ fontSize: 12, fontWeight: 800, color: C.purple, textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 6 }}>
-                          {d.day}
-                        </p>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                          {[
-                            { label: "Breakfast", meal: d.B },
-                            { label: "Lunch", meal: d.L },
-                            { label: "Dinner", meal: d.D }
-                          ].map((m, i) => (
-                            <div key={i} onClick={() => { if(m.meal.rawMeal) navigate(`/recipe/${dIdx}/${m.label}`, { state: { meal: m.meal.rawMeal, fromDashboard: true, from: location.pathname } }) }}
-                              style={{
-                                display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: C.white,
-                                borderRadius: 10, border: `1px solid ${C.cardBdr}`, cursor: m.meal.rawMeal ? "pointer" : "default", transition: "all .15s"
-                              }}
-                              onMouseEnter={e => { if (m.meal.rawMeal) (e.currentTarget as HTMLElement).style.borderColor = C.accent }}
-                              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = C.cardBdr }}>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <p style={{ fontSize: 10, color: C.faint, fontWeight: 700, textTransform: "uppercase" }}>{m.label}</p>
-                                <p style={{ fontSize: 13, fontWeight: 700, color: C.txt, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.meal.name}</p>
-                              </div>
-                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                <span style={{ fontSize: 11, fontWeight: 600, color: m.meal.cal > 0 ? C.muted : C.faint }}>{m.meal.cal > 0 ? `${m.meal.cal} cal` : ''}</span>
-                                {m.meal.rawMeal && <ChevronRight size={14} style={{ color: C.faint }} />}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+            <div key={plan.id} role="link" aria-label={`Open plan: ${plan.title}`} tabIndex={0}
+              onClick={e => {
+                if ((e.target as HTMLElement).closest("button")) return
+                onOpenPlan(plan.id)
+              }}
+              onKeyDown={e => {
+                if (e.target !== e.currentTarget) return
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault()
+                  onOpenPlan(plan.id)
+                }
+              }}
+              style={{
+                background: C.white, borderRadius: 16, overflow: "hidden",
+                border: `1px solid ${C.cardBdr}`,
+                boxShadow: isActive ? `0 0 0 2px ${C.accent}` : undefined,
+                cursor: "pointer", transition: "all .18s",
+                position: "relative", display: "flex", flexDirection: "column", minWidth: 0
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLElement).style.transform = "translateY(-2px)";
+                (e.currentTarget as HTMLElement).style.boxShadow = `${isActive ? `0 0 0 2px ${C.accent}, ` : ""}0 8px 24px rgba(0,0,0,0.07)`
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLElement).style.transform = "";
+                (e.currentTarget as HTMLElement).style.boxShadow = isActive ? `0 0 0 2px ${C.accent}` : ""
+              }}>
+              <div style={{ aspectRatio: "16 / 10", position: "relative", overflow: "hidden", background: "linear-gradient(135deg, #F5EDFF, #FDF7F0)", flexShrink: 0 }}>
+                {photos.length === 4 ? (
+                  <div style={{ width: "100%", height: "100%", display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gridTemplateRows: "repeat(2, 1fr)", gap: 2 }}>
+                    {photos.map((photo, index) => (
+                      <div key={`${photo}-${index}`} style={{ minWidth: 0, minHeight: 0, overflow: "hidden", background: "linear-gradient(135deg, #F5EDFF, #FDF7F0)" }}>
+                        <img src={resizeForCard(photo)} alt="" aria-hidden="true" loading="lazy" decoding="async"
+                          onError={e => { e.currentTarget.style.display = "none" }}
+                          style={{ width: "100%", height: "100%", display: "block", objectFit: "cover", objectPosition: "center 40%" }} />
                       </div>
                     ))}
                   </div>
+                ) : photos.length > 0 ? (
+                  <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #F5EDFF, #FDF7F0)" }}>
+                    <img src={resizeForCard(photos[0])} alt="" aria-hidden="true" loading="lazy" decoding="async"
+                      onError={e => { e.currentTarget.style.display = "none" }}
+                      style={{ width: "100%", height: "100%", display: "block", objectFit: "cover", objectPosition: "center 40%" }} />
+                  </div>
+                ) : (
+                  <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, #F5EDFF, #FDF7F0)" }}>
+                    <UtensilsCrossed size={38} aria-hidden="true" style={{ color: C.accent, opacity: 0.7 }} />
+                  </div>
+                )}
+                <div aria-hidden="true" style={{ position: "absolute", inset: 0, height: 94, pointerEvents: "none", background: "linear-gradient(180deg, rgba(17,24,39,0.42), transparent)" }} />
+                {isActive && (
+                  <span style={{ position: "absolute", top: 12, left: 12, zIndex: 1, background: C.accent, color: "white", fontSize: 11, fontWeight: 700, padding: "5px 10px", borderRadius: 999 }}>
+                    ACTIVE
+                  </span>
+                )}
+                <div style={{ position: "absolute", top: 10, right: 10, zIndex: 1, display: "flex", gap: 7 }}>
+                  <button aria-label={`Share ${plan.title}`} onClick={async e => {
+                    e.stopPropagation()
+                    setSharingId(plan.id)
+                    try {
+                      await setMealPlanPublic(plan.id, true)
+                      const url = `${window.location.origin}/plan/${plan.id}`
+                      await navigator.clipboard.writeText(url)
+                      setSharingId(null)
+                      showShareToast()
+                    } catch {
+                      setSharingId(null)
+                      alert('Failed to generate link. Please try again.')
+                    }
+                  }} style={{ width: 32, height: 32, borderRadius: 999, background: "rgba(255,255,255,0.88)", border: "1px solid rgba(255,255,255,0.65)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    {sharingId === plan.id
+                      ? <div aria-label="Sharing" style={{ width: 12, height: 12, borderRadius: "50%", border: `2px solid ${C.accent}`, borderTopColor: "transparent", animation: "spin 0.7s linear infinite" }} />
+                      : <Share2 size={15} aria-hidden="true" style={{ color: C.accentDark }} />
+                    }
+                  </button>
+                  <div ref={openMenuId === plan.id ? menuRef : null} style={{ position: "relative" }}>
+                    <button aria-label={`More options for ${plan.title}`} aria-haspopup="menu" aria-expanded={openMenuId === plan.id}
+                      onClick={e => { e.stopPropagation(); setOpenMenuId(current => current === plan.id ? null : plan.id) }}
+                      style={{ width: 32, height: 32, borderRadius: 999, background: "rgba(255,255,255,0.88)", border: "1px solid rgba(255,255,255,0.65)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <MoreHorizontal size={17} aria-hidden="true" style={{ color: C.txt }} />
+                    </button>
+                    {openMenuId === plan.id && (
+                      <div role="menu" style={{ position: "absolute", top: 38, right: 0, minWidth: 140, padding: 4, borderRadius: 10, background: C.white, boxShadow: "0 8px 24px rgba(0,0,0,0.16)", zIndex: 5 }}>
+                        <button role="menuitem" onClick={e => { e.stopPropagation(); setOpenMenuId(null); setDeletingId(plan.id) }}
+                          style={{ width: "100%", textAlign: "left", padding: "9px 10px", border: "none", borderRadius: 7, background: "transparent", color: C.red, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                          Delete plan
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
+              </div>
+
+              <div style={{ padding: 16, display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
+                <p style={{ fontWeight: 700, color: C.txt, fontSize: 14, lineHeight: 1.4, margin: "0 0 10px", display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: 2, overflow: "hidden", textOverflow: "ellipsis", minHeight: "2.8em" }}>
+                  {plan.title}
+                </p>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, minWidth: 0 }}>
+                  <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 600, color: dm.col, background: dm.bg, padding: "3px 9px", borderRadius: 999 }}>{plan.diet}</span>
+                  <p style={{ minWidth: 0, margin: 0, fontSize: 11.5, color: C.faint, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {plan.days.length} days · {countMeals(plan.planData)} meals · {new Date(plan.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                  </p>
+                </div>
+
+                <button onClick={e => {
+                  e.stopPropagation()
+                  if (isActive) onNav("planner")
+                  else setActivatingId(plan.id)
+                }}
+                  style={{
+                    width: "100%", marginTop: "auto", padding: "10px 0", borderRadius: 10,
+                    border: isActive ? `1.5px solid ${C.accent}` : "none",
+                    background: isActive ? C.white : C.accent,
+                    color: isActive ? C.accent : "white",
+                    fontSize: 12.5, fontWeight: 700, cursor: "pointer"
+                  }}>
+                  {isActive ? "View in Meal Planner" : "Use this plan"}
+                </button>
+              </div>
             </div>
           )
         })}
@@ -1205,6 +1287,12 @@ function SavedPlans({ plans, activePlanId, onActivatePlan, onDeletePlan, onNav }
         </div>
       )}
 
+      {toastMessage && (
+        <div role="status" aria-live="polite" style={{ position: "fixed", left: "50%", bottom: 24, transform: "translateX(-50%)", zIndex: 2000, padding: "10px 18px", borderRadius: 999, background: C.txt, color: C.white, fontSize: 13, fontWeight: 600, boxShadow: "0 8px 24px rgba(0,0,0,0.2)", pointerEvents: "none" }}>
+          {toastMessage}
+        </div>
+      )}
+
       {activatingId && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, backdropFilter: "blur(4px)" }} onClick={() => setActivatingId(null)}>
           <div style={{ background: C.white, borderRadius: 24, padding: 32, maxWidth: 400, width: "100%", boxShadow: "0 20px 40px rgba(0,0,0,0.2)", margin: "0 16px" }} onClick={e => e.stopPropagation()}>
@@ -1226,7 +1314,6 @@ function SavedPlans({ plans, activePlanId, onActivatePlan, onDeletePlan, onNav }
                   setActivatingLoading(true)
                   await onActivatePlan(activatingId)
                   setActivatingLoading(false)
-                  setJustActivatedId(activatingId)
                   setActivatingId(null)
                 }}
                 disabled={activatingLoading}
@@ -1761,8 +1848,10 @@ export default function EdibleDashboard() {
             title: mp.title,
             diet: (mp.plan_data?.diet || 'Balanced') as DietKey,
             date: mp.created_at || new Date().toISOString(),
+            createdAt: mp.created_at || undefined,
             activatedAt: mp.activated_at || mp.created_at || new Date().toISOString(),
             days,
+            planData: mp.plan_data,
           }
         })
 
@@ -1860,6 +1949,26 @@ export default function EdibleDashboard() {
   const go = (id: NavId) => {
     if (id === "logout") { signOut(); return }
     setView(id); setSearch(""); setShowDrop(false)
+    if (searchParams.has("open")) {
+      const params = new URLSearchParams(searchParams)
+      params.delete("open")
+      params.set("view", id)
+      setSearchParams(params, { replace: true })
+    }
+  }
+
+  const openSavedPlan = (id: string) => {
+    const params = new URLSearchParams(searchParams)
+    params.set("view", "plans")
+    params.set("open", id)
+    setSearchParams(params)
+  }
+
+  const returnToSavedPlans = () => {
+    const params = new URLSearchParams(searchParams)
+    params.set("view", "plans")
+    params.delete("open")
+    setSearchParams(params, { replace: true })
   }
 
   // Persist the active dashboard view + selected plan in the URL. Navigating
@@ -1867,12 +1976,18 @@ export default function EdibleDashboard() {
   // back button would always reset to the Overview tab. With the param in the
   // URL, the remount restores the exact screen the user left from.
   useEffect(() => {
-    const params = new URLSearchParams()
+    const params = new URLSearchParams(searchParams)
     params.set("view", view)
     if (selectedPlanId) params.set("plan", selectedPlanId)
+    else params.delete("plan")
     setSearchParams(params, { replace: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, selectedPlanId])
+
+  useEffect(() => {
+    const urlView = searchParams.get("view") as NavId | null
+    setView(urlView && VALID_VIEWS.includes(urlView) ? urlView : "overview")
+  }, [searchParams])
 
   return (
     <>
@@ -2162,16 +2277,28 @@ export default function EdibleDashboard() {
           </header>
           <main className="dashboard-main" style={{ flex: 1, overflowY: "auto" }}>
             <div style={{ maxWidth: 860, margin: "0 auto" }}>
-              {showSearch ? (
+              {view === "plans" && searchParams.get("open") ? (
+                <SavedPlanPage
+                  plan={plans.find(plan => plan.id === searchParams.get("open"))}
+                  isLoading={isLoadingPlans}
+                  isActive={plans.find(plan => plan.id === searchParams.get("open"))?.id === selectedPlanId}
+                  onBack={returnToSavedPlans}
+                  onActivate={handleActivatePlan}
+                  onViewPlanner={() => go("planner")}
+                  onUpgradeRequired={trigger => { setPricingTrigger(trigger); setPricingOpen(true) }}
+                />
+              ) : showSearch ? (
                 <SearchResults plans={matchedPlans} recipes={matchedRecipes} query={search.trim()} />
               ) : (
                 <>
                   {view === "overview" && (
                     <Overview 
                       plans={activePlans} 
+                      savedPlans={plans}
+                      isLoadingPlans={isLoadingPlans}
                       onNav={go} 
+                      onOpenPlan={openSavedPlan}
                       userData={userData} 
-                      onSelectPlan={handleActivatePlan} 
                       selectedPlanId={selectedPlanId} 
                     />
                   )}
@@ -2188,6 +2315,7 @@ export default function EdibleDashboard() {
                       onActivatePlan={handleActivatePlan} 
                       onDeletePlan={handleDeletePlan}
                       onNav={go}
+                      onOpenPlan={openSavedPlan}
                     />
                   )}
                   {view === "recipes" && (
