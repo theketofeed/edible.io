@@ -331,6 +331,7 @@ function MainContent() {
 				parsedItems={parsedItems}
 				onConfirm={handleConfirmItems}
 				onCancel={() => setShowConfirmation(false)}
+				dashboardMode={location.pathname.startsWith('/dashboard')}
 			/>
 
 {!location.pathname.startsWith("/dashboard") && !location.pathname.startsWith("/recipe") && !location.pathname.startsWith("/plan") && !isLoading && !result && !showConfirmation && !isParsing && !authOpen && !pricingOpen && (

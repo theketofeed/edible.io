@@ -1,4 +1,5 @@
 import { forwardRef, memo, useMemo, useState, useCallback } from 'react'
+import type { ReactNode } from 'react'
 import { track, Events } from '../lib/analytics'
 import { Download, RefreshCw, X, Bookmark, Check, Save } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -19,6 +20,7 @@ interface Props {
 	setAuthOpen: (open: boolean) => void
 	showToast: (type: 'success' | 'error' | 'info', message: string) => void
 	onUpgradeRequired?: (trigger: string) => void
+	afterRegenerate?: ReactNode
 }
 
 // Helper to get high-quality placeholder images from Unsplash
@@ -66,7 +68,7 @@ const NutritionBadges = memo(function NutritionBadges({ nutrition }: {
 	)
 })
 
-const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result, onDownload, onRegenerate, setAuthOpen, showToast, onUpgradeRequired }, ref) {
+const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result, onDownload, onRegenerate, setAuthOpen, showToast, onUpgradeRequired, afterRegenerate }, ref) {
 	const navigate = useNavigate()
 	const location = useLocation()
 	const { user } = useAuth()
@@ -286,7 +288,7 @@ const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result
 					))}
 				</div>
 
-				<div className="no-print mt-10 flex justify-center">
+				<div className="no-print mt-10 flex flex-col items-center gap-3">
 					<motion.button
 						whileHover={{ y: -2, scale: 1.02 }}
 						whileTap={{ scale: 0.98 }}
@@ -297,6 +299,7 @@ const Results = memo(forwardRef<HTMLDivElement, Props>(function Results({ result
 						<RefreshCw className="w-4 h-4 mr-2.5 text-gray-900/70" />
 						Regenerate this plan
 					</motion.button>
+					{afterRegenerate}
 				</div>
 			</div>
 

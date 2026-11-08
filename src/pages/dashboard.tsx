@@ -7,7 +7,7 @@ import {
   ClipboardList, CalendarDays, Utensils,
   Sunrise, Sun, Moon,
   Scale, Leaf, Dumbbell, Wheat, Sprout, Salad,
-  Camera, PencilLine, Share2, MoreHorizontal, Loader2, Check
+  Camera, PencilLine, Share2, MoreHorizontal, Check
 } from "lucide-react"
 import logo from "../assets/favicon.png"
 import { useAuth } from "../context/AuthContext"
@@ -23,6 +23,7 @@ import { isSavedPlanCurrent } from "../lib/savedPlan"
 import SavedPlanPage from "./SavedPlanPage"
 import UploadArea from "../components/UploadArea"
 import Results from "../components/Results"
+import Loading from "../components/Loading"
 
 const C = {
   white: "#FFFFFF",
@@ -1589,12 +1590,12 @@ function Generate({
 
   return (
     <div>
-      <h1 style={{ fontSize: 24, fontWeight: 800, color: C.txt, marginBottom: 6 }}>
-        {result && !isLoading ? "Your Meal Plan" : "Generate a Meal Plan"}
-      </h1>
-      <p style={{ color: C.muted, fontSize: 13, marginBottom: 24 }}>
-        {result && !isLoading ? "Your groceries, turned into meals." : "Choose how to add groceries, then make the plan yours."}
-      </p>
+      {!(result && !isLoading) && (
+        <>
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: C.txt, marginBottom: 6 }}>Generate a Meal Plan</h1>
+          <p style={{ color: C.muted, fontSize: 13, marginBottom: 24 }}>Choose how to add groceries, then make the plan yours.</p>
+        </>
+      )}
 
       {result && !isLoading ? (
         <div>
@@ -1606,27 +1607,21 @@ function Generate({
             setAuthOpen={setAuthOpen}
             showToast={showToast}
             onUpgradeRequired={onUpgradeRequired}
+            afterRegenerate={
+              <button onClick={onReset} style={{
+                background: C.white, color: C.txt, padding: "10px 18px", borderRadius: 999,
+                fontWeight: 700, fontSize: 13, border: `1px solid ${C.cardBdr}`, cursor: "pointer"
+              }}>
+                Create another plan
+              </button>
+            }
           />
-          <button onClick={onReset} style={{
-            marginTop: 20, background: C.white, color: C.txt, padding: "10px 18px", borderRadius: 999,
-            fontWeight: 700, fontSize: 13, border: `1px solid ${C.cardBdr}`, cursor: "pointer"
-          }}>
-            Create another plan
-          </button>
         </div>
       ) : isLoading ? (
         <div role="status" aria-live="polite" style={{
-          background: C.white, borderRadius: 20, border: `1px solid ${C.cardBdr}`, padding: 36,
-          textAlign: "center", color: C.txt
+          background: C.white, borderRadius: 20, border: `1px solid ${C.cardBdr}`, height: 390, overflow: "hidden"
         }}>
-          <Loader2 size={32} className="animate-spin" style={{ color: C.accent, margin: "0 auto 14px" }} />
-          <p style={{ fontWeight: 800, fontSize: 16 }}>Building your meal plan</p>
-          <p style={{ color: C.muted, fontSize: 13, marginTop: 6 }}>This can take a little while. You can stay right here.</p>
-          <div aria-label={`Generation step ${loadingStep + 1}`} style={{
-            width: "min(100%, 300px)", height: 5, borderRadius: 999, overflow: "hidden", background: "#F1EDF5", margin: "20px auto 0"
-          }}>
-            <div style={{ height: "100%", width: `${Math.min(100, (loadingStep + 1) * 25)}%`, background: C.accent, transition: "width .3s" }} />
-          </div>
+          <Loading step={loadingStep} compact />
         </div>
       ) : (
         <>
@@ -1733,7 +1728,7 @@ function Generate({
             </div>
           )}
           {!canGenerateMore && (
-            <p style={{ color: C.muted, fontSize: 12, marginBottom: 12 }}>Your free generation has been used. Generate to view upgrade options.</p>
+            <p style={{ color: C.muted, fontSize: 12, marginBottom: 12 }}>Your free generation has been used. Generate again to open upgrade options.</p>
           )}
           <button type="button" disabled={!groceryItems.length} onClick={() => onGenerate(selectedDays)}
             style={{

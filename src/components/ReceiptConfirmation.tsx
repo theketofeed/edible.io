@@ -8,9 +8,10 @@ interface Props {
     parsedItems: ParsedItem[]
     onConfirm: (items: string[]) => void
     onCancel: () => void
+    dashboardMode?: boolean
 }
 
-export default function ReceiptConfirmation({ isOpen, isParsing, parsedItems, onConfirm, onCancel }: Props) {
+export default function ReceiptConfirmation({ isOpen, isParsing, parsedItems, onConfirm, onCancel, dashboardMode = false }: Props) {
     const [items, setItems] = useState<ParsedItem[]>([])
 
     useEffect(() => {
@@ -51,11 +52,11 @@ export default function ReceiptConfirmation({ isOpen, isParsing, parsedItems, on
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-            <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-xl overflow-hidden">
+        <div className={`fixed inset-0 ${dashboardMode ? 'z-[1100] p-3 sm:p-5' : 'z-50 p-4'} flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fadeIn`}>
+            <div className={`bg-white rounded-2xl w-full ${dashboardMode ? 'max-w-2xl max-h-[calc(100dvh-24px)] sm:max-h-[88dvh]' : 'max-w-2xl max-h-[90vh]'} flex flex-col shadow-xl overflow-hidden`}>
 
                 {/* Header */}
-                <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <div className={`${dashboardMode ? 'px-4 py-4 sm:px-6' : 'p-6'} border-b border-gray-100 flex justify-between items-center bg-gray-50`}>
                     <div>
                         <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                             <ShoppingBag className="w-5 h-5 text-purple-600" />
@@ -78,7 +79,7 @@ export default function ReceiptConfirmation({ isOpen, isParsing, parsedItems, on
                 </div>
 
                 {/* Body */}
-                <div className="flex-1 overflow-y-auto p-6 bg-gray-50/50 overscroll-contain" style={{ willChange: 'scroll-position' }}>
+                <div className={`flex-1 min-h-0 overflow-y-auto ${dashboardMode ? 'px-4 py-4 sm:px-6 sm:py-5' : 'p-6'} bg-gray-50/50 overscroll-contain`} style={{ willChange: 'scroll-position' }}>
                     {isParsing ? (
                         <div className="flex flex-col items-center justify-center py-20">
                             <Loader2 className="w-12 h-12 text-purple-600 animate-spin mb-4" />
@@ -148,7 +149,7 @@ export default function ReceiptConfirmation({ isOpen, isParsing, parsedItems, on
 
                 {/* Footer */}
                 {!isParsing && (
-                    <div className="px-6 pt-4 pb-6 border-t border-gray-100 bg-white flex flex-col gap-3">
+                    <div className={`${dashboardMode ? 'px-4 pt-3 pb-4 sm:px-6 sm:pt-4 sm:pb-5' : 'px-6 pt-4 pb-6'} border-t border-gray-100 bg-white flex flex-col gap-3`}>
                         <button
                             onClick={handleSave}
                             className="w-full py-3 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
