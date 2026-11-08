@@ -6,14 +6,14 @@ import {
   Clock, UtensilsCrossed, X, Flame, ArrowUpRight,
   ClipboardList, CalendarDays, Utensils,
   Sunrise, Sun, Moon,
-  Scale, Leaf, Dumbbell, Wheat, Sprout,
-  Camera, PencilLine, Share2, MoreHorizontal
+  Scale, Leaf, Dumbbell, Wheat, Sprout, Salad,
+  Camera, PencilLine, Share2, MoreHorizontal, Loader2, Check
 } from "lucide-react"
 import logo from "../assets/favicon.png"
 import { useAuth } from "../context/AuthContext"
 import { getUserMealPlans, getProfile, deleteMealPlan, getUserSavedRecipes, updateMealPlan, setMealPlanPublic, getDismissedNotifications, setDismissedNotifications } from "../lib/db"
 import { fetchMealImage } from "../lib/mealImages"
-import type { MealPlanResult, Meal, SavedRecipe } from "../utils/types"
+import type { DietType, MealPlanResult, Meal, SavedRecipe } from "../utils/types"
 import PlanBadge from "../components/PlanBadge"
 import PricingModal from '../components/PricingModal'
 import { usePlan } from '../hooks/usePlan'
@@ -21,6 +21,8 @@ import { track, Events } from '../lib/analytics'
 import { countMeals, pickPlanPhotos, resizeForCard } from "../lib/planCover"
 import { isSavedPlanCurrent } from "../lib/savedPlan"
 import SavedPlanPage from "./SavedPlanPage"
+import UploadArea from "../components/UploadArea"
+import Results from "../components/Results"
 
 const C = {
   white: "#FFFFFF",
@@ -39,7 +41,7 @@ const C = {
   red: "#ef4444",
 }
 
-type DietKey = "All" | "Balanced" | "Keto" | "Vegan" | "High-Protein" | "Mediterranean" | "Vegetarian" | "Paleo"
+type DietKey = "All" | "Balanced" | "Keto" | "Vegan" | "High-Protein" | "Mediterranean" | "Vegetarian" | "Paleo" | "Low-Carb"
 type UserData = { name: string; email: string; joined: string; avatarUrl?: string }
 const DEFAULT_USER_DATA: UserData = { name: "User", email: "user@edible.pro", joined: "2026" }
 
@@ -62,6 +64,7 @@ const DIET: Record<DietKey, { icon: React.ElementType; col: string; bg: string }
   Mediterranean: { icon: Wheat, col: "#1d4ed8", bg: "#EFF6FF" },
   Vegetarian: { icon: Sprout, col: "#15803d", bg: "#F0FDF4" },
   Paleo: { icon: UtensilsCrossed, col: "#c2410c", bg: "#FFF7ED" },
+  "Low-Carb": { icon: Salad, col: "#0ea5e9", bg: "#E0F2FE" },
 }
 
 type MealSlot = { name: string; cal: number; imageUrl?: string; rawMeal?: Meal }
@@ -1545,76 +1548,204 @@ function SearchResults({
 }
 
 // ─── Generate ─────────────────────────────────────────────────────────────────
-function Generate() {
-  const navigate = useNavigate()
-  const [hov, setHov] = useState<number | null>(null)
-  const [prefDiet, setPrefDiet] = useState<DietKey>("Balanced")
+interface GenerateProps {
+  diet: DietType
+  onDietChange: (diet: DietType) => void
+  groceryItems: string[]
+  onItemsDetected: (items: string[], rawText: string) => void
+  onItemError: (message: string) => void
+  onRemoveItem: (index: number) => void
+  isLoading: boolean
+  isParsing: boolean
+  loadingStep: number
+  error: string | null
+  aiUnavailable: boolean
+  canGenerateMore: boolean
+  result: MealPlanResult | null
+  onGenerate: (days: number) => void
+  onReset: () => void
+  onDownload: () => void
+  setAuthOpen: (open: boolean) => void
+  showToast: (type: 'success' | 'error' | 'info', message: string) => void
+  onUpgradeRequired: (trigger: string) => void
+  resultRef: React.Ref<HTMLDivElement>
+}
 
-  const handleGenerate = () => {
-    // Navigate to home and pass diet via state (homepage can pick it up or we just auto-scroll)
-    navigate('/', { state: { dietPref: prefDiet } })
-    setTimeout(() => {
-      const uploadSection = document.getElementById('upload-section')
-      if (uploadSection) {
-        uploadSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      }
-    }, 100)
-  }
+function Generate({
+  diet, onDietChange, groceryItems, onItemsDetected, onItemError, onRemoveItem,
+  isLoading, isParsing, loadingStep, error, aiUnavailable, canGenerateMore,
+  result, onGenerate, onReset, onDownload, setAuthOpen, showToast,
+  onUpgradeRequired, resultRef
+}: GenerateProps) {
+  const [hov, setHov] = useState<number | null>(null)
+  const [inputMode, setInputMode] = useState<'receipt' | 'typed'>('typed')
+  const [planDays, setPlanDays] = useState<number | 'auto'>('auto')
+  const autoDays = groceryItems.length >= 26 ? 7 : groceryItems.length >= 16 ? 5 : groceryItems.length >= 10 ? 3 : groceryItems.length > 0 ? 2 : 1
+  const maxPlanDays = groceryItems.length < 8 ? 3 : groceryItems.length < 16 ? 5 : 7
+  const availableDays = [3, 5, 7].filter(days => days <= maxPlanDays)
+  const clampedPlanDays = planDays === 'auto' ? 'auto' : Math.min(planDays, maxPlanDays)
+  const selectedDays = clampedPlanDays === 'auto' ? autoDays : clampedPlanDays
+  const diets: DietKey[] = ["Balanced", "Keto", "Vegan", "High-Protein", "Mediterranean", "Vegetarian", "Paleo", "Low-Carb"]
 
   return (
     <div>
-      <h1 style={{ fontSize: 24, fontWeight: 800, color: C.txt, marginBottom: 6 }}>Generate a Meal Plan</h1>
-      <p style={{ color: C.muted, fontSize: 13, marginBottom: 28 }}>Tell us what you've got. We'll handle the rest.</p>
-      <div className="dash-generate-grid" style={{ marginBottom: 24 }}>
-        {[
-          { Icon: Camera, label: "Upload a Receipt", desc: "Take a photo of your grocery receipt", method: 'receipt' },
-          { Icon: PencilLine, label: "Type or Paste", desc: "Enter your grocery items directly", method: 'typed' },
-        ].map((o, i) => (
-          <div key={i} onMouseEnter={() => setHov(i)} onMouseLeave={() => setHov(null)}
-            onClick={() => { track(Events.INPUT_METHOD_SELECTED, { method: o.method, source: 'dashboard' }); handleGenerate() }}
-            style={{
-              background: C.white, borderRadius: 16,
-              border: `2px solid ${hov === i ? C.accent : C.cardBdr}`,
-              padding: 28, cursor: "pointer", transition: "all .15s", textAlign: "center"
-            }}>
-            <p style={{ fontSize: 36, marginBottom: 12, display: "flex", justifyContent: "center" }}>
-              <o.Icon size={40} style={{ color: C.accent }} />
-            </p>
-            <p style={{ fontWeight: 700, color: C.txt, fontSize: 15, marginBottom: 6 }}>{o.label}</p>
-            <p style={{ color: C.muted, fontSize: 12 }}>{o.desc}</p>
-          </div>
-        ))}
-      </div>
-      <div style={{ background: C.white, borderRadius: 16, padding: 20, border: `1px solid ${C.cardBdr}`, marginBottom: 22 }}>
-        <p style={{ fontWeight: 700, fontSize: 13, color: C.txt, marginBottom: 12 }}>Diet Preference</p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-          {(Object.entries(DIET) as [DietKey, typeof DIET[DietKey]][]).filter(([k]) => k !== "All").map(([d, dm]) => {
-            const on = prefDiet === d
-            return (
-              <button key={d} onClick={() => setPrefDiet(d)} style={{
-                display: "flex", alignItems: "center", gap: 5, padding: "7px 14px", borderRadius: 999,
-                fontSize: 12.5, fontWeight: on ? 700 : 500,
-                border: on ? "none" : `1px solid ${C.cardBdr}`,
-                background: on ? C.purple : C.white, color: on ? "white" : C.txt,
-                cursor: "pointer", fontFamily: "'Plus Jakarta Sans',sans-serif", transition: "all .15s"
-              }}>
-                <dm.icon size={16} style={{ color: on ? "white" : dm.col }} />{d}
-              </button>
-            )
-          })}
+      <h1 style={{ fontSize: 24, fontWeight: 800, color: C.txt, marginBottom: 6 }}>
+        {result && !isLoading ? "Your Meal Plan" : "Generate a Meal Plan"}
+      </h1>
+      <p style={{ color: C.muted, fontSize: 13, marginBottom: 24 }}>
+        {result && !isLoading ? "Your groceries, turned into meals." : "Choose how to add groceries, then make the plan yours."}
+      </p>
+
+      {result && !isLoading ? (
+        <div>
+          <Results
+            ref={resultRef}
+            result={result}
+            onDownload={onDownload}
+            onRegenerate={() => onGenerate(selectedDays)}
+            setAuthOpen={setAuthOpen}
+            showToast={showToast}
+            onUpgradeRequired={onUpgradeRequired}
+          />
+          <button onClick={onReset} style={{
+            marginTop: 20, background: C.white, color: C.txt, padding: "10px 18px", borderRadius: 999,
+            fontWeight: 700, fontSize: 13, border: `1px solid ${C.cardBdr}`, cursor: "pointer"
+          }}>
+            Create another plan
+          </button>
         </div>
-      </div>
-      <button
-        onClick={handleGenerate}
-        style={{
-          background: C.accent, color: "white", padding: "12px 28px", borderRadius: 999,
-          fontWeight: 700, fontSize: 14, border: "none", cursor: "pointer",
-          display: "flex", alignItems: "center", gap: 8,
-          fontFamily: "'Plus Jakarta Sans',sans-serif",
-          boxShadow: "0 4px 14px rgba(198,160,246,0.45)"
+      ) : isLoading ? (
+        <div role="status" aria-live="polite" style={{
+          background: C.white, borderRadius: 20, border: `1px solid ${C.cardBdr}`, padding: 36,
+          textAlign: "center", color: C.txt
         }}>
-        <Sparkles size={16} /> Generate Meal Plan
-      </button>
+          <Loader2 size={32} className="animate-spin" style={{ color: C.accent, margin: "0 auto 14px" }} />
+          <p style={{ fontWeight: 800, fontSize: 16 }}>Building your meal plan</p>
+          <p style={{ color: C.muted, fontSize: 13, marginTop: 6 }}>This can take a little while. You can stay right here.</p>
+          <div aria-label={`Generation step ${loadingStep + 1}`} style={{
+            width: "min(100%, 300px)", height: 5, borderRadius: 999, overflow: "hidden", background: "#F1EDF5", margin: "20px auto 0"
+          }}>
+            <div style={{ height: "100%", width: `${Math.min(100, (loadingStep + 1) * 25)}%`, background: C.accent, transition: "width .3s" }} />
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="dash-generate-grid" style={{ marginBottom: 16 }}>
+            {[
+              { Icon: Camera, label: "Upload a Receipt", desc: "Scan a grocery receipt", method: 'receipt' as const },
+              { Icon: PencilLine, label: "Type or Paste", desc: "Add groceries from your list", method: 'typed' as const },
+            ].map((option, i) => {
+              const active = inputMode === option.method
+              return (
+                <button key={option.method} type="button" onMouseEnter={() => setHov(i)} onMouseLeave={() => setHov(null)}
+                  onClick={() => setInputMode(option.method)}
+                  aria-pressed={active}
+                  style={{
+                    background: active ? "#FBF8FF" : C.white, borderRadius: 16,
+                    border: `2px solid ${active || hov === i ? C.accent : C.cardBdr}`,
+                    padding: "20px 16px", cursor: "pointer", transition: "all .15s", textAlign: "center",
+                    fontFamily: "'Plus Jakarta Sans',sans-serif", boxShadow: active ? "0 5px 16px rgba(198,160,246,0.12)" : "none"
+                  }}>
+                  <span style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
+                    <option.Icon size={30} style={{ color: C.accent }} />
+                  </span>
+                  <span style={{ display: "block", fontWeight: 800, color: C.txt, fontSize: 14, marginBottom: 4 }}>{option.label}</span>
+                  <span style={{ color: C.muted, fontSize: 12 }}>{option.desc}</span>
+                </button>
+              )
+            })}
+          </div>
+
+          <div style={{ background: C.white, borderRadius: 18, padding: 18, border: `1px solid ${C.cardBdr}`, marginBottom: 16 }}>
+            <UploadArea
+              mode={inputMode}
+              analyticsSource="dashboard"
+              onItemsDetected={onItemsDetected}
+              onError={onItemError}
+              disabled={isParsing}
+            />
+            {groceryItems.length > 0 && (
+              <div style={{ borderTop: `1px solid ${C.cardBdr}`, marginTop: 18, paddingTop: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                  <Check size={16} style={{ color: C.green }} />
+                  <p style={{ margin: 0, color: C.txt, fontWeight: 800, fontSize: 13 }}>
+                    {groceryItems.length} grocery {groceryItems.length === 1 ? "item" : "items"} ready
+                  </p>
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                  {groceryItems.map((item, index) => (
+                    <span key={`${item}-${index}`} style={{
+                      display: "inline-flex", alignItems: "center", gap: 5, background: "#F8F7F5", border: `1px solid ${C.cardBdr}`,
+                      padding: "5px 8px 5px 10px", borderRadius: 999, color: C.txt, fontSize: 12
+                    }}>
+                      {item}
+                      <button type="button" onClick={() => onRemoveItem(index)} aria-label={`Remove ${item}`}
+                        style={{ display: "inline-flex", border: 0, background: "transparent", color: C.faint, padding: 0, cursor: "pointer" }}>
+                        <X size={13} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div style={{ background: C.white, borderRadius: 16, padding: 20, border: `1px solid ${C.cardBdr}`, marginBottom: 16 }}>
+            <p style={{ fontWeight: 800, fontSize: 13, color: C.txt, marginBottom: 12 }}>Diet Preference</p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+              {diets.map(d => {
+                const dm = DIET[d]
+                const active = diet === d
+                return (
+                  <button key={d} type="button" aria-pressed={active} onClick={() => onDietChange(d as DietType)} style={{
+                    display: "flex", alignItems: "center", gap: 5, padding: "7px 12px", borderRadius: 999,
+                    fontSize: 12, fontWeight: active ? 800 : 600,
+                    border: active ? "none" : `1px solid ${C.cardBdr}`,
+                    background: active ? C.purple : C.white, color: active ? "white" : C.txt,
+                    cursor: "pointer", fontFamily: "'Plus Jakarta Sans',sans-serif", transition: "all .15s"
+                  }}>
+                    <dm.icon size={15} style={{ color: active ? "white" : dm.col }} />{d}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div style={{ background: C.white, borderRadius: 16, padding: 18, border: `1px solid ${C.cardBdr}`, marginBottom: 18 }}>
+            <label htmlFor="dashboard-plan-duration" style={{ display: "block", fontWeight: 800, fontSize: 13, color: C.txt, marginBottom: 10 }}>
+              Plan Duration
+            </label>
+            <select id="dashboard-plan-duration" value={clampedPlanDays} onChange={event => setPlanDays(event.target.value === 'auto' ? 'auto' : Number(event.target.value))}
+              style={{ maxWidth: "100%", padding: "9px 12px", borderRadius: 10, border: `1px solid ${C.cardBdr}`, color: C.txt, background: C.white }}>
+              <option value="auto">Auto ({autoDays} days)</option>
+              {availableDays.map(days => <option key={days} value={days}>{days} days</option>)}
+            </select>
+            {availableDays.length < 3 && (
+              <p style={{ color: C.faint, fontSize: 11, margin: "8px 0 0" }}>Add more groceries to support a longer plan.</p>
+            )}
+          </div>
+
+          {error && <p role="alert" style={{ padding: 12, background: "#FEF2F2", color: C.red, borderRadius: 10, fontSize: 13, marginBottom: 14 }}>{error}</p>}
+          {aiUnavailable && (
+            <div role="alert" style={{ padding: 16, background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 12, marginBottom: 14 }}>
+              <p style={{ margin: "0 0 10px", color: C.txt, fontSize: 13 }}>Meal generation is temporarily unavailable.</p>
+              <button type="button" onClick={() => onGenerate(selectedDays)} style={{ border: 0, background: "transparent", color: C.accentDark, fontWeight: 800, cursor: "pointer", padding: 0 }}>Try again</button>
+            </div>
+          )}
+          {!canGenerateMore && (
+            <p style={{ color: C.muted, fontSize: 12, marginBottom: 12 }}>Your free generation has been used. Generate to view upgrade options.</p>
+          )}
+          <button type="button" disabled={!groceryItems.length} onClick={() => onGenerate(selectedDays)}
+            style={{
+              background: groceryItems.length ? C.accent : "#D8C6ED", color: "white", padding: "12px 24px", borderRadius: 999,
+              fontWeight: 800, fontSize: 14, border: "none", cursor: groceryItems.length ? "pointer" : "not-allowed",
+              display: "flex", alignItems: "center", gap: 8, fontFamily: "'Plus Jakarta Sans',sans-serif",
+              boxShadow: groceryItems.length ? "0 4px 14px rgba(198,160,246,0.4)" : "none"
+            }}>
+            <Sparkles size={16} /> Generate Meal Plan
+          </button>
+        </>
+      )}
     </div>
   )
 }
@@ -1723,7 +1854,7 @@ function Profile({ user, plans }: ProfileProps) {
 }
 
 // ─── Root Dashboard ───────────────────────────────────────────────────────────
-export default function EdibleDashboard() {
+export default function EdibleDashboard(generateProps: GenerateProps) {
   const navigate = useNavigate()
   const { user, isLoading: authLoading, isInitialized, isLoading, signOut } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -2332,7 +2463,7 @@ export default function EdibleDashboard() {
                       }))} 
                     />
                   )}
-                  {view === "generate" && <Generate />}
+                  {view === "generate" && <Generate {...generateProps} />}
                   {view === "profile" && <Profile user={userData} plans={plans} />}
                 </>
               )}

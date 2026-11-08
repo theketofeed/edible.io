@@ -212,7 +212,13 @@ function MainContent() {
 		setGroceryItems([])
 	}, [showToast])
 
-	const handleGenerate = useCallback(async () => {
+	const handleRemoveGroceryItem = useCallback((index: number) => {
+		const updatedItems = groceryItems.filter((_, itemIndex) => itemIndex !== index)
+		setGroceryItems(updatedItems)
+		setSourceText(updatedItems.join(', '))
+	}, [groceryItems])
+
+	const handleGenerate = useCallback(async (daysOverride?: number) => {
 		// Check generation limit
 		const { allowed, remaining } = checkGenerationLimit()
 		if (!allowed) {
@@ -236,7 +242,7 @@ function MainContent() {
 				items: groceryItems,
 				diet,
 				sourceText,
-				days: effectivePlanDays,
+				days: daysOverride ?? effectivePlanDays,
 				onStep: (step) => setLoadingStep(step),
 			})
 
@@ -300,6 +306,14 @@ function MainContent() {
 		navigate('/')
 		window.scrollTo({ top: 0, behavior: 'smooth' })
 	}
+
+	const resetDashboardGenerator = useCallback(() => {
+		setResult(null)
+		setGroceryItems([])
+		setSourceText('')
+		setError(null)
+		setAiUnavailable(false)
+	}, [])
 
 	const showFooter = location.pathname === '/' || /^\/(?:blog|privacy|terms)(?:\/|$)/.test(location.pathname)
 
@@ -523,7 +537,37 @@ function MainContent() {
 						<RecipeWrapper result={result} showToast={showToast} />
 					</ErrorBoundary>
 				} />
-			<Route path="/dashboard" element={<EdibleDashboard />} />
+			<Route path="/dashboard" element={
+				<EdibleDashboard
+					diet={diet}
+					onDietChange={setDiet}
+					groceryItems={groceryItems}
+					onItemsDetected={onItemsDetected}
+					onItemError={onItemError}
+					onRemoveItem={handleRemoveGroceryItem}
+					isLoading={isLoading}
+					isParsing={isParsing}
+					loadingStep={loadingStep}
+					error={error}
+					aiUnavailable={aiUnavailable}
+					canGenerateMore={canGenerateMore}
+					result={result}
+					onGenerate={(days) => {
+						track(Events.GENERATE_PLAN_CLICKED, { retry: false, item_count: groceryItems.length, diet, source: 'dashboard' })
+						if (canGenerateMore) setResult(null)
+						void handleGenerate(days)
+					}}
+					onReset={resetDashboardGenerator}
+					onDownload={triggerDownload}
+					setAuthOpen={setAuthOpen}
+					showToast={showToast}
+					onUpgradeRequired={(trigger) => {
+						setPricingTrigger(trigger)
+						setPricingOpen(true)
+					}}
+					resultRef={printRef}
+				/>
+			} />
 			<Route path="/payment-success" element={<PaymentSuccess />} />
 			<Route path="/privacy" element={<Privacy />} />
 			<Route path="/terms" element={<Terms />} />

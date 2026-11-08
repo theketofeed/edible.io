@@ -22,11 +22,13 @@ interface Props {
 	onItemsDetected: (items: string[], rawText: string) => void
 	onError: (message: string) => void
 	disabled?: boolean
+	mode?: 'both' | 'typed' | 'receipt'
+	analyticsSource?: string
 }
 
 type UploadState = 'idle' | 'hover' | 'dragOver' | 'uploading' | 'processing' | 'success' | 'error'
 
-export default function UploadArea({ onItemsDetected, onError, disabled }: Props) {
+export default function UploadArea({ onItemsDetected, onError, disabled, mode = 'both', analyticsSource = 'homepage' }: Props) {
 	const inputRef = useRef<HTMLInputElement | null>(null)
 	const [uploadState, setUploadState] = useState<UploadState>('idle')
 	const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -207,7 +209,7 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 	return (
 		<div className="grid gap-5 sm:gap-6">
 			{/* Manual Text Input Section: now primary, shown first */}
-			<div className="grid gap-3">
+			{mode !== 'receipt' && <div className="grid gap-3">
 				<label className="text-sm font-semibold text-black/80 flex items-center gap-2">
 					<FileText className="w-4 h-4 text-lavender" strokeWidth={2} />
 					Paste your grocery list:
@@ -223,7 +225,7 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 					<button
 						type="button"
 						className="px-5 sm:px-6 py-2.5 sm:py-2.5 rounded-full bg-lavender text-black font-semibold shadow-lg shadow-lavender/40 hover:shadow-lavender/50 hover:scale-105 transition-all duration-200 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed text-sm"
-						onClick={() => { track(Events.INPUT_METHOD_SELECTED, { method: 'typed', source: 'homepage' }); useManual() }}
+						onClick={() => { track(Events.INPUT_METHOD_SELECTED, { method: 'typed', source: analyticsSource }); useManual() }}
 						disabled={disabled || !manualText.trim()}
 					>
 						Use this text
@@ -234,10 +236,10 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 						</span>
 					)}
 				</div>
-			</div>
+			</div>}
 
 			{/* Receipt Upload Section: now secondary, shown below */}
-			<div className="grid gap-3 pt-4 sm:pt-6 border-t border-gray-200/50">
+			{mode !== 'typed' && <div className={`grid gap-3 ${mode === 'both' ? 'pt-4 sm:pt-6 border-t border-gray-200/50' : ''}`}>
 				<label className="text-sm font-semibold text-black/80 flex items-center gap-2">
 					<Receipt className="w-4 h-4 text-lavender" strokeWidth={2} />
 					Or upload a receipt photo:
@@ -278,7 +280,7 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 							<div className="flex flex-col sm:flex-row gap-3 w-full px-2 sm:px-0 sm:justify-center">
 								<button
 									type="button"
-									onClick={() => { track(Events.INPUT_METHOD_SELECTED, { method: 'receipt', source: 'homepage' }); inputRef.current?.click() }}
+									onClick={() => { track(Events.INPUT_METHOD_SELECTED, { method: 'receipt', source: analyticsSource }); inputRef.current?.click() }}
 									className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-lavender text-black font-semibold shadow-lg shadow-lavender/40 hover:shadow-lavender/50 hover:scale-105 transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
 									disabled={disabled}
 								>
@@ -287,7 +289,7 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 								</button>
 								<button
 									type="button"
-									onClick={() => { track(Events.INPUT_METHOD_SELECTED, { method: 'receipt', source: 'homepage' }); setShowCamera(true) }}
+									onClick={() => { track(Events.INPUT_METHOD_SELECTED, { method: 'receipt', source: analyticsSource }); setShowCamera(true) }}
 									className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-white border-2 border-lavender/40 text-black font-semibold hover:bg-lavender/5 hover:border-lavender/60 transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
 									disabled={disabled}
 								>
@@ -424,7 +426,7 @@ export default function UploadArea({ onItemsDetected, onError, disabled }: Props
 						disabled={disabled}
 					/>
 				</div>
-			</div>
+			</div>}
 
 			{showCamera && (
 				<CameraCapture
