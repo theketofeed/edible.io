@@ -20,6 +20,7 @@ import { usePlan } from '../hooks/usePlan'
 import { track, Events } from '../lib/analytics'
 import { countMeals, pickPlanPhotos, resizeForCard } from "../lib/planCover"
 import { isSavedPlanCurrent } from "../lib/savedPlan"
+import { cleanMealTitle } from "../lib/mealTitle"
 import SavedPlanPage from "./SavedPlanPage"
 import UploadArea from "../components/UploadArea"
 import Results from "../components/Results"
@@ -73,6 +74,46 @@ type PlanDay = { day: string; B: MealSlot; L: MealSlot; D: MealSlot }
 type Plan = { id: string; title: string; diet: DietKey; date: string; createdAt?: string; activatedAt: string; days: PlanDay[]; planData: unknown }
 
 type Recipe = { id: string; title: string; type: string; time: number; cal: number; rawMeal?: Meal }
+
+function PlanPhotoMosaic({ planData }: { planData: unknown }) {
+  const [failedPhotos, setFailedPhotos] = useState<Set<string>>(() => new Set())
+  const photos = pickPlanPhotos(planData).filter(photo => !failedPhotos.has(photo))
+  const handleImageError = (photo: string) => {
+    setFailedPhotos(previous => {
+      if (previous.has(photo)) return previous
+      return new Set(previous).add(photo)
+    })
+  }
+  const imageStyle = { width: "100%", height: "100%", display: "block", objectFit: "cover" as const, objectPosition: "center 40%" }
+
+  if (photos.length === 4) {
+    return (
+      <div style={{ width: "100%", height: "100%", display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gridTemplateRows: "repeat(2, 1fr)", gap: 2 }}>
+        {photos.map((photo, index) => (
+          <div key={`${photo}-${index}`} style={{ minWidth: 0, minHeight: 0, overflow: "hidden", background: "linear-gradient(135deg, #F5EDFF, #FDF7F0)" }}>
+            <img src={resizeForCard(photo)} alt="" aria-hidden="true" loading="lazy" decoding="async"
+              onError={() => handleImageError(photo)} style={imageStyle} />
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  if (photos.length > 0) {
+    return (
+      <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #F5EDFF, #FDF7F0)" }}>
+        <img src={resizeForCard(photos[0])} alt="" aria-hidden="true" loading="lazy" decoding="async"
+          onError={() => handleImageError(photos[0])} style={imageStyle} />
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, #F5EDFF, #FDF7F0)" }}>
+      <UtensilsCrossed size={38} aria-hidden="true" style={{ color: C.accent, opacity: 0.7 }} />
+    </div>
+  )
+}
 type CustomMeal = { id: string; name: string; type: string; cal: number; time: number; rawMeal?: Meal }
 
 // Helper: extract unique recipes from user's saved plans
@@ -721,7 +762,7 @@ function Overview({ plans, savedPlans, isLoadingPlans, onNav, onOpenPlan, userDa
               }}>
                 <MealImage name={m.name} type={m.type} size={34} imageUrl={(m as any).imageUrl} />
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 12.5, fontWeight: 600, color: C.txt }}>{m.name}</p>
+                  <p style={{ fontSize: 12.5, fontWeight: 600, color: C.txt }}>{cleanMealTitle(m.name)}</p>
                   <p style={{ fontSize: 11, color: C.faint }}>{m.type} · {m.cal} kcal · {m.time} min</p>
                 </div>
               </div>
@@ -777,7 +818,6 @@ function Overview({ plans, savedPlans, isLoadingPlans, onNav, onOpenPlan, userDa
           <div className="dash-two-col">
             {recentSavedPlans.map(plan => {
               const dm = DIET[plan.diet] || DIET.Balanced
-              const photos = pickPlanPhotos(plan.planData)
               const isActive = plan.id === selectedPlanId
               const savedDate = new Date(plan.createdAt || plan.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
               return (
@@ -806,27 +846,7 @@ function Overview({ plans, savedPlans, isLoadingPlans, onNav, onOpenPlan, userDa
                     card.style.boxShadow = isActive ? `0 0 0 2px ${C.accent}` : ""
                   }}>
                   <div style={{ width: 104, height: 104, borderRadius: 16, overflow: "hidden", flexShrink: 0, background: "linear-gradient(135deg, #F5EDFF, #FDF7F0)" }}>
-                    {photos.length === 4 ? (
-                      <div style={{ width: "100%", height: "100%", display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gridTemplateRows: "repeat(2, 1fr)", gap: 2 }}>
-                        {photos.map((photo, index) => (
-                          <div key={`${photo}-${index}`} style={{ minWidth: 0, minHeight: 0, overflow: "hidden", background: "linear-gradient(135deg, #F5EDFF, #FDF7F0)" }}>
-                            <img src={resizeForCard(photo)} alt="" aria-hidden="true" loading="lazy" decoding="async"
-                              onError={e => { e.currentTarget.style.display = "none" }}
-                              style={{ width: "100%", height: "100%", display: "block", objectFit: "cover", objectPosition: "center 40%" }} />
-                          </div>
-                        ))}
-                      </div>
-                    ) : photos.length > 0 ? (
-                      <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #F5EDFF, #FDF7F0)" }}>
-                        <img src={resizeForCard(photos[0])} alt="" aria-hidden="true" loading="lazy" decoding="async"
-                          onError={e => { e.currentTarget.style.display = "none" }}
-                          style={{ width: "100%", height: "100%", display: "block", objectFit: "cover", objectPosition: "center 40%" }} />
-                      </div>
-                    ) : (
-                      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, #F5EDFF, #FDF7F0)" }}>
-                        <UtensilsCrossed size={38} aria-hidden="true" style={{ color: C.accent, opacity: 0.7 }} />
-                      </div>
-                    )}
+                    <PlanPhotoMosaic planData={plan.planData} />
                   </div>
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 7, minWidth: 0, marginBottom: 7 }}>
@@ -962,7 +982,7 @@ function MealPlanner({ plans, selectedPlanId }: MealPlannerProps & { selectedPla
                   <MealImage name={m.name} type={m.type} imageUrl={(m as any).imageUrl} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontSize: 11.5, fontWeight: 700, color: MCOL[m.type] || C.purple, marginBottom: 2 }}>{m.type}</p>
-                    <p style={{ fontSize: 14, fontWeight: 700, color: C.txt, marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.name}</p>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: C.txt, marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cleanMealTitle(m.name)}</p>
                     <p style={{ fontSize: 11, color: C.faint, fontWeight: 500 }}>{m.cal > 0 ? `${m.cal} kcal` : '-- kcal'} · {m.time > 0 ? `${m.time} min` : '--'}</p>
                   </div>
                   {m.rawMeal && !isExtra && <ChevronRight size={16} style={{ color: C.faint, flexShrink: 0 }} />}
@@ -1117,7 +1137,6 @@ function SavedPlans({ plans, activePlanId, onActivatePlan, onDeletePlan, onNav, 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(270px,1fr))", gap: 14, alignItems: "stretch" }}>
         {visible.map(plan => {
           const dm = DIET[plan.diet] || DIET.Balanced
-          const photos = pickPlanPhotos(plan.planData)
           const isActive = plan.id === activePlanId && isSavedPlanCurrent(plan.activatedAt, plan.days.length)
           return (
             <div key={plan.id} role="link" aria-label={`Open plan: ${plan.title}`} tabIndex={0}
@@ -1148,27 +1167,7 @@ function SavedPlans({ plans, activePlanId, onActivatePlan, onDeletePlan, onNav, 
                 (e.currentTarget as HTMLElement).style.boxShadow = isActive ? `0 0 0 2px ${C.accent}` : ""
               }}>
               <div style={{ aspectRatio: "16 / 10", position: "relative", overflow: "hidden", background: "linear-gradient(135deg, #F5EDFF, #FDF7F0)", flexShrink: 0 }}>
-                {photos.length === 4 ? (
-                  <div style={{ width: "100%", height: "100%", display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gridTemplateRows: "repeat(2, 1fr)", gap: 2 }}>
-                    {photos.map((photo, index) => (
-                      <div key={`${photo}-${index}`} style={{ minWidth: 0, minHeight: 0, overflow: "hidden", background: "linear-gradient(135deg, #F5EDFF, #FDF7F0)" }}>
-                        <img src={resizeForCard(photo)} alt="" aria-hidden="true" loading="lazy" decoding="async"
-                          onError={e => { e.currentTarget.style.display = "none" }}
-                          style={{ width: "100%", height: "100%", display: "block", objectFit: "cover", objectPosition: "center 40%" }} />
-                      </div>
-                    ))}
-                  </div>
-                ) : photos.length > 0 ? (
-                  <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #F5EDFF, #FDF7F0)" }}>
-                    <img src={resizeForCard(photos[0])} alt="" aria-hidden="true" loading="lazy" decoding="async"
-                      onError={e => { e.currentTarget.style.display = "none" }}
-                      style={{ width: "100%", height: "100%", display: "block", objectFit: "cover", objectPosition: "center 40%" }} />
-                  </div>
-                ) : (
-                  <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, #F5EDFF, #FDF7F0)" }}>
-                    <UtensilsCrossed size={38} aria-hidden="true" style={{ color: C.accent, opacity: 0.7 }} />
-                  </div>
-                )}
+                <PlanPhotoMosaic planData={plan.planData} />
                 <div aria-hidden="true" style={{ position: "absolute", inset: 0, height: 94, pointerEvents: "none", background: "linear-gradient(180deg, rgba(17,24,39,0.42), transparent)" }} />
                 {isActive && (
                   <span style={{ position: "absolute", top: 12, left: 12, zIndex: 1, background: C.accent, color: "white", fontSize: 11, fontWeight: 700, padding: "5px 10px", borderRadius: 999 }}>
@@ -1383,7 +1382,7 @@ function RecipeCard({ r, hidden, onHide }: { r: Recipe, hidden: boolean, onHide:
       
       {/* Content */}
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 6 }}>
-        <p style={{ fontWeight: 800, fontSize: 15, color: C.txt, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.title}</p>
+        <p style={{ fontWeight: 800, fontSize: 15, color: C.txt, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{cleanMealTitle(r.title)}</p>
         
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 10, fontWeight: 700, color: MCOL[r.type] || C.purple, background: MBG[r.type] ? `${MBG[r.type]}20` : "rgba(198,160,246,0.15)", padding: "3px 8px", borderRadius: 999 }}>
@@ -2070,7 +2069,7 @@ export default function EdibleDashboard(generateProps: GenerateProps) {
   const results = showSearch
     ? [
       ...matchedPlans.map(p => ({ type: "plan" as const, label: p.title, sub: `${p.diet} · ${p.days.length} days`, nav: "plans" as NavId })),
-      ...matchedRecipes.map(r => ({ type: "recipe" as const, label: r.title, sub: `${r.type} · ${r.cal} kcal`, nav: "recipes" as NavId })),
+      ...matchedRecipes.map(r => ({ type: "recipe" as const, label: cleanMealTitle(r.title), sub: `${r.type} · ${r.cal} kcal`, nav: "recipes" as NavId })),
     ]
     : []
 

@@ -3,6 +3,7 @@ import { ChevronRight } from 'lucide-react'
 import type { DayMeals, Meal } from '../utils/types'
 import { fetchMealImage, sessionCache, titleToKey } from '../lib/mealImages'
 import MealImagePlaceholder from './MealImagePlaceholder'
+import { cleanMealTitle } from '../lib/mealTitle'
 
 function getMealTypeIcon(mealType: string): string {
 	const icons = {
@@ -102,6 +103,7 @@ export const MealCard = memo(function MealCard({
 	const p = meal.nutrition?.protein ?? 0
 	const c = meal.nutrition?.carbs ?? 0
 	const f = meal.nutrition?.fat ?? 0
+	const displayTitle = cleanMealTitle(meal.title)
 
 	return (
 		<div
@@ -125,19 +127,19 @@ export const MealCard = memo(function MealCard({
 				{imageUrl && !imageError && (
 					<img
 						src={imageUrl}
-						alt={meal.title}
+						alt={displayTitle}
 						className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
 						onLoad={() => setImageLoaded(true)}
 						onError={handleImageError}
 					/>
 				)}
 				{imageError && (
-					<img src={fallbackSvg} alt={meal.title} className="w-full h-full object-cover" />
+					<img src={fallbackSvg} alt={displayTitle} className="w-full h-full object-cover" />
 				)}
 			</div>
 			<div className="flex-1 min-w-0">
 				<p className="text-[14px] font-bold text-gray-900 leading-snug line-clamp-2 group-hover:text-purple-600 transition-colors">
-					{meal.title}
+					{displayTitle}
 				</p>
 			</div>
 			<ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-purple-400 transition-colors flex-shrink-0" />

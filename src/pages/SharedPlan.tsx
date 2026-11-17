@@ -5,6 +5,7 @@ import { fetchMealImage } from '../lib/mealImages'
 import { ChevronRight, ArrowLeft } from 'lucide-react'
 import logo from '../assets/favicon.png'
 import Seo from '../components/Seo'
+import { cleanMealTitle } from '../lib/mealTitle'
 
 type MealSlot = { name: string; cal: number; imageUrl?: string }
 type PlanDay = { day: string; B: MealSlot; L: MealSlot; D: MealSlot }
@@ -36,6 +37,7 @@ function MealRow({ name, type, cal, imageUrl: storedImageUrl }: { name: string; 
     Dinner: { label: '#5b21b6', bg: '#ede9fe' },
   }
   const col = typeColors[type] || typeColors.Dinner
+  const displayName = cleanMealTitle(name)
 
   useEffect(() => {
     if (storedImageUrl) { setImg(storedImageUrl); return }
@@ -45,10 +47,10 @@ function MealRow({ name, type, cal, imageUrl: storedImageUrl }: { name: string; 
   return (
     <div style={{ background: '#f9f8f6', borderRadius: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
       <div style={{ width: 44, height: 44, borderRadius: 9, background: col.bg, flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>
-        {img ? <img src={img} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : getMealEmoji(name)}
+        {img ? <img src={img} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : getMealEmoji(name)}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ fontSize: 13, fontWeight: 700, color: '#111827', margin: 0, lineHeight: 1.3 }}>{name}</p>
+        <p style={{ fontSize: 13, fontWeight: 700, color: '#111827', margin: 0, lineHeight: 1.3 }}>{displayName}</p>
         {cal > 0 && <p style={{ fontSize: 11, color: '#9ca3af', margin: '2px 0 0', fontWeight: 500 }}>{cal} kcal</p>}
       </div>
     </div>

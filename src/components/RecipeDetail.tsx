@@ -18,6 +18,7 @@ import { downloadElementAsPDF } from '../utils/pdfHelper'
 import MealImagePlaceholder from './MealImagePlaceholder'
 import RecipePDFTemplate from './RecipePDFTemplate'
 import logo from '../assets/favicon.png'
+import { cleanMealTitle } from '../lib/mealTitle'
 
 interface RecipeDetailProps {
     meal?: Meal
@@ -123,6 +124,7 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
             totalTime: meal.totalTime || (meal.prepTime || 0) + (meal.cookTime || 0)
         }
     }, [meal])
+    const displayTitle = safeMeal ? cleanMealTitle(safeMeal.title) : ''
 
     // Storage key unique to this specific recipe in this meal plan
     const storageKey = useMemo(() => {
@@ -248,7 +250,7 @@ export default function RecipeDetail({ meal, mealType, dayName, onBack, backLabe
     const copyRecipeText = async () => {
         if (!safeMeal) return
         
-        const recipeSummary = `${safeMeal.title}
+        const recipeSummary = `${displayTitle}
 
 
 ${mealType} - ${dayName}
@@ -326,7 +328,7 @@ Made with Edible`
 
             await new Promise(r => setTimeout(r, 500))
 
-            const filename = `${safeMeal.title.replace(/\s+/g, '-').toLowerCase()}-recipe.pdf`
+            const filename = `${displayTitle.replace(/\s+/g, '-').toLowerCase()}-recipe.pdf`
             const success = await downloadElementAsPDF(el, { filename })
 
             if (success) {
@@ -715,7 +717,7 @@ Made with Edible`
                                 <>
                                 <img
                                     src={recipeImage}
-                                    alt={safeMeal.title}
+                                    alt={displayTitle}
                                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60" />
@@ -754,7 +756,7 @@ Made with Edible`
 
                         {/* Title */}
                         <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold text-gray-900 mb-6 sm:mb-8 md:mb-10 leading-[1.1] tracking-tight">
-                            {safeMeal.title}
+                            {displayTitle}
                         </h1>
 
                         {/* Time Information */}
@@ -856,7 +858,7 @@ Made with Edible`
                 {isCookingModeOpen && (
                     <CookingMode
                         steps={instructionSteps}
-                        mealTitle={safeMeal.title}
+                        mealTitle={displayTitle}
                         onClose={() => setIsCookingModeOpen(false)}
                         storageKey={storageKey}
                     />

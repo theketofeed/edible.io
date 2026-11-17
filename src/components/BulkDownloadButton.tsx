@@ -8,6 +8,7 @@ import { createPortal } from 'react-dom'
 import { fetchMealImage } from '../lib/mealImages'
 import { usePlan } from '../hooks/usePlan'
 import RecipePDFTemplate from './RecipePDFTemplate'
+import { cleanMealTitle } from '../lib/mealTitle'
 
 interface Props {
     result: MealPlanResult
@@ -77,7 +78,7 @@ export default function BulkDownloadButton({ result, showToast, onUpgradeRequire
 
                 if (pdfRef.current) {
                     pdfRef.current.classList.add('pdf-export-mode')
-                    const filename = `${item.dayName.replace(/\s+/g, '-')}-${item.mealType}-${item.meal.title.replace(/\s+/g, '-').toLowerCase()}.pdf`
+                    const filename = `${item.dayName.replace(/\s+/g, '-')}-${item.mealType}-${cleanMealTitle(item.meal.title).replace(/\s+/g, '-').toLowerCase()}.pdf`
                     const blob = await getElementAsPDFBlob(pdfRef.current, filename)
                     pdfRef.current.classList.remove('pdf-export-mode')
                     if (blob) {

@@ -1,6 +1,7 @@
 import { forwardRef } from 'react'
 import { Clock, ChefHat, Timer } from 'lucide-react'
 import type { Meal } from '../utils/types'
+import { cleanMealTitle } from '../lib/mealTitle'
 
 interface RecipePDFTemplateProps {
 	meal: Meal
@@ -12,6 +13,7 @@ interface RecipePDFTemplateProps {
 
 const RecipePDFTemplate = forwardRef<HTMLDivElement, RecipePDFTemplateProps>(
 	function RecipePDFTemplate({ meal, dayName, mealType, imageSrc, canSeeChefTips }, ref) {
+		const displayTitle = cleanMealTitle(meal.title || 'Untitled Recipe')
 		const safeMeal = {
 			...meal,
 			title: meal.title || 'Untitled Recipe',
@@ -38,12 +40,12 @@ const RecipePDFTemplate = forwardRef<HTMLDivElement, RecipePDFTemplateProps>(
 					</div>
 
 					<h1 className="text-4xl font-black text-gray-900 mb-8 leading-tight tracking-tight pdf-word-wrap">
-						{safeMeal.title}
+						{displayTitle}
 					</h1>
 
 					{imageSrc && (
 						<div className="pdf-hero mb-8 rounded-[2rem] overflow-hidden h-[360px] border border-gray-100 shadow-sm pdf-avoid-break">
-							<img src={imageSrc} alt={safeMeal.title} className="w-full h-full object-cover" />
+							<img src={imageSrc} alt={displayTitle} className="w-full h-full object-cover" />
 						</div>
 					)}
 
