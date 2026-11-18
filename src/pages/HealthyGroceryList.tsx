@@ -8,6 +8,9 @@ import { SITE_URL } from '../lib/seo'
 const TITLE = 'Healthy Grocery List: What to Buy, Build Your Own | Edible'
 const DESCRIPTION = 'A complete healthy grocery list organized by food category, with a free printable checklist, budget tips, and keto and low-carb swaps.'
 const ARTICLE_TITLE = 'The Healthy Grocery List: What to Buy and How to Build Your Own'
+const COVER_IMAGE_WEBP = '/blog/blog-cover-healthy-grocery-list.webp'
+const COVER_IMAGE = '/blog/blog-cover-healthy-grocery-list.jpg'
+const COVER_IMAGE_URL = `${SITE_URL}${COVER_IMAGE}`
 const FAQ_ITEMS = [
 	{
 		question: 'What should be on a healthy grocery list?',
@@ -28,7 +31,7 @@ const STRUCTURED_DATA = [
 		'@context': 'https://schema.org',
 		'@type': 'Article',
 		headline: ARTICLE_TITLE,
-		image: `${SITE_URL}/blog/healthy-grocery-list-hero.png`,
+		image: COVER_IMAGE_URL,
 		author: { '@type': 'Person', name: 'Praise' },
 		publisher: {
 			'@type': 'Organization',
@@ -56,16 +59,16 @@ export default function HealthyGroceryList() {
 				title={TITLE}
 				description={DESCRIPTION}
 				path="/blog/healthy-grocery-list"
-				image={`${SITE_URL}/blog/healthy-grocery-list-hero.png`}
+				image={COVER_IMAGE_URL}
 			/>
 			<JsonLd data={STRUCTURED_DATA} />
 			<BlogBreadcrumb title="The Healthy Grocery List" />
 
 			<picture>
-				<source srcSet="/blog/healthy-grocery-list-hero.webp" type="image/webp" />
+				<source srcSet={COVER_IMAGE_WEBP} type="image/webp" />
 				<img
-					src="/blog/healthy-grocery-list-hero.png"
-					alt="Healthy grocery list staples including fresh produce, proteins, grains, and pantry items"
+					src={COVER_IMAGE}
+					alt="A grocery list on crumpled paper with a purple pen ticking off an item"
 					width={1600}
 					height={900}
 					loading="eager"

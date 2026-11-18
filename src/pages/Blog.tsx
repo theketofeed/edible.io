@@ -6,7 +6,8 @@ const DESCRIPTION = 'Meal planning tips, app comparisons, and practical guides t
 
 interface PostThumbnail {
 	webp?: string
-	png: string
+	jpg?: string
+	png?: string
 	alt: string
 	width: number
 	height: number
@@ -43,9 +44,9 @@ const posts: Post[] = [
 		date: 'August 23, 2026',
 		href: '/blog/healthy-grocery-list',
 		thumbnail: {
-			webp: '/blog/healthy-grocery-list-hero.webp',
-			png: '/blog/healthy-grocery-list-hero.png',
-			alt: 'Healthy grocery list staples including fresh produce, proteins, grains, and pantry items',
+			webp: '/blog/blog-cover-healthy-grocery-list.webp',
+			jpg: '/blog/blog-cover-healthy-grocery-list.jpg',
+			alt: 'A grocery list on crumpled paper with a purple pen ticking off an item',
 			width: 1600,
 			height: 900,
 		},
@@ -88,8 +89,9 @@ export default function Blog() {
 							<div className="border-b border-gray-100 pb-3 sm:pb-4">
 								<picture>
 									{post.thumbnail.webp && <source srcSet={post.thumbnail.webp} type="image/webp" />}
+									{post.thumbnail.jpg && <source srcSet={post.thumbnail.jpg} type="image/jpeg" />}
 									<img
-										src={post.thumbnail.png}
+										src={post.thumbnail.jpg || post.thumbnail.png}
 										alt={post.thumbnail.alt}
 										width={post.thumbnail.width}
 										height={post.thumbnail.height}
