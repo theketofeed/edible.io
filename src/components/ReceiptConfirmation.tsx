@@ -102,7 +102,8 @@ export default function ReceiptConfirmation({ isOpen, isParsing, parsedItems, on
                             <input
                                 value={item.quantity}
                                 onChange={(e) => updateItem(item.id, 'quantity', e.target.value)}
-                                className="w-12 shrink-0 p-2 bg-gray-50 rounded-lg text-sm font-medium text-center focus:ring-2 focus:ring-purple-200 outline-none"
+                                style={{ width: `clamp(6rem, ${Math.min(Math.max(item.quantity.length + 3, 10), 18)}ch, 10rem)` }}
+                                className="max-w-[40%] shrink-0 p-2 bg-gray-50 rounded-lg text-sm font-medium text-center focus:ring-2 focus:ring-purple-200 outline-none"
                                 placeholder="Qty"
                             />
 
