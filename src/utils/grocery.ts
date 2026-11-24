@@ -37,7 +37,7 @@ const EXCLUDED_PATTERNS = [
 	/\bpin\b/i,
 	// Hex/alphanumeric transaction codes (e.g. "fe010d03")
 	/^[a-f0-9]{6,}$/i,
-	/^[a-z0-9]{8,}$/i,
+	/^(?=.*\d)[a-z0-9]{8,}$/i,
 	// Date/time patterns
 	/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s+\d{1,2}\s+\d{4}/i,
 	/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}/,
@@ -73,7 +73,7 @@ const EXCLUDED_PATTERNS = [
 	/^@/i,
 	/lb\s*@/i,
 	/tare\s*weight/i,
-	/subtotal|sub\s*total|total|tax|fee|paid|visa|rate|taxed\s+amt/i,
+	/\b(subtotal|sub\s*total|totals?(?!\s+greek\s+yogurt)|tax(es|ed)?|fees?|paid|visa|rates?)\b/i,
 	/^\d{3}-\d{4}/i,
 	/^--/i,
 	/metropolita|summary/i,
