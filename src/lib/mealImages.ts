@@ -48,7 +48,7 @@ function getCategoryFallback(mealTitle: string): string {
     return 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=800&h=500&fit=crop'
   if (t.match(/\b(pork|ham|bacon|sausage|chorizo)\b/))
     return 'https://images.unsplash.com/photo-1432139509613-5c4255815697?w=800&h=500&fit=crop'
-  if (t.match(/\b(pasta|spaghetti|noodle|fettuccine|penne|linguine|carbonara)\b/))
+  if (t.match(/\b(pasta|spaghetti|noodle|noodles|indomie|fettuccine|penne|linguine|carbonara)\b/))
     return 'https://images.unsplash.com/photo-1555949258-eb67b1ef0ceb?w=800&h=500&fit=crop'
   if (t.match(/\b(pizza)\b/))
     return 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&h=500&fit=crop'

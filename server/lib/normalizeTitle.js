@@ -24,6 +24,20 @@ const FILLER_WORDS = new Set([
 ])
 
 const DESTRUCTIVE_CONNECTORS = /\b(?:with|and|plus|in)\b/i
+const CONNECTOR_WORDS = new Set(['with', 'and', 'plus', 'in'])
+
+function pushCandidate(candidates, seen, value) {
+  const candidate = String(value || '').replace(/\s+/g, ' ').trim()
+  if (!candidate) return
+  const words = candidate.split(' ').map((word) => word.toLowerCase().replace(/[^a-z]/g, ''))
+  if (!words.length) return
+  if (CONNECTOR_WORDS.has(words[0])) return
+  if (words.every((word) => CONNECTOR_WORDS.has(word))) return
+  const key = candidate.toLowerCase()
+  if (seen.has(key)) return
+  seen.add(key)
+  candidates.push(candidate)
+}
 
 function uniqueStrings(values) {
   const seen = new Set()
@@ -50,13 +64,15 @@ export function generateMealImageSearchCandidates(rawTitle) {
   const base = sanitizeTitle(rawTitle)
   if (!base) return []
 
-  const candidates = [base]
+  const candidates = []
+  const seen = new Set()
+  pushCandidate(candidates, seen, base)
 
   const noConnectors = base.replace(DESTRUCTIVE_CONNECTORS, ' ')
-  if (noConnectors && noConnectors !== base) candidates.push(noConnectors)
+  if (noConnectors && noConnectors !== base) pushCandidate(candidates, seen, noConnectors)
 
   const beforeConnector = base.replace(/\s+\b(?:with|and|plus|in)\b\s+.+$/i, '').trim()
-  if (beforeConnector && beforeConnector !== base) candidates.push(beforeConnector)
+  if (beforeConnector && beforeConnector !== base) pushCandidate(candidates, seen, beforeConnector)
 
   const words = base.split(/\s+/).filter(word => {
     const lower = word.toLowerCase().replace(/[^a-z]/g, '')
@@ -67,18 +83,18 @@ export function generateMealImageSearchCandidates(rawTitle) {
   })
 
   const mainProteinStyle = words.slice(0, 4).join(' ').trim()
-  if (mainProteinStyle && !candidates.includes(mainProteinStyle)) candidates.push(mainProteinStyle)
+  if (mainProteinStyle) pushCandidate(candidates, seen, mainProteinStyle)
 
   const mainIngredient = words.slice(-2).join(' ').trim()
-  if (mainIngredient && !candidates.includes(mainIngredient)) candidates.push(mainIngredient)
+  if (mainIngredient) pushCandidate(candidates, seen, mainIngredient)
 
   const singleWord = words.find(word => {
     const lower = word.toLowerCase().replace(/[^a-z]/g, '')
-    return lower && !['with', 'and', 'plus', 'in'].includes(lower)
+    return lower && !CONNECTOR_WORDS.has(lower)
   }) || words[0]
-  if (singleWord && !candidates.includes(singleWord)) candidates.push(singleWord)
+  if (singleWord) pushCandidate(candidates, seen, singleWord)
 
-  return uniqueStrings(candidates)
+  return candidates
 }
 
 /**

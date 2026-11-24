@@ -122,3 +122,14 @@ export const GROQ_MAX_TOKENS = 6144
 // tokens — 20,000 leaves ~2.6× headroom. Env override wins (server reads it).
 export const GEMINI_MODEL = 'gemini-2.5-flash'
 export const GEMINI_MAX_OUTPUT_TOKENS = 20000
+
+// 3-step plan pipeline
+// Step 1 proposes concepts, step 2 selects them, step 3 writes full recipes.
+// Each request has its own cap; one overall AbortController enforces the total.
+// The frontend cap stays above the total so the browser waits for the final JSON.
+export const PIPELINE_STEP1_MS = 60000
+export const PIPELINE_STEP2_MS = 45000
+export const PIPELINE_STEP3_MS = 200000
+export const PIPELINE_STEP3_SPLIT_MS = 150000
+export const PIPELINE_TOTAL_MS = 240000
+export const PIPELINE_FRONTEND_MS = PIPELINE_TOTAL_MS + CLAUDE_FRONTEND_MARGIN_MS

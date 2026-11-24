@@ -7,7 +7,8 @@ import DodoPayments from 'dodopayments'
 import { Webhook } from 'standardwebhooks'
 import crypto from 'crypto'
 import rateLimit from 'express-rate-limit'
-import { TIMEOUTS, claudePlanConfig, GROQ_MAX_TOKENS, GEMINI_MODEL, GEMINI_MAX_OUTPUT_TOKENS } from './shared/timeouts.mjs'
+import { TIMEOUTS, claudePlanConfig, GROQ_MAX_TOKENS, GEMINI_MODEL, GEMINI_MAX_OUTPUT_TOKENS, PIPELINE_TOTAL_MS } from './shared/timeouts.mjs'
+import { runPlanPipeline, validatePlanRequest } from './shared/planPipeline.mjs'
 
 dotenv.config({ path: '.env.local' })
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -189,8 +190,68 @@ function requireWebhookSecret(req, res, next) {
   next()
 }
 
+// 3-step plan pipeline proxy. Behind the same meal-plan limiter as /api/claude.
+app.post('/api/plan', planLimiter, async (req, res) => {
+	if (process.env.PLAN_PIPELINE_ENABLED !== 'true') {
+		return res.status(404).json({ error: 'pipeline_disabled' })
+	}
+
+	const validated = validatePlanRequest(req.body)
+	if (!validated.ok) {
+		return res.status(400).json({ error: validated.reason })
+	}
+
+	const apiKey = process.env.CLAUDE_API_KEY || process.env.VITE_CLAUDE_API_KEY
+	if (!apiKey || apiKey.trim() === '' || apiKey === 'your_key_here') {
+		console.warn('[PlanPipeline] No valid Claude API key found.')
+		return res.status(401).json({ error: 'Claude API key not configured' })
+	}
+
+	const controller = new AbortController()
+	const totalTimer = setTimeout(() => {
+		console.error(`[PlanPipeline] Overall timeout after ${PIPELINE_TOTAL_MS}ms`)
+		controller.abort()
+	}, PIPELINE_TOTAL_MS)
+
+	res.status(200)
+	res.setHeader('Content-Type', 'application/json')
+	res.flushHeaders()
+
+	const keepAlive = setInterval(() => {
+		if (!res.writableEnded && !res.destroyed) res.write(' ')
+	}, 10000)
+
+	const abortIfDisconnected = () => {
+		if (!res.writableEnded && (res.destroyed || !req.complete)) controller.abort()
+	}
+	req.on('close', abortIfDisconnected)
+	res.on('close', abortIfDisconnected)
+
+	try {
+		const plan = await runPlanPipeline({
+			items: validated.items,
+			diet: validated.diet,
+			days: validated.days,
+			apiKey,
+			signal: controller.signal,
+		})
+		if (!res.writableEnded && !res.destroyed) res.end(JSON.stringify(plan))
+	} catch (err) {
+		const failedStep = Number.isInteger(err?.failedStep) ? err.failedStep : 0
+		console.error(`[PlanPipeline] Failed at step ${failedStep}: ${err?.message || String(err)}`)
+		if (!res.writableEnded && !res.destroyed) {
+			res.end(JSON.stringify({ error: err?.message || 'pipeline failed', failedStep }))
+		}
+	} finally {
+		clearTimeout(totalTimer)
+		clearInterval(keepAlive)
+		req.off('close', abortIfDisconnected)
+		res.off('close', abortIfDisconnected)
+	}
+})
+
 // ─── Claude API proxy ──────────────────────────────────────────────────────
-app.post('/api/claude', async (req, res) => {
+app.post('/api/claude', planLimiter, async (req, res) => {
 	try {
 		const { prompt, days } = req.body
 
@@ -347,7 +408,7 @@ app.post('/api/claude', async (req, res) => {
 })
 
 // ─── Gemini API proxy (middle fallback: Claude → Gemini → Groq) ────────────
-app.post('/api/gemini', async (req, res) => {
+app.post('/api/gemini', planLimiter, async (req, res) => {
 	try {
 		const { prompt, days } = req.body
 		if (!prompt) {

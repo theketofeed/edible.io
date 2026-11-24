@@ -2,7 +2,7 @@ import Tesseract from 'tesseract.js'
 import { track, Events } from './analytics'
 import type { DietType, GenerateMealPlanParams, MealPlanResult, DayMeals, Meal, OcrResult } from '../utils/types'
 import { extractGroceryItems, cleanGroceryList } from '../utils/grocery'
-import { TIMEOUTS, claudePlanConfig } from '../../shared/timeouts.mjs'
+import { TIMEOUTS, claudePlanConfig, PIPELINE_FRONTEND_MS } from '../../shared/timeouts.mjs'
 import { cleanMealTitle } from './mealTitle'
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -313,6 +313,37 @@ async function callClaude(prompt: string, days: number): Promise<{ totalDays: nu
   }
 }
 
+async function callPipeline(items: string[], diet: DietType, days: number): Promise<{ totalDays: number; days: DayMeals[] } | null> {
+  console.log(`[Pipeline] Calling backend pipeline with ${items.length} items for ${days} days`)
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
+
+  try {
+    const response = await fetch(`${backendUrl}/api/plan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items, diet, days }),
+      signal: AbortSignal.timeout(PIPELINE_FRONTEND_MS),
+    })
+
+    if (!response.ok) {
+      console.error(`[Pipeline] Backend returned non-ok status: ${response.status}`)
+      return null
+    }
+
+    const json = await response.json()
+    if (json?.error) {
+      console.error(`[Pipeline] Backend error: ${json.error}`)
+      return null
+    }
+
+    console.log('[Pipeline] Received plan')
+    return json as { totalDays: number; days: DayMeals[] }
+  } catch (err) {
+    console.error('[Pipeline] Failed:', err?.message || String(err))
+    return null
+  }
+}
+
 async function callGemini(prompt: string, days: number): Promise<{ totalDays: number; days: DayMeals[] } | null> {
   console.log('[Gemini] Calling backend proxy...')
   const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
@@ -436,24 +467,43 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
 
   const prompt = buildPrompt(effectiveItems, diet, effectiveDays)
 
-  // Try Claude first, then Gemini, then Groq (last resort)
-  let result = await callClaude(prompt, effectiveDays)
+  let result: { totalDays: number; days: DayMeals[] } | null = null
+  let fromPipeline = false
+
+  const pipelinePlan = await callPipeline(effectiveItems, diet, effectiveDays)
+  if (pipelinePlan) {
+    const coercedPipeline = coerceDaysStructure(pipelinePlan)
+    if (coercedPipeline.days.length) {
+      result = coercedPipeline
+      fromPipeline = true
+    } else {
+      console.warn('[Generator] Pipeline returned no usable days')
+    }
+  }
 
   if (!result || !result.days.length) {
-    console.log('[Generator] 🔄 Claude returned no result — trying Gemini')
-    onStep?.(1) // Gemini fallback kicking in — advance bar
-    result = await callGemini(prompt, effectiveDays)
+    console.log('[Generator] Pipeline unusable, trying legacy chain')
+    // Try Claude first, then Gemini, then Groq (last resort)
+    result = await callClaude(prompt, effectiveDays)
 
     if (!result || !result.days.length) {
-      console.log('[Generator] 🔄 Gemini returned no result — triggering Groq fallback')
-      onStep?.(1) // Groq fallback kicking in — advance bar
-      result = await callGroq(prompt)
+      console.log('[Generator] 🔄 Claude returned no result — trying Gemini')
+      onStep?.(1) // Gemini fallback kicking in — advance bar
+      result = await callGemini(prompt, effectiveDays)
+
+      if (!result || !result.days.length) {
+        console.log('[Generator] 🔄 Gemini returned no result — triggering Groq fallback')
+        onStep?.(1) // Groq fallback kicking in — advance bar
+        result = await callGroq(prompt)
+      } else {
+        console.log('[Generator] ✅ Gemini succeeded')
+      }
     } else {
-      console.log('[Generator] ✅ Gemini succeeded')
+      console.log('[Generator] ✅ Claude succeeded')
+      onStep?.(1) // Claude succeeded
     }
   } else {
-    console.log('[Generator] ✅ Claude succeeded')
-    onStep?.(1) // Claude succeeded
+    onStep?.(1) // Pipeline succeeded
   }
 
   // All providers failed — throw so UI can show retry
@@ -463,7 +513,9 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
 
   // Validate ingredient usage (soft check)
   const isValid = validatePlan(result, effectiveItems)
-  if (!isValid) {
+  if (fromPipeline) {
+    console.log(`[Generator] Pipeline validation result: ${isValid ? 'pass' : 'fail'} (logged only, no retry)`)
+  } else if (!isValid) {
     // Try once more with Gemini (it can complete large plans — Groq's 6144 cap cannot)
     console.warn('[Generator] Plan failed validation — retrying with Gemini...')
     const retryResult = await callGemini(prompt, effectiveDays)
@@ -480,7 +532,7 @@ export async function generateMealPlan(params: GenerateMealPlanParams): Promise<
   console.log('[Generator] ✅ Done —', result.days.length, 'days generated')
 
   const duration = effectiveDays
-  track(Events.PLAN_GENERATED_SUCCESS, { diet, duration })
+  track(Events.PLAN_GENERATED_SUCCESS, { diet, duration, source: fromPipeline ? 'pipeline' : 'fallback' })
 
   return {
     sourceItems: items,

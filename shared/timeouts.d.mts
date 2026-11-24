@@ -32,3 +32,15 @@ export declare function claudePlanConfig(days?: number): {
   attemptTimeoutMs: number
   frontendTimeoutMs: number
 }
+
+export declare const PIPELINE_STEP1_MS: number
+
+export declare const PIPELINE_STEP2_MS: number
+
+export declare const PIPELINE_STEP3_MS: number
+
+export declare const PIPELINE_STEP3_SPLIT_MS: number
+
+export declare const PIPELINE_TOTAL_MS: number
+
+export declare const PIPELINE_FRONTEND_MS: number
