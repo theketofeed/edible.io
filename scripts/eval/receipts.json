@@ -1,0 +1,79 @@
+[
+  {
+    "id": "r01",
+    "label": "Thanksgiving week",
+    "items": ["Turkey breast", "Russet potatoes", "Sweet potatoes", "Green beans", "Brussels sprouts", "Cranberry sauce", "Stuffing mix", "Dinner rolls", "Butter", "Heavy cream", "Celery", "Yellow onions", "Fresh sage", "Canned pumpkin", "Pie crust", "Eggs", "Apple cider"],
+    "diet": "Balanced",
+    "days": 5
+  },
+  {
+    "id": "r02",
+    "label": "Halloween family shop",
+    "items": ["Ground beef", "Hot dogs", "Hot dog buns", "Frozen chicken nuggets", "Pasta", "Jarred marinara", "Shredded mozzarella", "Cheese sticks", "Baby carrots", "Apples", "Bananas", "Milk", "Cereal", "Orange juice", "Pumpkin", "Fun-size candy"],
+    "diet": "Balanced",
+    "days": 5
+  },
+  {
+    "id": "r03",
+    "label": "Vegetarian week",
+    "items": ["Eggs", "Firm tofu", "Canned chickpeas", "Red lentils", "Brown rice", "Quinoa", "Spinach", "Bell peppers", "Zucchini", "Mushrooms", "Cherry tomatoes", "Cucumber", "Feta cheese", "Greek yogurt", "Whole wheat pita", "Sweet potatoes", "Lemons", "Frozen edamame"],
+    "diet": "Vegetarian",
+    "days": 5
+  },
+  {
+    "id": "r04",
+    "label": "Keto household",
+    "items": ["Eggs", "Chicken thighs", "Ground beef", "Salmon fillets", "Bacon", "Cheddar cheese", "Cream cheese", "Butter", "Avocados", "Spinach", "Cauliflower", "Broccoli", "Zucchini", "Mushrooms", "Bell peppers", "Cucumbers", "Olive oil", "Almond flour", "Berries", "Heavy cream"],
+    "diet": "Keto",
+    "days": 5
+  },
+  {
+    "id": "r05",
+    "label": "Game day week",
+    "items": ["Chicken wings", "Ground turkey", "Eggs", "Black beans", "Corn tortillas", "Tortilla chips", "Salsa", "Avocados", "Limes", "Jalapenos", "Cilantro", "Bell peppers", "Sour cream", "Shredded cheddar", "Greek yogurt", "Canned tuna"],
+    "diet": "High-Protein",
+    "days": 5
+  },
+  {
+    "id": "r06",
+    "label": "Nigerian market staples",
+    "items": ["Long grain rice", "Ripe plantain", "Black-eyed beans", "Fresh tomatoes", "Red bell peppers", "Scotch bonnet peppers", "Eggs", "Chicken legs", "Whole tilapia", "Onions", "Garlic", "Ginger", "Palm oil", "Groundnut oil", "Spinach", "Cassava flour", "Sweet potatoes", "Smoked mackerel", "Canned tomato paste", "Stock cubes"],
+    "diet": "Balanced",
+    "days": 5
+  },
+  {
+    "id": "r07",
+    "label": "Mediterranean market",
+    "items": ["Salmon fillets", "Chicken thighs", "Canned chickpeas", "Brown rice", "Whole wheat couscous", "Lentils", "Cherry tomatoes", "Cucumbers", "Red onion", "Baby spinach", "Kalamata olives", "Feta cheese", "Plain Greek yogurt", "Lemons", "Garlic", "Eggplant", "Red bell peppers", "Whole wheat pita", "Parsley", "Olive oil"],
+    "diet": "Mediterranean",
+    "days": 5
+  },
+  {
+    "id": "r08",
+    "label": "Tiny list, eight items",
+    "items": ["Eggs", "Canned tuna", "White rice", "Frozen peas", "Carrots", "Onions", "Canned tomatoes", "Cheddar cheese"],
+    "diet": "Balanced",
+    "days": 5
+  },
+  {
+    "id": "r09",
+    "label": "Asian pantry shop",
+    "items": ["Ground pork", "Frozen shrimp", "Eggs", "Firm tofu", "Napa cabbage", "Bok choy", "Scallions", "Ginger", "Garlic", "Shiitake mushrooms", "Carrots", "Cucumber", "Jasmine rice", "Rice noodles", "Kimchi", "Gochujang", "Coconut milk", "Limes"],
+    "diet": "Balanced",
+    "days": 5
+  },
+  {
+    "id": "r10",
+    "label": "Mostly pantry and freezer",
+    "items": ["Frozen chicken breast", "Frozen spinach", "Frozen broccoli", "Frozen mixed vegetables", "Frozen berries", "Canned tuna", "Canned kidney beans", "Canned chickpeas", "Canned tomatoes", "Canned corn", "Brown rice", "Pasta", "Oats", "Peanut butter", "Shelf-stable milk", "Eggs", "Potatoes", "Onions", "Garlic", "Chicken broth"],
+    "diet": "Balanced",
+    "days": 5
+  },
+  {
+    "id": "r11",
+    "label": "Nigerian market (real list)",
+    "items": ["Plantains", "Eggs", "Bread", "Maggi", "Curry", "Thyme", "Dried fish", "Carrots", "Green beans", "Tomato paste", "Spaghetti", "Rice", "Beans", "Egusi", "Bitterleaf", "Waterleaf", "Okro", "Coconut", "Watermelon", "Shombo", "Yellow pepper", "Red pepper", "Green pepper", "Cucumber", "Cabbage", "Palm oil", "Groundnut oil", "Banana", "Seasoning packets", "Chicken", "Meat", "Onions", "Indomie", "Garri", "Plantain flour", "Sugar", "Milk", "Yam", "Sweet potatoes", "Irish potatoes"],
+    "diet": "Balanced",
+    "days": 5
+  }
+]
